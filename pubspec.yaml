@@ -1,0 +1,112 @@
+name: zip_peer
+description: "A new Flutter project."
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  image_picker: 
+  permission_handler: 
+  bottom_picker: 
+  country_code_picker: 
+  country_pickers: 
+  dropdown_button2: 
+  gradient_borders: 
+  flutter_slidable: 
+  gap: 
+  modal_bottom_sheet: 
+  easy_stepper: 
+  flutter_staggered_grid_view:
+  table_calendar: 
+  syncfusion_flutter_sliders:
+  svg_flutter: 
+  google_fonts: 
+  get: 
+  simple_gradient_text: 
+  weekly_date_picker:
+  cached_network_image: 
+  intl:
+  carousel_slider: 
+  pinput: 
+  bottom_navy_bar: 
+  stylish_bottom_bar: 
+  cupertino_icons: 
+  flutter_animate: 
+  shared_preferences: 
+  bounce: 
+  intro_screen_onboarding_flutter: 
+  smooth_page_indicator: 
+  syncfusion_flutter_charts: 
+  fl_chart: 
+  draggable_home:
+  flutter_advanced_drawer: 
+  tap_to_expand: 
+  persistent_bottom_nav_bar_v2: 
+  dotted_border:
+  flutter_spinkit:
+  flutter_neumorphic: 
+  action_slider: 
+  animated_bottom_navigation_bar: 
+  rename_app:
+  shimmer: 
+  url_launcher:
+  flutter_slider_drawer: 
+  expandable:
+
+
+
+  flutter_localizations:
+    sdk: flutter
+  
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: HelveticaNowDisplay
+      fonts:
+        - asset: assets/fonts/HelveticaNowDisplay-Thin.ttf
+          weight: 300
+        - asset: assets/fonts/HelveticaNowDisplay-Light.ttf
+          weight: 400
+        - asset: assets/fonts/HelveticaNowDisplay-Regular.ttf
+          weight: 500
+        - asset: assets/fonts/HelveticaNowDisplay-Medium.ttf
+          weight: 600
+        - asset: assets/fonts/HelveticaNowDisplay-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/HelveticaNowDisplay-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/HelveticaNowDisplay-Black.ttf
+          weight: 900
+        - asset: assets/fonts/HelveticaNowDisplay-ExtLt.ttf
+          weight: 200
+
+
+flutter_assets:
+  assets_path: assets/
+  output_path: lib/generated/
+  filename: assets.dart
+  field_prefix: ""
+
+
+
+
+  
