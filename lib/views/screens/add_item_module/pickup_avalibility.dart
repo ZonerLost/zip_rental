@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/views/screens/add_item_module/add_items_summary.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
@@ -118,7 +119,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
           children: [
             MyButton(
               onTap: () {
-                ItemAddedBottomSheet(context);
+                Get.to(() => const AddItemsSummaryScreen());
               },
               buttonText: "Continue",
               fontColor: Colors.white,

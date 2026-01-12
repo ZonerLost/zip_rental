@@ -20,6 +20,8 @@ class BookingsScreen extends StatefulWidget {
 class _BookingsScreenState extends State<BookingsScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  int _selectedMainTab = 0; // 0 = Items I rent out, 1 = Items I'm renting
+  int _selectedSubTab = 0; // 0 = Upcoming, 1 = Pending, 2 = Active, 3 = Past
 
   // Sample bookings data with event markers
   final Map<DateTime, List<String>> _events = {
@@ -64,7 +66,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
       return Container(
         width: 30,
         height: 3,
-        margin: EdgeInsets.symmetric(horizontal: 1),
+        margin: EdgeInsets.symmetric(vertical: 2),
         decoration: BoxDecoration(
           color: color == 'green' ? Color(0xFF4CAF50) : Color(0xFFFFD37E),
           borderRadius: BorderRadius.circular(2),
@@ -73,17 +75,67 @@ class _BookingsScreenState extends State<BookingsScreen> {
     }).toList();
   }
 
+  Widget _buildSubTab(String title, int index) {
+    final isSelected = _selectedSubTab == index;
+    return Expanded(
+      child: Bounce(
+        onTap: () {
+          setState(() {
+            _selectedSubTab = index;
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? kPrimaryColor.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Center(
+            child: MyText(
+              text: title,
+              size: 14,
+              color: isSelected ? kPrimaryColor : kSubText,
+              weight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: AnimatedListView(
         padding: EdgeInsets.all(20),
-
         children: [
           Gap(50),
           // Header
           MyText(text: "Bookings", size: 28, weight: FontWeight.w700),
           Gap(24),
+
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Row(
+              children: [
+                _buildSubTab('Upcoming', 0),
+                const Gap(8),
+                _buildSubTab('Pending', 1),
+                const Gap(8),
+                _buildSubTab('Active', 2),
+                const Gap(8),
+                _buildSubTab('Past', 3),
+              ],
+            ),
+          ),
+          const Gap(24),
+
           Container(
             decoration: BoxDecoration(
               color: kWhite,
@@ -203,7 +255,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
                       return Positioned(
                         bottom: 2,
-                        child: Row(
+                        child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: markers,
                         ),
@@ -222,7 +274,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
               ],
             ),
           ),
+
           Gap(24),
+
           // Bookings count
           MyText(
             text: '${bookings.length} Bookings found',
@@ -246,7 +300,12 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   color: kWhite,
                   borderRadius: BorderRadius.circular(12),
                   border: Border(
-                    left: BorderSide(color: Color(0xFF4CAF50), width: 4),
+                    left: BorderSide(
+                      color: _selectedMainTab == 0
+                          ? Color(0xFFFFD37E)
+                          : Color(0xFF4CAF50),
+                      width: 4,
+                    ),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -398,8 +457,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
                         ],
                       ),
                     ),
-
-                    // Pay Now Button
                   ],
                 ),
               );

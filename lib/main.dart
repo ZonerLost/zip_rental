@@ -4,6 +4,7 @@ import 'package:zip_peer/config/routes/routes.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
+  
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }

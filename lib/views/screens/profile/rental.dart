@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/constants/app_sizes.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets_2.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
@@ -74,15 +75,6 @@ class _RentalScreenState extends State<RentalScreen> {
                         weight: FontWeight.w600,
                       ),
                     ],
-                  ),
-                  Bounce(
-                    onTap: () {
-                      // Add new item
-                    },
-                    child: CommonImageView(
-                      imagePath: Assets.imagesNavAdd,
-                      height: 40,
-                    ),
                   ),
                 ],
               ),
@@ -215,7 +207,9 @@ class _RentalScreenState extends State<RentalScreen> {
                 children: [
                   Expanded(
                     child: MyButton(
-                      onTap: () {},
+                      onTap: () {
+                        endofrentformBottomSheet(context);
+                      },
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       radius: 30,

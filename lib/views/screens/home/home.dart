@@ -249,45 +249,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const Gap(20),
 
-          Row(
-            children: [
-              MyText(text: "Categories", weight: FontWeight.w600, size: 16),
-              const Gap(10),
-              const Expanded(child: Divider(thickness: 2)),
-              const Gap(10),
-              CommonImageView(imagePath: Assets.imagesNextSimple2, height: 20),
-            ],
-          ),
-
-          const Gap(20),
-
-          // Horizontal Category Chips
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: tabs.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChipWidget(
-                    label: tabs[index],
-
-                    isSelected: _selectedIndex == index,
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = index;
-                        Get.to(() => const HomeItemScreen());
-                      });
-                    },
-                  ),
-                );
-              },
+          Bounce(
+            onTap: () {
+              Get.to(() => const HomeItemScreen());
+            },
+            child: Row(
+              children: [
+                MyText(
+                  text: "Recently added near you",
+                  weight: FontWeight.w600,
+                  size: 16,
+                ),
+                const Gap(10),
+                const Expanded(child: Divider(thickness: 2)),
+                const Gap(10),
+                CommonImageView(
+                  imagePath: Assets.imagesNextSimple2,
+                  height: 20,
+                ),
+              ],
             ),
           ),
-
           const Gap(20),
-
           SizedBox(
             height: 330,
             child: ListView.builder(
@@ -315,22 +298,31 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Gap(20),
 
-          Row(
-            children: [
-              MyText(
-                text: "Recently Viewed",
-                weight: FontWeight.w600,
-                size: 16,
-              ),
-              const Gap(10),
-              const Expanded(child: Divider(thickness: 2)),
-              const Gap(10),
-              CommonImageView(imagePath: Assets.imagesNextSimple2, height: 20),
-            ],
+          Bounce(
+            onTap: () {
+              Get.to(() => const HomeItemScreen());
+            },
+            child: Row(
+              children: [
+                MyText(
+                  text: "Popular near you ",
+
+                  weight: FontWeight.w600,
+                  size: 16,
+                ),
+                const Gap(10),
+                const Expanded(child: Divider(thickness: 2)),
+                const Gap(10),
+                CommonImageView(
+                  imagePath: Assets.imagesNextSimple2,
+                  height: 20,
+                ),
+              ],
+            ),
           ),
           const Gap(20),
           SizedBox(
-            height: 400,
+            height: 350,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: recents.length,
@@ -354,6 +346,100 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+
+          Bounce(
+            onTap: () {
+              Get.to(() => const HomeItemScreen());
+            },
+            child: Row(
+              children: [
+                MyText(
+                  text: "Recently Viewed",
+                  weight: FontWeight.w600,
+                  size: 16,
+                ),
+                const Gap(10),
+                const Expanded(child: Divider(thickness: 2)),
+                const Gap(10),
+                CommonImageView(
+                  imagePath: Assets.imagesNextSimple2,
+                  height: 20,
+                ),
+              ],
+            ),
+          ),
+          const Gap(20),
+          SizedBox(
+            height: 350,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: sneakers.length,
+              itemBuilder: (context, index) {
+                final sneaker = sneakers[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Bounce(
+                    onTap: () {
+                      Get.to(() => const ItemDetailsScreen());
+                    },
+                    child: SneakerCard(
+                      title: sneaker["title"],
+                      price: sneaker["price"],
+                      imageUrl: sneaker["image"],
+                      userName: sneaker["user"],
+                      avatarUrl: sneaker["avatar"],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const Gap(20),
+
+          Bounce(
+            onTap: () {
+              Get.to(() => const HomeItemScreen());
+            },
+            child: Row(
+              children: [
+                MyText(text: "Popular ", weight: FontWeight.w600, size: 16),
+                const Gap(10),
+                const Expanded(child: Divider(thickness: 2)),
+                const Gap(10),
+                CommonImageView(
+                  imagePath: Assets.imagesNextSimple2,
+                  height: 20,
+                ),
+              ],
+            ),
+          ),
+          const Gap(20),
+          SizedBox(
+            height: 350,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: sneakers.length,
+              itemBuilder: (context, index) {
+                final sneaker = sneakers[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Bounce(
+                    onTap: () {
+                      Get.to(() => const ItemDetailsScreen());
+                    },
+                    child: SneakerCard(
+                      title: sneaker["title"],
+                      price: sneaker["price"],
+                      imageUrl: sneaker["image"],
+                      userName: sneaker["user"],
+                      avatarUrl: sneaker["avatar"],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
           const Gap(100),
         ],
       ),

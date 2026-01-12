@@ -1,4 +1,3 @@
-
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:zip_peer/constants/app_colors.dart';
@@ -7,8 +6,10 @@ import 'package:zip_peer/views/screens/add_item_module/add_item_main.dart';
 import 'package:zip_peer/views/screens/booking/booking.dart';
 import 'package:zip_peer/views/screens/chat_module/chat_main.dart';
 import 'package:zip_peer/views/screens/home/home.dart';
+import 'package:zip_peer/views/screens/listing_module/my_listed.dart';
 import 'package:zip_peer/views/screens/profile/profile_setting.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
+import 'package:zip_peer/views/widget/my_text_widget.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int initialIndex;
@@ -19,14 +20,15 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  int currentIndex = 0;
+  int? currentIndex = 0;
   late List<Map<String, dynamic>> items;
   final List<Widget> screens = [
     const HomeScreen(),
-    BookingsScreen(),
-    AddNewItemScreen(),
-    ChatMainScreen(),
-    UserProfileScreen(),
+    const BookingsScreen(),
+    const AddNewItemScreen(),
+    const MyListedItemsScreen(),
+    const ChatMainScreen(),
+    const UserProfileScreen(),
   ];
 
   @override
@@ -40,24 +42,39 @@ class _BottomNavBarState extends State<BottomNavBar> {
     items = [
       {
         'image': currentIndex == 0
-            ? Assets.imagesNavSearch1
-            : Assets.imagesNavSearch2,
+            ? Assets.imagesBottomNavBarSearch
+            : Assets.imagesBottomNavBarSearch2,
+        'label': "Search",
       },
       {
         'image': currentIndex == 1
-            ? Assets.imagesNavBooking2
-            : Assets.imagesNavBooking1,
+            ? Assets.imagesBottomNavBarBooking2
+            : Assets.imagesBottomNavBarBooking,
+        'label': "Bookings",
       },
-      {'image': currentIndex == 2 ? Assets.imagesNavAdd : Assets.imagesNavAdd},
+      {
+        'image': currentIndex == 2
+            ? Assets.imagesNewAddNav2
+            : Assets.imagesNewAddNav,
+        'label': "Add Item",
+      },
       {
         'image': currentIndex == 3
-            ? Assets.imagesNavChat2
-            : Assets.imagesNavChat1,
+            ? Assets.imagesBottomNavBarChat2
+            : Assets.imagesBottomNavBarChat,
+        'label': "My Listings",
       },
       {
         'image': currentIndex == 4
-            ? Assets.imagesNavProfile2
-            : Assets.imagesNavProfile1,
+            ? Assets.imagesBottomNavBarListing2
+            : Assets.imagesBottomNavBarLisitng,
+        'label': "Chats",
+      },
+      {
+        'image': currentIndex == 5
+            ? Assets.imagesBottomNavBarDashboard2
+            : Assets.imagesBottomNavBarDashboard,
+        'label': "Dashboard",
       },
     ];
   }
@@ -70,17 +87,29 @@ class _BottomNavBarState extends State<BottomNavBar> {
   }
 
   Widget _buildNavItem(int index) {
-    return Expanded(
-      child: Center(
-        child: Transform.translate(
-          offset: index == 2 ? const Offset(0, -5) : Offset.zero,
-          child: Bounce(
-            onTap: () => _onItemTapped(index),
-            child: CommonImageView(
+    final isSelected = currentIndex == index;
+
+    return Bounce(
+      onTap: () => _onItemTapped(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CommonImageView(
               imagePath: items[index]['image'],
-              height: 45,
+              fit: BoxFit.cover,
+              height: 24,
             ),
-          ),
+            const SizedBox(height: 6),
+            MyText(
+              text: items[index]['label'],
+              color: isSelected ? kPrimaryColor : Colors.grey.shade600,
+              weight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              size: 11,
+            ),
+          ],
         ),
       ),
     );
@@ -89,30 +118,25 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget _buildBottomNavBar() {
     return Container(
       height: 100,
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(22),
-          topRight: Radius.circular(22),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 20,
-            offset: Offset(0, -4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildNavItem(0),
-          _buildNavItem(1),
-          _buildNavItem(2),
-          _buildNavItem(3),
-          _buildNavItem(4),
-        ],
+        children: List.generate(6, (index) => _buildNavItem(index)),
       ),
     );
   }
@@ -124,7 +148,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       extendBody: true,
       body: Stack(
         children: [
-          screens[currentIndex],
+          screens[currentIndex!],
           Positioned(left: 0, right: 0, bottom: 0, child: _buildBottomNavBar()),
         ],
       ),

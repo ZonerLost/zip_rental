@@ -250,7 +250,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 Gap(20),
                 // Owner info
                 Container(
-                  padding: EdgeInsets.all(12),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: kWhite,
                     borderRadius: BorderRadius.circular(12),
@@ -263,43 +263,51 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     ],
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      CommonImageView(
-                        imagePath: Assets.imagesChatAvatar,
-                        height: 60,
+                      Row(
+                        children: [
+                          CommonImageView(
+                            imagePath: Assets.imagesChatAvatar,
+                            height: 40,
+                          ),
+                          Gap(12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MyText(
+                                text: "Christopher Henry",
+                                size: 16,
+                                weight: FontWeight.w600,
+                              ),
+                              Gap(4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 16,
+                                    color: Colors.amber,
+                                  ),
+                                  Gap(4),
+                                  MyText(
+                                    text: "4.7 ratings",
+                                    size: 14,
+                                    color: kBlack,
+                                  ),
+                                  Gap(12),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Gap(12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MyText(
-                              text: "Christopher Henry",
-                              size: 16,
-                              weight: FontWeight.w600,
-                            ),
-                            Gap(4),
-                            Row(
-                              children: [
-                                Icon(Icons.star, size: 16, color: Colors.amber),
-                                Gap(4),
-                                MyText(
-                                  text: "4.7 ratings",
-                                  size: 14,
-                                  color: kSubText,
-                                ),
-                                Gap(12),
-                                MyText(
-                                  onTap: () {
-                                    Get.to(() => const CommentsScreen());
-                                  },
-                                  text: "50+ comments",
-                                  size: 14,
-                                  color: kSubText,
-                                ),
-                              ],
-                            ),
-                          ],
+                      Bounce(
+                        onTap: () {
+                          Get.to(() => const CommentsScreen());
+                        },
+                        child: CommonImageView(
+                          imagePath: Assets.imagesCommentsNewIcon,
+                          height: 40,
                         ),
                       ),
                     ],

@@ -509,3 +509,187 @@ void showRequestAcceptedBottomSheet(BuildContext context) {
     ),
   );
 }
+
+void endofrentformBottomSheet(BuildContext context) {
+  Get.bottomSheet(
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    enableDrag: true,
+    DoubleWhiteContainers(
+      height: 800,
+      mainColor: kWhite3,
+      topColor: kWhite,
+      handleHeight: 14,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        const Gap(10),
+
+                        Center(
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 12),
+                            height: 4,
+                            width: 40,
+                            decoration: BoxDecoration(
+                              color: kSubText2.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const Gap(10),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: kPrimaryColor,
+                                size: 20,
+                              ),
+                              const Gap(12),
+                              Expanded(
+                                child: MyText(
+                                  text:
+                                      'Your rating will remain private until both parties have submitted their feedback.',
+                                  size: 13,
+                                  color: kPrimaryColor,
+                                  maxLines: 3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Gap(24),
+
+                        // Upload Product Images Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: kWhite,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              CommonImageView(
+                                imagePath: Assets.imagesGallery,
+                                height: 50,
+                              ),
+                              const Gap(12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    MyText(
+                                      text: 'Upload Product Images',
+                                      size: 16,
+                                      weight: FontWeight.w600,
+                                      color: kBlack,
+                                    ),
+                                    const Gap(4),
+                                    MyText(
+                                      text: 'Multiple images allowed',
+                                      size: 12,
+                                      color: kSubText2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Gap(12),
+                              Bounce(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: kPrimaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: MyText(
+                                    text: "Upload",
+                                    size: 14,
+                                    color: kPrimaryColor,
+                                    weight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Gap(24),
+
+                        // Description Label
+                        MyText(
+                          text: "Describe your experience",
+                          size: 14,
+                          color: kSubText2,
+                          weight: FontWeight.w500,
+                        ),
+
+                        const Gap(12),
+
+                        // Text Field
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: kWhite,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: MyTextField(
+                            maxLines: 6,
+
+                            hint: "Lorem ipsum dolor ist amet",
+                            hintsize: 14,
+                          ),
+                        ),
+
+                        const Gap(24),
+                      ],
+                    ),
+                  ),
+
+                  // Submit Button at the bottom
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: MyButton(
+                      onTap: () {
+                        Get.back();
+                      },
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      radius: 30,
+                      height: 56,
+                      buttonText: "Submit",
+                      fontColor: kWhite,
+                      backgroundColor: kPrimaryColor,
+                      hasgrad: false,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}

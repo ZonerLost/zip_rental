@@ -82,6 +82,10 @@ class Assets {
   /// assets/images/back_simple_2.png
   static const String imagesBackSimple2 = "assets/images/back_simple_2.png";
 
+  /// Assets for imagesBadgeNew
+  /// assets/images/badge_new.png
+  static const String imagesBadgeNew = "assets/images/badge_new.png";
+
   /// Assets for imagesBell
   /// assets/images/bell.png
   static const String imagesBell = "assets/images/bell.png";
@@ -89,6 +93,46 @@ class Assets {
   /// Assets for imagesBluetick
   /// assets/images/bluetick.png
   static const String imagesBluetick = "assets/images/bluetick.png";
+
+  /// Assets for imagesBottomNavBarBooking
+  /// assets/images/BottomNavBar_booking.png
+  static const String imagesBottomNavBarBooking = "assets/images/BottomNavBar_booking.png";
+
+  /// Assets for imagesBottomNavBarBooking2
+  /// assets/images/BottomNavBar_Booking_2.png
+  static const String imagesBottomNavBarBooking2 = "assets/images/BottomNavBar_Booking_2.png";
+
+  /// Assets for imagesBottomNavBarChat
+  /// assets/images/BottomNavBar_chat.png
+  static const String imagesBottomNavBarChat = "assets/images/BottomNavBar_chat.png";
+
+  /// Assets for imagesBottomNavBarChat2
+  /// assets/images/BottomNavBar_chat_2.png
+  static const String imagesBottomNavBarChat2 = "assets/images/BottomNavBar_chat_2.png";
+
+  /// Assets for imagesBottomNavBarDashboard
+  /// assets/images/BottomNavBar_dashboard.png
+  static const String imagesBottomNavBarDashboard = "assets/images/BottomNavBar_dashboard.png";
+
+  /// Assets for imagesBottomNavBarDashboard2
+  /// assets/images/BottomNavBar_dashboard_2.png
+  static const String imagesBottomNavBarDashboard2 = "assets/images/BottomNavBar_dashboard_2.png";
+
+  /// Assets for imagesBottomNavBarLisitng
+  /// assets/images/Bottom_NavBar_lisitng.png
+  static const String imagesBottomNavBarLisitng = "assets/images/Bottom_NavBar_lisitng.png";
+
+  /// Assets for imagesBottomNavBarListing2
+  /// assets/images/BottomNavBar_listing_2.png
+  static const String imagesBottomNavBarListing2 = "assets/images/BottomNavBar_listing_2.png";
+
+  /// Assets for imagesBottomNavBarSearch
+  /// assets/images/BottomNavBar_search.png
+  static const String imagesBottomNavBarSearch = "assets/images/BottomNavBar_search.png";
+
+  /// Assets for imagesBottomNavBarSearch2
+  /// assets/images/BottomNavBar_search_2.png
+  static const String imagesBottomNavBarSearch2 = "assets/images/BottomNavBar_search_2.png";
 
   /// Assets for imagesCalendar
   /// assets/images/calendar.png
@@ -141,6 +185,10 @@ class Assets {
   /// Assets for imagesClose
   /// assets/images/close.png
   static const String imagesClose = "assets/images/close.png";
+
+  /// Assets for imagesCommentsNewIcon
+  /// assets/images/comments_new_icon.png
+  static const String imagesCommentsNewIcon = "assets/images/comments_new_icon.png";
 
   /// Assets for imagesConfirmPayment
   /// assets/images/Confirm_Payment.png
@@ -314,6 +362,10 @@ class Assets {
   /// assets/images/map_pin.png
   static const String imagesMapPin = "assets/images/map_pin.png";
 
+  /// Assets for imagesMapPin2
+  /// assets/images/map_pin_2.png
+  static const String imagesMapPin2 = "assets/images/map_pin_2.png";
+
   /// Assets for imagesMinus
   /// assets/images/minus.png
   static const String imagesMinus = "assets/images/minus.png";
@@ -369,6 +421,18 @@ class Assets {
   /// Assets for imagesNavSearch2
   /// assets/images/nav_search_2.png
   static const String imagesNavSearch2 = "assets/images/nav_search_2.png";
+
+  /// Assets for imagesNewAddNav
+  /// assets/images/new_add_nav.png
+  static const String imagesNewAddNav = "assets/images/new_add_nav.png";
+
+  /// Assets for imagesNewAddNav2
+  /// assets/images/new_add_nav_2.png
+  static const String imagesNewAddNav2 = "assets/images/new_add_nav_2.png";
+
+  /// Assets for imagesNewCalender2
+  /// assets/images/new_calender_2.png
+  static const String imagesNewCalender2 = "assets/images/new_calender_2.png";
 
   /// Assets for imagesNextGre
   /// assets/images/next_gre.png
@@ -501,6 +565,10 @@ class Assets {
   /// Assets for imagesTrashNew
   /// assets/images/trash_new.png
   static const String imagesTrashNew = "assets/images/trash_new.png";
+
+  /// Assets for imagesTruck
+  /// assets/images/truck.png
+  static const String imagesTruck = "assets/images/truck.png";
 
   /// Assets for imagesUp
   /// assets/images/up.png
