@@ -9,7 +9,6 @@ import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/auth/reset_password.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
-import 'package:zip_peer/views/screens/home/home.dart';
 import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_checkbox_widget.dart';
@@ -178,7 +177,11 @@ void emailSendBottomSheet(BuildContext context) {
   );
 }
 
-void selectPaymentBottomSheet(BuildContext context) {
+void selectPaymentBottomSheet(
+  BuildContext context, {
+  bool isDelivery = false,
+  String? deliveryFee,
+}) {
   int selectedPaymentIndex = 0;
 
   Get.bottomSheet(
@@ -238,6 +241,56 @@ void selectPaymentBottomSheet(BuildContext context) {
                 textAlign: TextAlign.center,
               ),
               const Gap(32),
+
+              // Pricing Breakdown (only show when Delivery is selected)
+              if (isDelivery && deliveryFee != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const MyText(
+                        text: "Pricing Breakdown",
+                        size: 16,
+                        weight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                      const Gap(12),
+                      _buildPricingRow("Items Price", "\$199.00"),
+                      const Gap(8),
+                      _buildPricingRow("Discount (5%)", "\$15.00"),
+                      const Gap(8),
+                      _buildPricingRow("Delivery Fees", deliveryFee),
+                      const Gap(8),
+                      const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                      const Gap(8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const MyText(
+                            text: "Subtotal",
+                            size: 16,
+                            weight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                          MyText(
+                            text: "\$500.00",
+                            size: 16,
+                            weight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(24),
+              ],
 
               // Payment Options Grid
               Row(
@@ -313,6 +366,21 @@ void selectPaymentBottomSheet(BuildContext context) {
         );
       },
     ),
+  );
+}
+
+Widget _buildPricingRow(String label, String price) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      MyText(text: label, size: 14, color: kSubText2, weight: FontWeight.w400),
+      MyText(
+        text: price,
+        size: 14,
+        weight: FontWeight.w600,
+        color: Colors.black,
+      ),
+    ],
   );
 }
 
@@ -1282,7 +1350,10 @@ void showFiltersBottomSheet(BuildContext context) {
   );
 }
 
-void showSelectAddressBottomSheet(BuildContext context) {
+void showSelectAddressBottomSheet(
+  BuildContext context, {
+  Function(String fee, String addressTitle)? onAddressSelected,
+}) {
   int selectedAddressIndex = 0;
 
   final List<Map<String, dynamic>> addresses = [
@@ -1482,6 +1553,14 @@ void showSelectAddressBottomSheet(BuildContext context) {
               // Continue Button
               MyButton(
                 onTap: () {
+                  final selectedAddress = addresses[selectedAddressIndex];
+                  // Extract fee amount from string like "$10.00 delivery fees"
+                  final feeString = selectedAddress['fee'] as String;
+                  final addressTitle = selectedAddress['title'] as String;
+
+                  if (onAddressSelected != null) {
+                    onAddressSelected(feeString, addressTitle);
+                  }
                   Get.back();
                 },
                 buttonText: "Continue",

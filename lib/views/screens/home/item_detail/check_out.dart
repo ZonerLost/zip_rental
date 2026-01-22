@@ -25,6 +25,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   int _selectedTabIndex = 0;
   final List<String> _tabs = ['Delivery', 'Pickup'];
   final TextEditingController _discountController = TextEditingController();
+  String? _selectedDeliveryFee; // Track delivery fee from selected address
 
   @override
   void dispose() {
@@ -93,6 +94,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Gap(12),
                 _buildPriceRow("Discount (5%)", "\$15.00"),
                 Gap(12),
+                // Show delivery fees only when Delivery tab is selected
+                if (_selectedTabIndex == 0 && _selectedDeliveryFee != null) ...[
+                  _buildPriceRow("Delivery Fees", _selectedDeliveryFee!),
+                  Gap(12),
+                ],
                 _buildPriceRow("Subtotal", "\$500.00"),
                 Gap(12),
                 Divider(color: kDividerColor),
@@ -122,7 +128,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Gap(20),
             MyButton(
               onTap: () {
-                selectPaymentBottomSheet(context);
+                selectPaymentBottomSheet(
+                  context,
+                  isDelivery: _selectedTabIndex == 0,
+                  deliveryFee: _selectedDeliveryFee,
+                );
               },
               buttonText: "Continue to payment",
               height: 56,
@@ -170,6 +180,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     onTap: () {
                       setState(() {
                         _selectedTabIndex = index;
+                        // Clear delivery fee when switching to Pickup
+                        if (index == 1) {
+                          _selectedDeliveryFee = null;
+                        }
                       });
                     },
                     child: Container(
@@ -196,7 +210,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           Gap(20),
 
-          _selectedTabIndex == 0 ? DeliveryTabs() : PickupTab(),
+          _selectedTabIndex == 0
+              ? DeliveryTabs(
+                  onAddressSelected: (String fee, String addressTitle) {
+                    setState(() {
+                      _selectedDeliveryFee = fee;
+                    });
+                  },
+                )
+              : PickupTab(),
 
           // Custom Tabs
           Gap(100),
@@ -217,7 +239,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 }
 
 class DeliveryTabs extends StatefulWidget {
-  const DeliveryTabs({super.key});
+  final Function(String fee, String addressTitle)? onAddressSelected;
+
+  const DeliveryTabs({super.key, this.onAddressSelected});
 
   @override
   State<DeliveryTabs> createState() => _DeliveryTabsState();
@@ -232,7 +256,14 @@ class _DeliveryTabsState extends State<DeliveryTabs> {
         // Select Address Button
         MyButton(
           onTap: () {
-            showSelectAddressBottomSheet(context);
+            showSelectAddressBottomSheet(
+              context,
+              onAddressSelected: (String fee, String addressTitle) {
+                if (widget.onAddressSelected != null) {
+                  widget.onAddressSelected!(fee, addressTitle);
+                }
+              },
+            );
           },
           buttonText: "Select address",
           backgroundColor: kPrimaryColor.withOpacity(0.2),

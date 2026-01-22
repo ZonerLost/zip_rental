@@ -2,7 +2,6 @@ import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
@@ -56,11 +55,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   children: [
                     CommonImageView(imagePath: Assets.imagesBack, height: 40),
                     Gap(8),
-                    MyText(
-                      text: "Summary",
-                      size: 18,
-                      weight: FontWeight.w600,
-                    ),
+                    MyText(text: "Summary", size: 18, weight: FontWeight.w600),
                   ],
                 ),
               ),
@@ -87,20 +82,25 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                       weight: FontWeight.w500,
                       color: kBlack,
                     ),
-                    Row(
-                      spacing: 5,
-                      children: [
-                        CommonImageView(
-                          imagePath: Assets.imagesEditProfile2,
-                          height: 16,
-                        ),
-                        MyText(
-                          text: 'Edit',
-                          size: 14,
-                          color: kPrimaryColor,
-                          weight: FontWeight.w500,
-                        ),
-                      ],
+                    Bounce(
+                      onTap: () {
+                        // Navigate to edit product information
+                      },
+                      child: Row(
+                        spacing: 5,
+                        children: [
+                          CommonImageView(
+                            imagePath: Assets.imagesEditProfile2,
+                            height: 16,
+                          ),
+                          MyText(
+                            text: 'Edit',
+                            size: 14,
+                            color: kPrimaryColor,
+                            weight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -246,21 +246,25 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     ),
                   ],
                 ),
-                Row(
-                  spacing: 6,
-
-                  children: [
-                    CommonImageView(
-                      imagePath: Assets.imagesEditProfile2,
-                      height: 16,
-                    ),
-                    MyText(
-                      text: 'Edit',
-                      size: 14,
-                      color: kPrimaryColor,
-                      weight: FontWeight.w500,
-                    ),
-                  ],
+                Bounce(
+                  onTap: () {
+                    // Navigate to edit address
+                  },
+                  child: Row(
+                    spacing: 6,
+                    children: [
+                      CommonImageView(
+                        imagePath: Assets.imagesEditProfile2,
+                        height: 16,
+                      ),
+                      MyText(
+                        text: 'Edit',
+                        size: 14,
+                        color: kPrimaryColor,
+                        weight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -286,20 +290,25 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                       weight: FontWeight.w600,
                       color: kBlack,
                     ),
-                    Row(
-                      spacing: 6,
-                      children: [
-                        CommonImageView(
-                          imagePath: Assets.imagesEditProfile2,
-                          height: 16,
-                        ),
-                        MyText(
-                          text: 'Edit',
-                          size: 14,
-                          color: kPrimaryColor,
-                          weight: FontWeight.w500,
-                        ),
-                      ],
+                    Bounce(
+                      onTap: () {
+                        // Navigate to edit availability
+                      },
+                      child: Row(
+                        spacing: 6,
+                        children: [
+                          CommonImageView(
+                            imagePath: Assets.imagesEditProfile2,
+                            height: 16,
+                          ),
+                          MyText(
+                            text: 'Edit',
+                            size: 14,
+                            color: kPrimaryColor,
+                            weight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -326,6 +335,158 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     MyText(text: 'Sunday', size: 14, color: kSubText),
                     MyText(text: '06:00 PM - 05:00 PM', size: 16),
                   ],
+                ),
+              ],
+            ),
+          ),
+          Gap(16),
+
+          // Insurance Container
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  spacing: 8,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      spacing: 8,
+                      children: [
+                        MyText(
+                          text: 'Insurance',
+                          size: 16,
+                          weight: FontWeight.w600,
+                          color: kBlack,
+                        ),
+                        MyText(
+                          text: '\$10',
+                          size: 16,
+                          weight: FontWeight.w600,
+                          color: kBlack,
+                        ),
+                      ],
+                    ),
+                    MyText(
+                      text: 'Standard Protection',
+                      size: 14,
+                      color: kSubText,
+                    ),
+                  ],
+                ),
+                Bounce(
+                  onTap: () {
+                    // Navigate to edit insurance
+                  },
+                  child: Row(
+                    spacing: 6,
+                    children: [
+                      CommonImageView(
+                        imagePath: Assets.imagesEditProfile2,
+                        height: 16,
+                      ),
+                      MyText(
+                        text: 'Edit',
+                        size: 14,
+                        color: kPrimaryColor,
+                        weight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Gap(16),
+
+          // Boost Container
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  spacing: 8,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MyText(
+                      text: 'Boost',
+                      size: 16,
+                      weight: FontWeight.w600,
+                      color: kBlack,
+                    ),
+                    MyText(text: 'Not boosted', size: 14, color: kSubText),
+                  ],
+                ),
+                Bounce(
+                  onTap: () {
+                    // Navigate to edit boost
+                  },
+                  child: Row(
+                    spacing: 6,
+                    children: [
+                      CommonImageView(
+                        imagePath: Assets.imagesEditProfile2,
+                        height: 16,
+                      ),
+                      MyText(
+                        text: 'Edit',
+                        size: 14,
+                        color: kPrimaryColor,
+                        weight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Gap(24),
+
+          // Final Confirmation Section
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: kPrimaryColor.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: kPrimaryColor, size: 20),
+                    Gap(8),
+                    MyText(
+                      text: 'Final Confirmation',
+                      size: 16,
+                      weight: FontWeight.w600,
+                      color: kPrimaryColor,
+                    ),
+                  ],
+                ),
+                Gap(12),
+                MyText(
+                  text:
+                      'Please review all the information above before adding your item. You can edit any section by clicking the "Edit" button.',
+                  size: 14,
+                  color: kSubText,
+                  weight: FontWeight.w400,
                 ),
               ],
             ),

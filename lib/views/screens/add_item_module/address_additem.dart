@@ -5,8 +5,6 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/add_item_module/pickup_avalibility.dart';
-import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
-import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -20,7 +18,8 @@ class AddressAddItemScreen extends StatefulWidget {
 }
 
 class _AddressAddItemScreenState extends State<AddressAddItemScreen> {
-  int selectedAddressIndex = 0;
+  int selectedAddressIndex = -1;
+  bool _showSelectAddressError = false;
 
   final List<Map<String, dynamic>> addresses = [
     {
@@ -53,6 +52,12 @@ class _AddressAddItemScreenState extends State<AddressAddItemScreen> {
           children: [
             MyButton(
               onTap: () {
+                if (selectedAddressIndex == -1) {
+                  setState(() {
+                    _showSelectAddressError = true;
+                  });
+                  return;
+                }
                 Get.to(() => PickupAvailabilityScreen());
               },
               buttonText: "Continue",
@@ -110,15 +115,22 @@ class _AddressAddItemScreenState extends State<AddressAddItemScreen> {
                 child: Bounce(
                   onTap: () {
                     setState(() {
-                      selectedAddressIndex = index;
+                      // Toggle selection: if already selected, unselect it
+                      if (selectedAddressIndex == index) {
+                        selectedAddressIndex = -1;
+                      } else {
+                        selectedAddressIndex = index;
+                      }
+                      _showSelectAddressError = false;
                     });
                   },
                   child: Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: kWhite,
+                      color: isSelected
+                          ? kPrimaryColor.withOpacity(0.2)
+                          : kWhite,
                       borderRadius: BorderRadius.circular(16),
-
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
@@ -170,6 +182,7 @@ class _AddressAddItemScreenState extends State<AddressAddItemScreen> {
             },
           ),
           Gap(20),
+
           MyButton(
             onTap: () {
               Get.back();
@@ -183,7 +196,21 @@ class _AddressAddItemScreenState extends State<AddressAddItemScreen> {
             hasgrad: false,
             fontSize: 17,
           ),
-          Gap(20),
+          if (_showSelectAddressError) Gap(20),
+          if (_showSelectAddressError)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, color: kredColor, size: 30),
+                Gap(8),
+                MyText(
+                  text: "Please Select an Address",
+                  size: 16,
+                  color: kredColor,
+                  weight: FontWeight.w600,
+                ),
+              ],
+            ),
         ],
       ),
     );

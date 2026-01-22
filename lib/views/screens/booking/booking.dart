@@ -1,3 +1,5 @@
+
+
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -115,8 +117,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
           // Header
           MyText(text: "Bookings", size: 28, weight: FontWeight.w700),
           Gap(24),
-
-          Container(
+Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: kWhite,
@@ -135,7 +136,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             ),
           ),
           const Gap(24),
-
+          // Calendar
           Container(
             decoration: BoxDecoration(
               color: kWhite,
@@ -277,6 +278,71 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
           Gap(24),
 
+          // Main Tabs (Items I rent out / Items I'm renting)
+          Row(
+            children: [
+              Expanded(
+                child: Bounce(
+                  onTap: () {
+                    setState(() {
+                      _selectedMainTab = 0;
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      MyText(
+                        text: 'Items I rent out',
+                        size: 16,
+                        color: _selectedMainTab == 0 ? kBlack : kSubText,
+                        weight: _selectedMainTab == 0 ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                      Gap(8),
+                      Container(
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: _selectedMainTab == 0 ? kYellowColor : Colors.transparent,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Gap(20),
+              Expanded(
+                child: Bounce(
+                  onTap: () {
+                    setState(() {
+                      _selectedMainTab = 1;
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      MyText(
+                        text: 'Items I\'m renting',
+                        size: 16,
+                        color: _selectedMainTab == 1 ? kBlack : kSubText,
+                        weight: _selectedMainTab == 1 ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                      Gap(8),
+                      Container(
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: _selectedMainTab == 1 ? kgreenColor : Colors.transparent,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          Gap(24),
+
+          
+
           // Bookings count
           MyText(
             text: '${bookings.length} Bookings found',
@@ -302,8 +368,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   border: Border(
                     left: BorderSide(
                       color: _selectedMainTab == 0
-                          ? Color(0xFFFFD37E)
-                          : Color(0xFF4CAF50),
+                          ? kYellowColor
+                          : kgreenColor,
                       width: 4,
                     ),
                   ),
@@ -370,7 +436,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
                                       text: booking['paymentStatus'],
                                       size: 13,
                                       weight: FontWeight.w500,
-                                      color: Color(0xFFE53935),
+                                      color:  Color(0xFFE53935),
                                     ),
                                   ],
                                 ),
