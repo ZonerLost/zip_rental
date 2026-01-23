@@ -191,176 +191,184 @@ void selectPaymentBottomSheet(
     StatefulBuilder(
       builder: (context, setState) {
         return DoubleWhiteContainers(
-          height: 600,
+          height: (isDelivery && deliveryFee != null)
+              ? MediaQuery.of(context).size.height * 0.8
+              : MediaQuery.of(context).size.height * 0.6,
           mainColor: kWhite3,
           topColor: kWhite,
           handleHeight: 14,
 
           borderRadius: BorderRadius.circular(24),
 
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: ListView(
             children: [
-              // Back Button
-              GestureDetector(
-                onTap: () => Get.back(),
-                child: const Row(
-                  children: [
-                    Icon(Icons.arrow_back, size: 24),
-                    Gap(8),
-                    MyText(
-                      text: "Back",
-                      size: 16,
-                      weight: FontWeight.w600,
-                      color: Colors.black,
-                      textAlign: TextAlign.center,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back Button
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.arrow_back, size: 24),
+                        Gap(8),
+                        MyText(
+                          text: "Back",
+                          size: 16,
+                          weight: FontWeight.w600,
+                          color: Colors.black,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              const Gap(32),
-
-              // Title
-              const MyText(
-                text: "Select Payment",
-                size: 26,
-                weight: FontWeight.w700,
-                color: Colors.black,
-                textAlign: TextAlign.center,
-              ),
-
-              const Gap(8),
-
-              // Subtitle
-              const MyText(
-                text: "Please select the preferred payment method.",
-                size: 16,
-                weight: FontWeight.w400,
-                color: kSubText2,
-                textAlign: TextAlign.center,
-              ),
-              const Gap(32),
-
-              // Pricing Breakdown (only show when Delivery is selected)
-              if (isDelivery && deliveryFee != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const MyText(
-                        text: "Pricing Breakdown",
-                        size: 16,
-                        weight: FontWeight.w600,
-                        color: Colors.black,
+                  const Gap(32),
+
+                  // Title
+                  const MyText(
+                    text: "Select Payment",
+                    size: 26,
+                    weight: FontWeight.w700,
+                    color: Colors.black,
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const Gap(8),
+
+                  // Subtitle
+                  const MyText(
+                    text: "Please select the preferred payment method.",
+                    size: 16,
+                    weight: FontWeight.w400,
+                    color: kSubText2,
+                    textAlign: TextAlign.center,
+                  ),
+                  const Gap(32),
+
+                  // Pricing Breakdown (only show when Delivery is selected)
+                  if (isDelivery && deliveryFee != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: kWhite,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: kPrimaryColor.withOpacity(0.2),
+                        ),
                       ),
-                      const Gap(12),
-                      _buildPricingRow("Items Price", "\$199.00"),
-                      const Gap(8),
-                      _buildPricingRow("Discount (5%)", "\$15.00"),
-                      const Gap(8),
-                      _buildPricingRow("Delivery Fees", deliveryFee),
-                      const Gap(8),
-                      const Divider(color: Color(0xFFE0E0E0), thickness: 1),
-                      const Gap(8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const MyText(
-                            text: "Subtotal",
+                            text: "Delivery Charges",
                             size: 16,
                             weight: FontWeight.w600,
                             color: Colors.black,
                           ),
-                          MyText(
-                            text: "\$500.00",
-                            size: 16,
-                            weight: FontWeight.w600,
-                            color: Colors.black,
+                          const Gap(12),
+                          _buildPricingRow("Items Price", "\$199.00"),
+                          const Gap(8),
+                          _buildPricingRow("Discount (5%)", "\$15.00"),
+                          const Gap(8),
+                          _buildPricingRow("Delivery Fees", deliveryFee),
+                          const Gap(8),
+                          const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                          const Gap(8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const MyText(
+                                text: "Subtotal",
+                                size: 16,
+                                weight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                              MyText(
+                                text: "\$500.00",
+                                size: 16,
+                                weight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                    ),
+                    const Gap(24),
+                  ],
+
+                  // Payment Options Grid
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _paymentTile(
+                          Image: Assets.imagesCardIcon,
+                          label: "Debit/Credit Card",
+                          isSelected: selectedPaymentIndex == 0,
+                          onTap: () {
+                            setState(() => selectedPaymentIndex = 0);
+                          },
+                        ),
+                      ),
+                      const Gap(16),
+                      Expanded(
+                        child: _paymentTile(
+                          Image: Assets.imagesApplePayLogo,
+                          label: "Apply Pay",
+                          isSelected: selectedPaymentIndex == 1,
+                          onTap: () {
+                            setState(() => selectedPaymentIndex = 1);
+                          },
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const Gap(24),
-              ],
-
-              // Payment Options Grid
-              Row(
-                children: [
-                  Expanded(
-                    child: _paymentTile(
-                      Image: Assets.imagesCardIcon,
-                      label: "Debit/Credit Card",
-                      isSelected: selectedPaymentIndex == 0,
-                      onTap: () {
-                        setState(() => selectedPaymentIndex = 0);
-                      },
-                    ),
-                  ),
                   const Gap(16),
-                  Expanded(
-                    child: _paymentTile(
-                      Image: Assets.imagesApplePayLogo,
-                      label: "Apply Pay",
-                      isSelected: selectedPaymentIndex == 1,
-                      onTap: () {
-                        setState(() => selectedPaymentIndex = 1);
-                      },
-                    ),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _paymentTile(
+                          label: "Google Pay",
+                          isSelected: selectedPaymentIndex == 2,
+                          onTap: () {
+                            setState(() => selectedPaymentIndex = 2);
+                          },
+                          Image: Assets.imagesLogosGooglePay,
+                        ),
+                      ),
+                      const Gap(16),
+                      Expanded(
+                        child: _paymentTile(
+                          label: "American Express",
+                          isSelected: selectedPaymentIndex == 3,
+                          onTap: () {
+                            setState(() => selectedPaymentIndex = 3);
+                          },
+                          Image: Assets.imagesAmericanExpress,
+                        ),
+                      ),
+                    ],
                   ),
+                  const Gap(40),
+
+                  // Confirm Button
+                  MyButton(
+                    onTap: () {
+                      Get.back();
+                      AppleBottomSheet(context);
+                    },
+                    buttonText: "Confirm",
+                    fontColor: Colors.white,
+                    height: 56,
+                    radius: 28,
+                    hasgrad: false,
+                    fontSize: 17,
+                  ),
+                  const Gap(20),
                 ],
               ),
-              const Gap(16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _paymentTile(
-                      label: "Google Pay",
-                      isSelected: selectedPaymentIndex == 2,
-                      onTap: () {
-                        setState(() => selectedPaymentIndex = 2);
-                      },
-                      Image: Assets.imagesLogosGooglePay,
-                    ),
-                  ),
-                  const Gap(16),
-                  Expanded(
-                    child: _paymentTile(
-                      label: "American Express",
-                      isSelected: selectedPaymentIndex == 3,
-                      onTap: () {
-                        setState(() => selectedPaymentIndex = 3);
-                      },
-                      Image: Assets.imagesAmericanExpress,
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(40),
-
-              // Confirm Button
-              MyButton(
-                onTap: () {
-                  Get.back();
-                  AppleBottomSheet(context);
-                },
-                buttonText: "Confirm",
-                fontColor: Colors.white,
-                height: 56,
-                radius: 28,
-                hasgrad: false,
-                fontSize: 17,
-              ),
-              const Gap(20),
             ],
           ),
         );

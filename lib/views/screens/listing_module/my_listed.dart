@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/constants/app_sizes.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/views/screens/add_item_module/add_item_main.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets_2.dart';
 import 'package:zip_peer/views/screens/home/item_detail/add_item.dart';
 import 'package:zip_peer/views/screens/listing_module/item_details.dart';
@@ -115,7 +116,7 @@ class _MyListedItemsScreenState extends State<MyListedItemsScreen> {
                   ),
                   Bounce(
                     onTap: () {
-                      // Add new item
+                     // Get.to(() => const AddNewItemScreen());
                     },
                     child: CommonImageView(
                       imagePath: Assets.imagesNavAdd,

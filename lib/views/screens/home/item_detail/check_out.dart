@@ -238,6 +238,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
+
 class DeliveryTabs extends StatefulWidget {
   final Function(String fee, String addressTitle)? onAddressSelected;
 
@@ -248,6 +249,35 @@ class DeliveryTabs extends StatefulWidget {
 }
 
 class _DeliveryTabsState extends State<DeliveryTabs> {
+  int selectedItemIndex = 0;
+
+  final List<Map<String, dynamic>> items = [
+    {
+      'image': Assets.imagesShoes2,
+      'title': "Nike's Jordan 3310",
+      'rentedTimes': '30+',
+      'condition': '9.7',
+      'price': '\$49.99',
+      'duration': 'month',
+    },
+    {
+      'image': Assets.imagesShoes1,
+      'title': "Adidas Ultra Boost",
+      'rentedTimes': '20+',
+      'condition': '9.5',
+      'price': '\$39.99',
+      'duration': 'month',
+    },
+    {
+      'image': Assets.imagesShoes2,
+      'title': "Puma RS-X",
+      'rentedTimes': '15+',
+      'condition': '9.0',
+      'price': '\$35.99',
+      'duration': 'month',
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -283,57 +313,82 @@ class _DeliveryTabsState extends State<DeliveryTabs> {
           color: kSubText,
         ),
         Gap(20),
-        // Item Card
-        Container(
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: kWhite,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              CommonImageView(imagePath: Assets.imagesShoes2, height: 120),
-              Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        // Item Cards List
+        ...List.generate(items.length, (index) {
+          final item = items[index];
+          final isSelected = selectedItemIndex == index;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: index < items.length - 1 ? 16 : 0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedItemIndex = index;
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isSelected ? kPrimaryColor.withOpacity(0.3) : kWhite,
+                  borderRadius: BorderRadius.circular(16),
+
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? kPrimaryColor.withOpacity(0.2)
+                          : Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
                   children: [
-                    MyText(
-                      text: "Nike's Jordan 3310",
-                      size: 16,
-                      weight: FontWeight.w600,
-                    ),
-                    Gap(4),
-                    MyText(
-                      text: "30+ Times rented | 9.7 condition",
-                      size: 12,
-                      color: kSubText,
-                      weight: FontWeight.w600,
-                    ),
-                    Gap(8),
-                    Row(
-                      children: [
-                        MyText(
-                          text: "\$49.99",
-                          size: 18,
-                          weight: FontWeight.w700,
-                        ),
-                        MyText(text: " / month", size: 14, color: kSubText),
-                      ],
+                    // Selection Indicator
+                    CommonImageView(imagePath: item['image'], height: 120),
+                    Gap(12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MyText(
+                            text: item['title'],
+                            size: 16,
+                            weight: FontWeight.w600,
+                          ),
+                          Gap(4),
+                          MyText(
+                            text:
+                                "${item['rentedTimes']} Times rented | ${item['condition']} condition",
+                            size: 12,
+                            color: kSubText,
+                            weight: FontWeight.w600,
+                          ),
+                          Gap(8),
+                          Row(
+                            children: [
+                              MyText(
+                                text: item['price'],
+                                size: 18,
+                                weight: FontWeight.w700,
+                                color: isSelected ? kPrimaryColor : kBlack,
+                              ),
+                              MyText(
+                                text: " / ${item['duration']}",
+                                size: 14,
+                                color: kSubText,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        }),
       ],
     );
   }

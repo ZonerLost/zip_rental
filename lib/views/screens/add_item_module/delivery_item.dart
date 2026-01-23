@@ -100,122 +100,124 @@ class _DeliveryFeeScreenState extends State<DeliveryFeeScreen> {
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: Bounce(
-                  onTap: () {
-                    setState(() {
-                      // Toggle selection: if already selected, unselect it
-                      if (_selectedDeliveryIndex == index) {
-                        _selectedDeliveryIndex = -1;
-                      } else {
-                        _selectedDeliveryIndex = index;
-                      }
-                      _showSelectDeliveryError = false;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? kPrimaryColor.withOpacity(0.2)
-                          : kWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MyText(
-                          text: option['title'] ?? '',
-                          size: 20,
-                          weight: FontWeight.w600,
-                        ),
-                        const Gap(10),
-                        Divider(color: kDividerColor),
-                        const Gap(10),
-                        Row(
-                          spacing: 10,
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: kbackground,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    MyText(
-                                      text: option['distanceLabel'] ?? '',
-                                      size: 14,
-                                      color: kSubText,
-                                    ),
-                                    const Gap(8),
-                                    MyText(
-                                      text: option['distance'] ?? '',
-                                      size: 18,
-                                      weight: FontWeight.w600,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: kbackground,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    MyText(
-                                      text: option['feeLabel'] ?? '',
-                                      size: 14,
-                                      color: kSubText,
-                                    ),
-                                    const Gap(8),
-                                    MyText(
-                                      text: option['fee'] ?? '',
-                                      size: 18,
-                                      weight: FontWeight.w600,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                child: Column(
+                  children: [
+                    Bounce(
+                      onTap: () {
+                        setState(() {
+                          // Toggle selection: if already selected, unselect it
+                          if (_selectedDeliveryIndex == index) {
+                            _selectedDeliveryIndex = -1;
+                          } else {
+                            _selectedDeliveryIndex = index;
+                          }
+                          _showSelectDeliveryError = false;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? kPrimaryColor.withOpacity(0.2)
+                              : kWhite,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        const Gap(10),
-                        Bounce(
-                          onTap: () {},
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.add,
-                                color: kPrimaryColor,
-                                size: 20,
-                              ),
-                              const Gap(8),
-                              MyText(
-                                text: "Add more options",
-                                size: 16,
-                                color: kPrimaryColor,
-                                weight: FontWeight.w600,
-                              ),
-                            ],
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText(
+                              text: option['title'] ?? '',
+                              size: 20,
+                              weight: FontWeight.w600,
+                            ),
+                            const Gap(10),
+                            Divider(color: kDividerColor),
+                            const Gap(10),
+                            Row(
+                              spacing: 10,
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: kbackground,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        MyText(
+                                          text: option['distanceLabel'] ?? '',
+                                          size: 14,
+                                          color: kSubText,
+                                        ),
+                                        const Gap(8),
+                                        MyText(
+                                          text: option['distance'] ?? '',
+                                          size: 18,
+                                          weight: FontWeight.w600,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: kbackground,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        MyText(
+                                          text: option['feeLabel'] ?? '',
+                                          size: 14,
+                                          color: kSubText,
+                                        ),
+                                        const Gap(8),
+                                        MyText(
+                                          text: option['fee'] ?? '',
+                                          size: 18,
+                                          weight: FontWeight.w600,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const Gap(10),
+                    Bounce(
+                      onTap: () {},
+                      child: Row(
+                        children: [
+                          const Icon(Icons.add, color: kPrimaryColor, size: 20),
+                          const Gap(8),
+                          MyText(
+                            text: "Add more options",
+                            size: 16,
+                            color: kPrimaryColor,
+                            weight: FontWeight.w600,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               );
             },

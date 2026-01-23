@@ -1,5 +1,3 @@
-
-
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -117,7 +115,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
           // Header
           MyText(text: "Bookings", size: 28, weight: FontWeight.w700),
           Gap(24),
-Container(
+          Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: kWhite,
@@ -294,13 +292,17 @@ Container(
                         text: 'Items I rent out',
                         size: 16,
                         color: _selectedMainTab == 0 ? kBlack : kSubText,
-                        weight: _selectedMainTab == 0 ? FontWeight.w600 : FontWeight.w500,
+                        weight: _selectedMainTab == 0
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                       ),
                       Gap(8),
                       Container(
                         height: 3,
                         decoration: BoxDecoration(
-                          color: _selectedMainTab == 0 ? kYellowColor : Colors.transparent,
+                          color: _selectedMainTab == 0
+                              ? kYellowColor
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -322,13 +324,17 @@ Container(
                         text: 'Items I\'m renting',
                         size: 16,
                         color: _selectedMainTab == 1 ? kBlack : kSubText,
-                        weight: _selectedMainTab == 1 ? FontWeight.w600 : FontWeight.w500,
+                        weight: _selectedMainTab == 1
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                       ),
                       Gap(8),
                       Container(
                         height: 3,
                         decoration: BoxDecoration(
-                          color: _selectedMainTab == 1 ? kgreenColor : Colors.transparent,
+                          color: _selectedMainTab == 1
+                              ? kgreenColor
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -341,11 +347,11 @@ Container(
 
           Gap(24),
 
-          
-
           // Bookings count
           MyText(
-            text: '${bookings.length} Bookings found',
+            text: _selectedMainTab == 0
+                ? '${bookings.length} Rented Out Items'
+                : '${bookings.length} Renting Items',
             size: 16,
             color: kSubText,
             weight: FontWeight.w500,
@@ -367,9 +373,7 @@ Container(
                   borderRadius: BorderRadius.circular(12),
                   border: Border(
                     left: BorderSide(
-                      color: _selectedMainTab == 0
-                          ? kYellowColor
-                          : kgreenColor,
+                      color: _selectedMainTab == 0 ? kYellowColor : kgreenColor,
                       width: 4,
                     ),
                   ),
@@ -421,25 +425,46 @@ Container(
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Color(0xFFFFEBEE),
+                                  color: _selectedMainTab == 0
+                                      ? kredColor.withOpacity(0.2)
+                                      : kgreenColor.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CommonImageView(
-                                      imagePath: Assets.imagesTimer,
-                                      height: 20,
-                                    ),
-                                    Gap(4),
-                                    MyText(
-                                      text: booking['paymentStatus'],
-                                      size: 13,
-                                      weight: FontWeight.w500,
-                                      color:  Color(0xFFE53935),
-                                    ),
-                                  ],
-                                ),
+                                child: _selectedMainTab == 0
+                                    ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          CommonImageView(
+                                            imagePath: Assets.imagesTimer,
+                                            height: 20,
+                                          ),
+
+                                          Gap(4),
+                                          MyText(
+                                            text: booking['paymentStatus'],
+                                            size: 13,
+                                            weight: FontWeight.w500,
+                                            color: Color(0xFFE53935),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: kgreenColor,
+                                            size: 16,
+                                          ),
+                                          Gap(4),
+                                          MyText(
+                                            text: "Ready to Rented",
+                                            size: 12,
+                                            weight: FontWeight.w500,
+                                            color: kgreenColor,
+                                          ),
+                                        ],
+                                      ),
                               ),
                             ],
                           ),
