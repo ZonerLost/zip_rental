@@ -5,27 +5,35 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/add_item_module/bosst.dart';
+import 'package:zip_peer/views/screens/home/item_detail/check_out.dart';
+import 'package:zip_peer/views/screens/home/item_detail/check_out_2.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
-class AddInsuranceScreen extends StatefulWidget {
-  const AddInsuranceScreen({super.key});
+class AddInsuranceScreen2 extends StatefulWidget {
+  const AddInsuranceScreen2({super.key});
 
   @override
-  State<AddInsuranceScreen> createState() => _AddInsuranceScreenState();
+  State<AddInsuranceScreen2> createState() => _AddInsuranceScreen2State();
 }
 
-class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
+class _AddInsuranceScreen2State extends State<AddInsuranceScreen2> {
   int selectedInsuranceIndex = 0;
 
   final List<Map<String, dynamic>> insuranceOptions = [
     {
+      'title': 'No Insurance',
+      'description': '',
+      'price': '\$0',
+      'isSelected': false,
+    },
+    {
       'title': 'Standard Protection',
       'description': 'Essential coverage for minor damages and everyday wear.',
       'price': '\$10',
-      'isSelected': true,
+      'isSelected': false,
     },
     {
       'title': 'Premium Protection',
@@ -34,7 +42,6 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
       'price': '\$10',
       'isSelected': false,
     },
-     
   ];
 
   @override
@@ -48,7 +55,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
           children: [
             MyButton(
               onTap: () {
-                Get.to(() => BoostScreen());
+                Get.to(() => CheckoutScreen());
               },
               buttonText: "Continue",
               fontColor: Colors.white,
@@ -144,12 +151,17 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                           ],
                         ),
                         Gap(8),
-                        MyText(
-                          text: option['description'],
-                          size: 14,
-                          color: kSubText,
-                        ),
-                        Gap(16),
+                        (option['description'] as String).isNotEmpty
+                            ? MyText(
+                                text: option['description'],
+                                size: 14,
+                                color: kSubText,
+                              )
+                            : const SizedBox.shrink(),
+
+                        (option['description'] as String).isNotEmpty
+                            ? Gap(16)
+                            : const SizedBox.shrink(),
                         MyText(
                           text: option['price'],
                           size: 24,

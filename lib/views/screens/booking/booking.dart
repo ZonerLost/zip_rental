@@ -42,18 +42,22 @@ class _BookingsScreenState extends State<BookingsScreen> {
       'title': 'Nike Jordan 6',
       'category': 'Footwear',
       'status': 'Rented Out',
-      'ownerName': 'Steve Taylor',
+      'ownerName': 'Mike Hesson',
       'amount': '€49.99',
       'dateToPay': 'Oct 5, 2025',
+      'deliveryDate': 'Oct 20, 2001',
+
       'paymentStatus': 'Payment',
     },
     {
       'title': 'Nike Jordan 6',
       'category': 'Footwear',
       'status': 'Rented Out',
-      'ownerName': 'Steve Taylor',
+      'ownerName': 'Mike Hesson',
       'amount': '€49.99',
       'dateToPay': 'Oct 5, 2025',
+      'deliveryDate': 'Oct 20, 2001',
+
       'paymentStatus': 'Payment',
     },
   ];
@@ -75,6 +79,37 @@ class _BookingsScreenState extends State<BookingsScreen> {
     }).toList();
   }
 
+  Widget _buildMainTab(String title, int index, Color indicatorColor) {
+    final isSelected = _selectedMainTab == index;
+    return Expanded(
+      child: Bounce(
+        onTap: () {
+          setState(() {
+            _selectedMainTab = index;
+          });
+        },
+        child: Column(
+          children: [
+            MyText(
+              text: title,
+              size: 16,
+              color: isSelected ? kBlack : kSubText,
+              weight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            ),
+            Gap(8),
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                color: isSelected ? indicatorColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSubTab(String title, int index) {
     final isSelected = _selectedSubTab == index;
     return Expanded(
@@ -94,6 +129,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
           ),
           child: Center(
             child: MyText(
+              textAlign: TextAlign.center,
               text: title,
               size: 14,
               color: isSelected ? kPrimaryColor : kSubText,
@@ -103,6 +139,101 @@ class _BookingsScreenState extends State<BookingsScreen> {
         ),
       ),
     );
+  }
+
+  // Build action buttons based on selected tab
+  Widget _buildActionButtons(Map<String, dynamic> booking) {
+    // Upcoming tab - no buttons
+    if (_selectedSubTab == 0) {
+      return Gap(0);
+    }
+
+    // Pending tab - Accept and Decline buttons
+    if (_selectedSubTab == 1) {
+      return Row(
+        children: [
+          Expanded(
+            child: MyButton(
+              onTap: () {
+                // Handle decline action
+              },
+              buttonText: "Decline",
+              backgroundColor: kredColor.withOpacity(0.2),
+              fontColor: kredColor,
+              radius: 20,
+            ),
+          ),
+          Gap(12),
+          Expanded(
+            child: MyButton(
+              onTap: () {
+                // Handle accept action
+              },
+              buttonText: "Accept",
+              backgroundColor: kgreenColor.withOpacity(0.2),
+              fontColor: kgreenColor,
+              radius: 20,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Active tab - different buttons based on main tab
+    if (_selectedSubTab == 2) {
+      if (_selectedMainTab == 0) {
+        // Items I rent out - Pay Now button
+        return MyButton(
+          onTap: () {},
+          buttonText: "Pay Now",
+          backgroundColor: kPrimaryColor.withOpacity(0.2),
+          fontColor: kPrimaryColor,
+          radius: 20,
+        );
+      } else {
+        // Items I'm renting - Return Item button
+        return MyButton(
+          onTap: () {},
+          buttonText: "Return Item",
+          backgroundColor: kYellowColor.withOpacity(0.2),
+          fontColor: kYellowColor,
+          radius: 20,
+        );
+      }
+    }
+
+    // Past tab - View Details or Rate buttons
+    if (_selectedSubTab == 3) {
+      return Row(
+        children: [
+          Expanded(
+            child: MyButton(
+              onTap: () {
+                // Handle view details action
+              },
+              buttonText: "View Details",
+              backgroundColor: kSubText.withOpacity(0.2),
+              fontColor: kSubText,
+              radius: 20,
+            ),
+          ),
+          Gap(12),
+          Expanded(
+            child: MyButton(
+              onTap: () {
+                // Handle rate action
+              },
+              buttonText: "Rate",
+              backgroundColor: kPrimaryColor.withOpacity(0.2),
+              fontColor: kPrimaryColor,
+              radius: 20,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Gap(0);
   }
 
   @override
@@ -115,25 +246,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
           // Header
           MyText(text: "Bookings", size: 28, weight: FontWeight.w700),
           Gap(24),
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Row(
-              children: [
-                _buildSubTab('Upcoming', 0),
-                const Gap(8),
-                _buildSubTab('Pending', 1),
-                const Gap(8),
-                _buildSubTab('Active', 2),
-                const Gap(8),
-                _buildSubTab('Past', 3),
-              ],
-            ),
-          ),
-          const Gap(24),
+
           // Calendar
           Container(
             decoration: BoxDecoration(
@@ -279,79 +392,38 @@ class _BookingsScreenState extends State<BookingsScreen> {
           // Main Tabs (Items I rent out / Items I'm renting)
           Row(
             children: [
-              Expanded(
-                child: Bounce(
-                  onTap: () {
-                    setState(() {
-                      _selectedMainTab = 0;
-                    });
-                  },
-                  child: Column(
-                    children: [
-                      MyText(
-                        text: 'Items I rent out',
-                        size: 16,
-                        color: _selectedMainTab == 0 ? kBlack : kSubText,
-                        weight: _selectedMainTab == 0
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                      Gap(8),
-                      Container(
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: _selectedMainTab == 0
-                              ? kYellowColor
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildMainTab('Items I rent out', 0, kYellowColor),
               Gap(20),
-              Expanded(
-                child: Bounce(
-                  onTap: () {
-                    setState(() {
-                      _selectedMainTab = 1;
-                    });
-                  },
-                  child: Column(
-                    children: [
-                      MyText(
-                        text: 'Items I\'m renting',
-                        size: 16,
-                        color: _selectedMainTab == 1 ? kBlack : kSubText,
-                        weight: _selectedMainTab == 1
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                      Gap(8),
-                      Container(
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: _selectedMainTab == 1
-                              ? kgreenColor
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildMainTab('Items I\'m renting', 1, kgreenColor),
             ],
           ),
 
           Gap(24),
 
+          // Sub Tabs (Upcoming, Pending, Active, Past)
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Row(
+              children: [
+                _buildSubTab('Upcoming', 0),
+                const Gap(8),
+                _buildSubTab('Pending', 1),
+                const Gap(8),
+                _buildSubTab('Active', 2),
+                const Gap(8),
+                _buildSubTab('Past', 3),
+              ],
+            ),
+          ),
+          const Gap(24),
+
           // Bookings count
           MyText(
-            text: _selectedMainTab == 0
-                ? '${bookings.length} Rented Out Items'
-                : '${bookings.length} Renting Items',
+            text: '${bookings.length} Bookings found',
             size: 16,
             color: kSubText,
             weight: FontWeight.w500,
@@ -438,7 +510,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
                                             imagePath: Assets.imagesTimer,
                                             height: 20,
                                           ),
-
                                           Gap(4),
                                           MyText(
                                             text: booking['paymentStatus'],
@@ -471,80 +542,157 @@ class _BookingsScreenState extends State<BookingsScreen> {
                           Gap(10),
                           Divider(color: kDividerColor),
                           Gap(10),
-                          // Booking details
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          // Booking details - Different layout for Pending tab when "Items I rent out"
+                          if (_selectedSubTab == 1 && _selectedMainTab == 0)
+                            Column(
+                              children: [
+                                Row(
                                   children: [
-                                    MyText(
-                                      text: 'Owner Name',
-                                      size: 13,
-                                      color: kSubText,
-                                      weight: FontWeight.w600,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          MyText(
+                                            text: 'Owner Name',
+                                            size: 13,
+                                            color: kSubText,
+                                            weight: FontWeight.w600,
+                                          ),
+                                          Gap(4),
+                                          MyText(
+                                            text: booking['ownerName'] ?? 'N/A',
+                                            size: 16,
+                                            color: kBlack,
+                                            weight: FontWeight.w600,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    Gap(4),
-                                    MyText(
-                                      text: booking['ownerName'],
-                                      size: 16,
-                                      color: kBlack,
-                                      weight: FontWeight.w600,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          MyText(
+                                            text: 'Delivery Date',
+                                            size: 13,
+                                            color: kSubText,
+                                            weight: FontWeight.w600,
+                                          ),
+                                          Gap(4),
+                                          MyText(
+                                            text: "Oct 20, 2025",
+                                            size: 16,
+                                            color: kBlack,
+                                            weight: FontWeight.w600,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                Gap(16),
+                                Row(
                                   children: [
-                                    MyText(
-                                      text: 'Amount/month',
-                                      size: 13,
-                                      color: kSubText,
-                                      weight: FontWeight.w600,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          MyText(
+                                            text: 'Rented since',
+                                            size: 13,
+                                            color: kSubText,
+                                            weight: FontWeight.w600,
+                                          ),
+                                          Gap(4),
+                                          MyText(
+                                            text: "Oct 20, 2025",
+                                            size: 16,
+                                            color: kBlack,
+                                            weight: FontWeight.w600,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    Gap(4),
-                                    MyText(
-                                      text: booking['amount'],
-                                      size: 16,
-                                      color: kBlack,
-                                      weight: FontWeight.w600,
-                                    ),
+                                    Expanded(child: Gap(0)),
                                   ],
                                 ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    MyText(
-                                      text: 'Date to Pay',
-                                      size: 13,
-                                      color: kSubText,
-                                      weight: FontWeight.w600,
-                                    ),
-                                    Gap(4),
-                                    MyText(
-                                      text: booking['dateToPay'],
-                                      size: 16,
-                                      color: kBlack,
-                                      weight: FontWeight.w600,
-                                    ),
-                                  ],
+                              ],
+                            )
+                          else
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      MyText(
+                                        text: 'Owner Name',
+                                        size: 13,
+                                        color: kSubText,
+                                        weight: FontWeight.w600,
+                                      ),
+                                      Gap(4),
+                                      MyText(
+                                        text: booking['ownerName'],
+                                        size: 16,
+                                        color: kBlack,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      MyText(
+                                        text: 'Amount/month',
+                                        size: 13,
+                                        color: kSubText,
+                                        weight: FontWeight.w600,
+                                      ),
+                                      Gap(4),
+                                      MyText(
+                                        text: booking['amount'],
+                                        size: 16,
+                                        color: kBlack,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      MyText(
+                                        text: 'Date to Pay',
+                                        size: 13,
+                                        color: kSubText,
+                                        weight: FontWeight.w600,
+                                      ),
+                                      Gap(4),
+                                      MyText(
+                                        text: booking['dateToPay'],
+                                        size: 16,
+                                        color: kBlack,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           Gap(20),
-                          MyButton(
-                            onTap: () {},
-                            buttonText: "Pay Now",
-                            backgroundColor: kPrimaryColor.withOpacity(0.2),
-                            fontColor: kPrimaryColor,
-                            radius: 20,
-                          ),
+                          // Action buttons based on selected tab
+                          _buildActionButtons(booking),
                         ],
                       ),
                     ),

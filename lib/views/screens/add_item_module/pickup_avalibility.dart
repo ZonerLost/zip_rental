@@ -5,8 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/add_item_module/add_items_summary.dart';
-import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
+import 'package:zip_peer/views/screens/add_item_module/bosst.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -22,6 +21,9 @@ class PickupAvailabilityScreen extends StatefulWidget {
 
 class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
   DateTime selectedWeekStart = DateTime.now();
+  String? scheduleType; // recurring or specific
+  String? bookingType; // manual or instant
+  String? rentalType; // delivery, pickup, or both
 
   final Map<String, bool> dayAvailability = {
     'Monday': true,
@@ -63,6 +65,16 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
       'to': TimeOfDay(hour: 18, minute: 0),
     },
   };
+
+  @override
+  void initState() {
+    super.initState();
+    if (Get.arguments != null) {
+      scheduleType = Get.arguments['scheduleType'];
+      bookingType = Get.arguments['bookingType'];
+      rentalType = Get.arguments['rentalType'];
+    }
+  }
 
   String getWeekRangeText() {
     final endDate = selectedWeekStart.add(Duration(days: 6));
@@ -119,7 +131,15 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
           children: [
             MyButton(
               onTap: () {
-                Get.to(() => const AddItemsSummaryScreen());
+                // Navigate to Boost screen with all arguments
+                Get.to(
+                  () => BoostScreen(),
+                  arguments: {
+                    'bookingType': bookingType,
+                    'rentalType': rentalType,
+                    'scheduleType': scheduleType,
+                  },
+                );
               },
               buttonText: "Continue",
               fontColor: Colors.white,
@@ -159,47 +179,49 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
           ),
           Gap(24),
 
-          // Week Selector
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
+          // Show week selector only for specific dates
+          if (scheduleType == 'specific') ...[
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: kWhite,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Bounce(
+                    onTap: previousWeek,
+                    child: Icon(Icons.chevron_left, size: 28),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today, size: 20),
+                      Gap(8),
+                      MyText(
+                        text: getWeekRangeText(),
+                        size: 16,
+                        weight: FontWeight.w600,
+                      ),
+                    ],
+                  ),
+                  Bounce(
+                    onTap: nextWeek,
+                    child: Icon(Icons.chevron_right, size: 28),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Bounce(
-                  onTap: previousWeek,
-                  child: Icon(Icons.chevron_left, size: 28),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.calendar_today, size: 20),
-                    Gap(8),
-                    MyText(
-                      text: getWeekRangeText(),
-                      size: 16,
-                      weight: FontWeight.w600,
-                    ),
-                  ],
-                ),
-                Bounce(
-                  onTap: nextWeek,
-                  child: Icon(Icons.chevron_right, size: 28),
-                ),
-              ],
-            ),
-          ),
-          Gap(24),
+            Gap(24),
+          ],
 
           // Days List
           ...dayAvailability.keys.map((day) {
@@ -225,19 +247,30 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         MyText(text: day, size: 16, weight: FontWeight.w600),
-                        Switch(
-                          value: isEnabled,
-                          onChanged: (value) {
-                            setState(() {
-                              dayAvailability[day] = value;
-                            });
-                          },
-                          activeColor: kPrimaryColor,
-                          inactiveTrackColor: kbackground,
+                        Row(
+                          children: [
+                            if (scheduleType != 'recurring')
+                              MyText(
+                                text: 'all day',
+                                size: 14,
+                                color: kSubText,
+                              ),
+                            Gap(8),
+                            Switch(
+                              value: isEnabled,
+                              onChanged: (value) {
+                                setState(() {
+                                  dayAvailability[day] = value;
+                                });
+                              },
+                              activeColor: kPrimaryColor,
+                              inactiveTrackColor: kbackground,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    if (isEnabled) ...[
+                    if (isEnabled && scheduleType != 'specific') ...[
                       Gap(10),
                       Divider(color: kDividerColor),
                       Gap(10),
@@ -296,7 +329,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                                       text: formatTimeOfDay(
                                         dayTimes[day]!['to']!,
                                       ),
-                                      size: 18,
+                                      size: 16,
                                       weight: FontWeight.w600,
                                     ),
                                   ],

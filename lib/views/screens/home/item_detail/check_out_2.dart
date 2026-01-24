@@ -15,18 +15,16 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({super.key});
+class CheckoutScreen2 extends StatefulWidget {
+  const CheckoutScreen2({super.key});
 
   @override
-  State<CheckoutScreen> createState() => _CheckoutScreenState();
+  State<CheckoutScreen2> createState() => _CheckoutScreen2State();
 }
 
-class _CheckoutScreenState extends State<CheckoutScreen> {
+class _CheckoutScreen2State extends State<CheckoutScreen2> {
   final TextEditingController _discountController = TextEditingController();
   String? _selectedDeliveryFee; // Track delivery fee from selected address
-  int _selectedTabIndex =
-      -1; // Track selected delivery/pickup option (0 = delivery, 1 = pickup)
 
   bool isDeliveryEnabled = true; // from backend
   bool isPickupEnabled = true; // from backend
@@ -98,8 +96,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Gap(12),
                 _buildPriceRow("Discount (5%)", "\$15.00"),
                 Gap(12),
-                _buildPriceRow("Insurance", "\$0.00"),
-                Gap(12),
+                
                 // Show delivery fees only when Delivery tab is selected
                 if (_selectedDeliveryFee != null) ...[
                   _buildPriceRow("Delivery Fees", _selectedDeliveryFee!),
@@ -134,11 +131,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Gap(20),
             MyButton(
               onTap: () {
-                selectPaymentBottomSheet(
-                  context,
-                  isDelivery: _selectedTabIndex == 0,
-                  deliveryFee: _selectedDeliveryFee,
-                );
+                Get.to(() => const AddInsuranceScreen2());
               },
               buttonText: "Continue to payment",
               height: 56,
@@ -172,13 +165,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ],
           ),
           Gap(20),
-          DeliveryTabs(
-            onTabChanged: (int index) {
-              setState(() {
-                _selectedTabIndex = index;
-              });
-            },
-          ),
+          DeliveryTabs(),
           // Custom Tabs
           Gap(100),
         ],
@@ -199,9 +186,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
 class DeliveryTabs extends StatefulWidget {
   final Function(String fee, String addressTitle)? onAddressSelected;
-  final Function(int)? onTabChanged;
 
-  const DeliveryTabs({super.key, this.onAddressSelected, this.onTabChanged});
+  const DeliveryTabs({super.key, this.onAddressSelected});
 
   @override
   State<DeliveryTabs> createState() => _DeliveryTabsState();
@@ -349,7 +335,6 @@ class _DeliveryTabsState extends State<DeliveryTabs> {
                     setState(() {
                       _selectedOption = "delivery";
                     });
-                    widget.onTabChanged?.call(0);
                     // 👉 DO NOT open map
                     // 👉 Just enable "Select address"
                   },
@@ -372,7 +357,7 @@ class _DeliveryTabsState extends State<DeliveryTabs> {
                       _selectedOption = "pickup";
                       pickupPoint = "Approx. pickup near Downtown Mall";
                     });
-                    widget.onTabChanged?.call(1);
+
                     showMapBottomSheet(context);
                   },
                   buttonText: "Pickup",

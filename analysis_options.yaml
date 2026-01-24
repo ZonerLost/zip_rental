@@ -10,6 +10,8 @@
 analyzer:
   errors:
     deprecated_member_use: ignore
+    no_leading_underscores_for_local_identifiers: ignore
+    prefer_final_fields: ignore
     unnecessary_to_list_in_spreads: ignore
     unused_element: ignore
     use_super_parameters: ignore

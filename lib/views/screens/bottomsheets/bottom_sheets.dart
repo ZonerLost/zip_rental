@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/auth/reset_password.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
+import 'package:zip_peer/views/screens/home/item_detail/check_out_2.dart';
 import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_checkbox_widget.dart';
@@ -1358,11 +1361,340 @@ void showFiltersBottomSheet(BuildContext context) {
   );
 }
 
+void showCalenderBottomSheet(BuildContext context) {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  int tapCount = 0;
+
+  bool isInstantBooking = true;
+
+  Get.bottomSheet(
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    enableDrag: false,
+    DoubleWhiteContainers(
+      height: MediaQuery.of(context).size.height * 0.9,
+      mainColor: kWhite3,
+      topColor: kWhite,
+      handleHeight: 14,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: StatefulBuilder(
+        builder: (context, setState) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Back
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Row(
+                children: [
+                  CommonImageView(
+                    imagePath: Assets.imagesBackSimple,
+                    height: 32,
+                  ),
+                  Gap(8),
+                  MyText(text: "Back", size: 16, weight: FontWeight.w600),
+                ],
+              ),
+            ),
+
+            const Gap(20),
+
+            /// Title
+            const MyText(
+              text: "Select Pickup Date",
+              size: 20,
+              weight: FontWeight.w600,
+            ),
+            const Gap(6),
+            MyText(
+              text:
+                  "Please select the date and time according to your preferences.",
+              size: 14,
+              color: kSubText,
+            ),
+
+            const Gap(12),
+            Divider(color: kDividerColor),
+            const Gap(12),
+
+            /// Instant booking info
+            /// Calendar
+            TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+              },
+              calendarFormat: CalendarFormat.month,
+              startingDayOfWeek: StartingDayOfWeek.sunday,
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                titleTextFormatter: (date, locale) =>
+                    DateFormat('EEE, MMM dd, yyyy').format(date),
+                titleTextStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                leftChevronIcon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.chevron_left, size: 20),
+                ),
+                rightChevronIcon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.chevron_right, size: 20),
+                ),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                headerPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                headerMargin: const EdgeInsets.only(bottom: 16),
+              ),
+              calendarStyle: CalendarStyle(
+                todayDecoration: const BoxDecoration(
+                  color: Color(0xFF4A5C6A),
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: const TextStyle(
+                  color: kWhite,
+                  fontWeight: FontWeight.w600,
+                ),
+                selectedDecoration: const BoxDecoration(
+                  color: kPrimaryColor,
+                  shape: BoxShape.circle,
+                ),
+                selectedTextStyle: const TextStyle(
+                  color: kWhite,
+                  fontWeight: FontWeight.w600,
+                ),
+                defaultTextStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                outsideTextStyle: TextStyle(
+                  color: kSubText.withOpacity(0.5),
+                  fontSize: 12,
+                ),
+                cellMargin: const EdgeInsets.all(3),
+              ),
+            ),
+
+            const Gap(26),
+
+            /// Time selection
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: kWhite,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        MyText(text: "Select time", size: 12),
+                        Gap(4),
+                        MyText(
+                          text: "09:00 PM",
+                          size: 16,
+                          weight: FontWeight.w600,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const Spacer(),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const MyText(
+                  text: "Instant booking available",
+                  size: 16,
+                  weight: FontWeight.w600,
+                ),
+                const Gap(6),
+                MyText(
+                  text:
+                      "Dates marked in green are available for instant booking. "
+                      "For any other date, you can request availability, and the owner "
+                      "will respond shortly to confirm or suggest alternative times.",
+                  size: 14,
+                  color: kSubText,
+                ),
+              ],
+            ),
+
+            const Gap(16),
+
+            /// Bottom action button
+            MyButton(
+              onTap: () {
+                setState(() {
+                  tapCount++;
+                });
+
+                if (tapCount == 2) {
+                  Get.back(); // close on 3rd tap
+                }
+              },
+              buttonText: tapCount == 0
+                  ? "Confirm Date and Time"
+                  : tapCount == 1
+                  ? "Request Date and Time"
+                  : "Request Date and Time",
+              backgroundColor: const Color(0xFF3F5D52),
+              fontColor: Colors.white,
+              height: 56,
+              radius: 30,
+              fontSize: 16,
+              hasgrad: false,
+            ),
+
+            const Gap(20),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+void showMapBottomSheet(BuildContext context) {
+  // Profile Type Selection
+
+  Get.bottomSheet(
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    enableDrag: false,
+    DoubleWhiteContainers(
+      height: MediaQuery.of(context).size.height * 0.85,
+      mainColor: kWhite3,
+      topColor: kWhite,
+      handleHeight: 14,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: StatefulBuilder(
+        builder: (context, setState) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Back Button
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Row(
+                children: [
+                  CommonImageView(
+                    imagePath: Assets.imagesBackSimple,
+                    height: 32,
+                  ),
+                  Gap(8),
+                  MyText(
+                    text: "Back",
+                    size: 16,
+                    weight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ],
+              ),
+            ),
+            const Gap(20),
+
+            // Title
+            const MyText(
+              text: "Select Loaction on Map",
+              size: 20,
+              weight: FontWeight.w600,
+              color: Colors.black,
+            ),
+            const Gap(4),
+            MyText(
+              text:
+                  "Please select the loaction on map as per your preferences.",
+              size: 14,
+              color: Colors.grey[600],
+            ),
+
+            const Gap(20),
+            Bounce(
+              child: CommonImageView(
+                imagePath: Assets.imagesMap,
+                height: 550,
+                radius: 25,
+                width: double.maxFinite,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const Gap(20),
+            Row(
+              children: [
+                Expanded(
+                  child: MyButton(
+                    onTap: () {
+                      Get.back();
+                    },
+                    buttonText: "Canel",
+                    backgroundColor: Colors.white,
+                    fontColor: Colors.black,
+                    height: 50,
+                    radius: 30,
+                    fontSize: 16,
+                    hasgrad: false,
+                  ),
+                ),
+                const Gap(16),
+                Expanded(
+                  child: MyButton(
+                    onTap: () {
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        Get.back();
+                      });
+                    },
+                    buttonText: "Add Loaction",
+                    backgroundColor: kPrimaryColor,
+                    fontColor: Colors.white,
+                    height: 50,
+                    radius: 30,
+                    fontSize: 16,
+                    hasgrad: false,
+                  ),
+                ),
+              ],
+            ),
+            const Gap(16),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 void showSelectAddressBottomSheet(
   BuildContext context, {
   Function(String fee, String addressTitle)? onAddressSelected,
 }) {
   int selectedAddressIndex = 0;
+  bool isOutsideRange = false;
 
   final List<Map<String, dynamic>> addresses = [
     {
@@ -1377,13 +1709,11 @@ void showSelectAddressBottomSheet(
       'distance': '10.4 KM',
       'fee': '\$45.00 delivery fees',
     },
-    {
-      'title': 'Friends Address',
-      'address': 'St3 , Wilson road , Brooklyn, USA 10121',
-      'distance': '1.5 KM',
-      'fee': '\$10.00 delivery fees',
-    },
   ];
+
+  double getDistanceInKm(String distanceText) {
+    return double.tryParse(distanceText.replaceAll('KM', '').trim()) ?? 0.0;
+  }
 
   Get.bottomSheet(
     backgroundColor: Colors.transparent,
@@ -1401,7 +1731,8 @@ void showSelectAddressBottomSheet(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Gap(20),
-              // Back Button
+
+              /// Back Button
               GestureDetector(
                 onTap: () => Get.back(),
                 child: Row(
@@ -1420,9 +1751,10 @@ void showSelectAddressBottomSheet(
                   ],
                 ),
               ),
+
               const Gap(24),
 
-              // Title
+              /// Title
               const MyText(
                 text: "Select Address",
                 size: 20,
@@ -1438,7 +1770,7 @@ void showSelectAddressBottomSheet(
               ),
               const Gap(24),
 
-              // Address List
+              /// Address List
               Expanded(
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
@@ -1451,8 +1783,11 @@ void showSelectAddressBottomSheet(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Bounce(
                         onTap: () {
+                          final distance = getDistanceInKm(address['distance']);
+
                           setState(() {
                             selectedAddressIndex = index;
+                            isOutsideRange = distance > 5;
                           });
                         },
                         child: Container(
@@ -1460,7 +1795,6 @@ void showSelectAddressBottomSheet(
                           decoration: BoxDecoration(
                             color: kWhite,
                             borderRadius: BorderRadius.circular(16),
-
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.05),
@@ -1543,9 +1877,27 @@ void showSelectAddressBottomSheet(
                 ),
               ),
 
+              /// Error Message
+              if (isOutsideRange)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MyText(
+                      text:
+                          "The selected address is outside the owner’s delivery range.\n"
+                          "Please choose a closer address or select pickup instead.",
+                      size: 14,
+                      color: Colors.red,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+
+              /// Add New Address
               MyButton(
                 onTap: () {
                   Get.back();
+                  showMapBottomSheet(context);
                 },
                 buttonText: "+ Add New Address",
                 fontColor: kPrimaryColor,
@@ -1556,20 +1908,20 @@ void showSelectAddressBottomSheet(
                 hasgrad: false,
                 fontSize: 17,
               ),
+
               Gap(20),
 
-              // Continue Button
               MyButton(
                 onTap: () {
-                  final selectedAddress = addresses[selectedAddressIndex];
-                  // Extract fee amount from string like "$10.00 delivery fees"
-                  final feeString = selectedAddress['fee'] as String;
-                  final addressTitle = selectedAddress['title'] as String;
-
-                  if (onAddressSelected != null) {
-                    onAddressSelected(feeString, addressTitle);
+                  // Only close if there's no error
+                  if (!isOutsideRange) {
+                    final selectedAddress = addresses[selectedAddressIndex];
+                    onAddressSelected?.call(
+                      selectedAddress['fee'],
+                      selectedAddress['title'],
+                    );
+                    Get.back();
                   }
-                  Get.back();
                 },
                 buttonText: "Continue",
                 fontColor: Colors.white,

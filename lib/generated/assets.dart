@@ -270,6 +270,10 @@ class Assets {
   /// assets/images/google.png
   static const String imagesGoogle = "assets/images/google.png";
 
+  /// Assets for imagesGoogleMapTA
+  /// assets/images/GoogleMapTA.jpg
+  static const String imagesGoogleMapTA = "assets/images/GoogleMapTA.jpg";
+
   /// Assets for imagesGreyLocation
   /// assets/images/grey_location.png
   static const String imagesGreyLocation = "assets/images/grey_location.png";
