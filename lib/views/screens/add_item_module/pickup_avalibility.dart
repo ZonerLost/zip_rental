@@ -1,3 +1,4 @@
+
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -35,35 +36,47 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
     'Sunday': false,
   };
 
+  // "All Day" defaults to 9:00 AM - 8:00 PM
   final Map<String, Map<String, TimeOfDay>> dayTimes = {
     'Monday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
     'Tuesday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
     'Wednesday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
     'Thursday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
     'Friday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
     'Saturday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
     'Sunday': {
       'from': TimeOfDay(hour: 9, minute: 0),
-      'to': TimeOfDay(hour: 18, minute: 0),
+      'to': TimeOfDay(hour: 20, minute: 0),
     },
+  };
+
+  // Track which days are using "All Day" mode
+  final Map<String, bool> dayAllDayMode = {
+    'Monday': true,
+    'Tuesday': true,
+    'Wednesday': true,
+    'Thursday': true,
+    'Friday': true,
+    'Saturday': true,
+    'Sunday': true,
   };
 
   @override
@@ -117,8 +130,24 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
         } else {
           dayTimes[day]!['to'] = picked;
         }
+        // Once user customizes time, disable "All Day" mode
+        dayAllDayMode[day] = false;
       });
     }
+  }
+
+  void toggleAllDay(String day) {
+    setState(() {
+      if (dayAllDayMode[day]!) {
+        // User is turning OFF "All Day" - keep current times
+        dayAllDayMode[day] = false;
+      } else {
+        // User is turning ON "All Day" - reset to 9 AM - 8 PM
+        dayAllDayMode[day] = true;
+        dayTimes[day]!['from'] = TimeOfDay(hour: 9, minute: 0);
+        dayTimes[day]!['to'] = TimeOfDay(hour: 20, minute: 0);
+      }
+    });
   }
 
   @override
@@ -226,6 +255,8 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
           // Days List
           ...dayAvailability.keys.map((day) {
             final isEnabled = dayAvailability[day]!;
+            final isAllDay = dayAllDayMode[day]!;
+            
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Container(
@@ -247,26 +278,15 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         MyText(text: day, size: 16, weight: FontWeight.w600),
-                        Row(
-                          children: [
-                            if (scheduleType != 'recurring')
-                              MyText(
-                                text: 'all day',
-                                size: 14,
-                                color: kSubText,
-                              ),
-                            Gap(8),
-                            Switch(
-                              value: isEnabled,
-                              onChanged: (value) {
-                                setState(() {
-                                  dayAvailability[day] = value;
-                                });
-                              },
-                              activeColor: kPrimaryColor,
-                              inactiveTrackColor: kbackground,
-                            ),
-                          ],
+                        Switch(
+                          value: isEnabled,
+                          onChanged: (value) {
+                            setState(() {
+                              dayAvailability[day] = value;
+                            });
+                          },
+                          activeColor: kPrimaryColor,
+                          inactiveTrackColor: kbackground,
                         ),
                       ],
                     ),
@@ -274,71 +294,105 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                       Gap(10),
                       Divider(color: kDividerColor),
                       Gap(10),
+                      
+                      // "All Day" toggle with explanation
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Bounce(
-                              onTap: () => selectTime(day, true),
-                              child: Container(
-                                padding: EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: kWhite3,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    MyText(
-                                      text: "From",
-                                      size: 12,
-                                      color: kSubText,
-                                    ),
-                                    Gap(4),
-                                    MyText(
-                                      text: formatTimeOfDay(
-                                        dayTimes[day]!['from']!,
-                                      ),
-                                      size: 16,
-                                      weight: FontWeight.w600,
-                                    ),
-                                  ],
-                                ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MyText(
+                                text: "All Day",
+                                size: 14,
+                                weight: FontWeight.w600,
                               ),
-                            ),
+                              Gap(2),
+                              MyText(
+                                text: "9:00 AM - 6:00 PM",
+                                size: 12,
+                                color: kSubText,
+                              ),
+                            ],
                           ),
-                          Gap(12),
-                          Expanded(
-                            child: Bounce(
-                              onTap: () => selectTime(day, false),
-                              child: Container(
-                                padding: EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: kWhite3,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    MyText(
-                                      text: "To",
-                                      size: 12,
-                                      color: kSubText,
-                                    ),
-                                    Gap(4),
-                                    MyText(
-                                      text: formatTimeOfDay(
-                                        dayTimes[day]!['to']!,
-                                      ),
-                                      size: 16,
-                                      weight: FontWeight.w600,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          Switch(
+                            value: isAllDay,
+                            onChanged: (value) => toggleAllDay(day),
+                            activeColor: kPrimaryColor,
+                            inactiveTrackColor: kbackground,
                           ),
                         ],
                       ),
+                      
+                      // Show time pickers only if NOT in "All Day" mode
+                      if (!isAllDay) ...[
+                        Gap(12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Bounce(
+                                onTap: () => selectTime(day, true),
+                                child: Container(
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: kWhite3,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      MyText(
+                                        text: "From",
+                                        size: 12,
+                                        color: kSubText,
+                                      ),
+                                      Gap(4),
+                                      MyText(
+                                        text: formatTimeOfDay(
+                                          dayTimes[day]!['from']!,
+                                        ),
+                                        size: 16,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Gap(12),
+                            Expanded(
+                              child: Bounce(
+                                onTap: () => selectTime(day, false),
+                                child: Container(
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: kWhite3,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      MyText(
+                                        text: "To",
+                                        size: 12,
+                                        color: kSubText,
+                                      ),
+                                      Gap(4),
+                                      MyText(
+                                        text: formatTimeOfDay(
+                                          dayTimes[day]!['to']!,
+                                        ),
+                                        size: 16,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ],
                 ),

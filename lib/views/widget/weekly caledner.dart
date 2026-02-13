@@ -125,36 +125,7 @@ class _WeeklyDatePickerState extends State<CustomWeeklyDatePicker> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(vertical: 8.0),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.start,
-        //     children: [
-        //       Bounce(
-        //         onTap: () => _updateMonth(false),
-        //         child: CommonImageView(
-        //           imagePath: Assets.imagesLeftArrowBlueBg,
-        //           height: 21,
-        //         ),
-        //       ),
-        //       SizedBox(width: 13),
-        //       MyText(
-        //         text: DateFormat('MMMM yyyy').format(_currentDate),
-        //         size: 14,
-        //         weight: FontWeight.w800,
-        //         color: kPrimaryColor,
-        //       ),
-        //       SizedBox(width: 13),
-        //       Bounce(
-        //         onTap: () => _updateMonth(true),
-        //         child: CommonImageView(
-        //           imagePath: Assets.imagesRightArrowBlueBg,
-        //           height: 21,
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
+
         Container(
           height: 80,
           color: widget.backgroundColor,

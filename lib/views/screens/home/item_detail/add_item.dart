@@ -1,3 +1,4 @@
+
 // ignore_for_file: prefer_final_fields
 
 import 'package:bounce/bounce.dart';
@@ -25,8 +26,6 @@ class ItemDetailsScreen extends StatefulWidget {
 class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   int _currentImageIndex = 2;
   int _monthCount = 1;
-  String? _selectedOption; // null = nothing selected
-  bool _showSelectDeliveryError = false;
   bool isDeliveryEnabled = true; // owner enabled delivery
   bool isPickupEnabled = true; // owner enabled pickup
 
@@ -63,13 +62,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                   Expanded(
                     child: MyButton(
                       onTap: () {
-                        if (_selectedOption == null) {
-                          setState(() {
-                            _showSelectDeliveryError = true;
-                          });
-                        } else {
-                          Get.to(() => const CheckoutScreen2());
-                        }
+                        Get.to(() => const CheckoutScreen2());
                       },
                       buttonText: "Book Now",
                       height: 56,
@@ -404,140 +397,113 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 ),
                 Gap(20),
 
-                // // Delivery Options Buttons
-                // Row(
-                //   spacing: 10,
-                //   children: [
-                //     Expanded(
-                //       child: MyButton(
-                //         onTap: () {
-                //           setState(() {
-                //             _selectedOption = "delivery";
-                //             _showSelectDeliveryError = false;
-                //           });
-                //         },
-                //         buttonText: "Delivery only",
-                //         height: 50,
-                //         radius: 30,
-                //         fontSize: 14,
-                //         backgroundColor: _selectedOption == "delivery"
-                //             ? kPrimaryColor
-                //             : kWhite,
-                //         fontColor: _selectedOption == "delivery"
-                //             ? kWhite
-                //             : kBlack,
-                //       ),
-                //     ),
-                //     Expanded(
-                //       child: MyButton(
-                //         onTap: () {
-                //           setState(() {
-                //             _selectedOption = "pickup";
-                //             _showSelectDeliveryError = false;
-                //           });
-                //         },
-                //         buttonText: "Pickup only",
-                //         height: 50,
-                //         radius: 30,
-                //         fontSize: 14,
-                //         backgroundColor: _selectedOption == "pickup"
-                //             ? kPrimaryColor
-                //             : kWhite,
-                //         fontColor: _selectedOption == "pickup"
-                //             ? kWhite
-                //             : kBlack,
-                //       ),
-                //     ),
-
-                //     Expanded(
-                //       child: MyButton(
-                //         onTap: () {
-                //           setState(() {
-                //             _selectedOption = "both";
-                //             _showSelectDeliveryError = false;
-                //           });
-                //         },
-                //         buttonText: "Enable both",
-                //         height: 50,
-                //         radius: 30,
-                //         fontSize: 14,
-                //         backgroundColor: _selectedOption == "both"
-                //             ? kPrimaryColor
-                //             : kWhite,
-                //         fontColor: _selectedOption == "both" ? kWhite : kBlack,
-                //       ),
-                //     ),
-                //   ],
-                // ),
-                Row(
-                  spacing: 10,
-                  children: [
-                    if (isDeliveryEnabled)
-                      Expanded(
-                        child: MyButton(
-                          onTap: () {
-                            // Delivery is NOT clickable at this step
-                            setState(() {
-                              _selectedOption = "delivery";
-                              _showSelectDeliveryError = false;
-                            });
-                          },
-                          buttonText: "Delivery",
-                          height: 50,
-                          radius: 30,
-                          fontSize: 14,
-                          backgroundColor: _selectedOption == "delivery"
-                              ? kPrimaryColor
-                              : kWhite,
-                          fontColor: _selectedOption == "delivery"
-                              ? kWhite
-                              : kBlack,
-                        ),
-                      ),
-
-                    if (isPickupEnabled)
-                      Expanded(
-                        child: MyButton(
-                          onTap: () {
-                            setState(() {
-                              _selectedOption = "pickup";
-                              _showSelectDeliveryError = false;
-                            });
-
-                            /// 👇 OPEN MAP HERE (pickup only)
-                            /// Get.to(() => PickupMapScreen());
-                          },
-                          buttonText: "Pickup",
-                          height: 50,
-                          radius: 30,
-                          fontSize: 14,
-                          backgroundColor: _selectedOption == "pickup"
-                              ? kPrimaryColor
-                              : kWhite,
-                          fontColor: _selectedOption == "pickup"
-                              ? kWhite
-                              : kBlack,
-                        ),
-                      ),
-                  ],
-                ),
-
-                // Error message
-                if (_showSelectDeliveryError) Gap(8),
-                if (_showSelectDeliveryError)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error, color: kredColor, size: 30),
-                      Gap(8),
-                      MyText(
-                        text: "Please Select the Delivery Option",
-                        size: 16,
-                        color: kredColor,
-                        weight: FontWeight.w600,
+                // Informational availability section - NO BUTTONS, NO SELECTION
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MyText(
+                        text: "Available Options",
+                        size: 18,
+                        weight: FontWeight.w700,
+                      ),
+                      Gap(16),
+                      
+                      // Show available options based on what owner enabled
+                      if (isPickupEnabled && isDeliveryEnabled)
+                        MyText(
+                          text: "✓ Pickup & Delivery available",
+                          size: 16,
+                          color: kBlack,
+                        )
+                      else if (isPickupEnabled)
+                        MyText(
+                          text: "✓ Pickup only",
+                          size: 16,
+                          color: kBlack,
+                        )
+                      else if (isDeliveryEnabled)
+                        MyText(
+                          text: "✓ Delivery only",
+                          size: 16,
+                          color: kBlack,
+                        ),
+                      
+                      // Show map preview if pickup is available
+                      if (isPickupEnabled) ...[
+                        Gap(16),
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: kWhite3,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on, color: kPrimaryColor, size: 24),
+                              Gap(12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    MyText(
+                                      text: "Approximate pickup location",
+                                      size: 14,
+                                      weight: FontWeight.w600,
+                                    ),
+                                    Gap(4),
+                                    MyText(
+                                      text: "Downtown area, City Center",
+                                      size: 12,
+                                      color: kSubText,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      
+                      // Show delivery info if delivery is available
+                      if (isDeliveryEnabled) ...[
+                        Gap(16),
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: kWhite3,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.local_shipping, color: kPrimaryColor, size: 24),
+                              Gap(12),
+                              Expanded(
+                                child: MyText(
+                                  text: "Delivery address will be requested in next step",
+                                  size: 12,
+                                  color: kSubText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
 
                 Gap(50),
               ],
