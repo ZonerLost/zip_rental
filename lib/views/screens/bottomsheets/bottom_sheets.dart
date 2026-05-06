@@ -21,7 +21,12 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-void showAccountCreatedBottomSheet(BuildContext context) {
+void showAccountCreatedBottomSheet() {
+  final activeContext = Get.context;
+  final bottomInset = activeContext != null
+      ? MediaQuery.of(activeContext).viewInsets.bottom
+      : 0.0;
+
   Get.bottomSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
@@ -41,7 +46,7 @@ void showAccountCreatedBottomSheet(BuildContext context) {
         ),
         child: Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: bottomInset + 24,
             top: 48,
             left: 10,
             right: 10,
@@ -100,7 +105,12 @@ void showAccountCreatedBottomSheet(BuildContext context) {
   );
 }
 
-void emailSendBottomSheet(BuildContext context) {
+void emailSendBottomSheet() {
+  final activeContext = Get.context;
+  final bottomInset = activeContext != null
+      ? MediaQuery.of(activeContext).viewInsets.bottom
+      : 0.0;
+
   Get.bottomSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
@@ -120,7 +130,7 @@ void emailSendBottomSheet(BuildContext context) {
         ),
         child: Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: bottomInset + 24,
             top: 48,
             left: 10,
             right: 10,
