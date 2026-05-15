@@ -23,8 +23,12 @@ class SignUpScreen extends StatelessWidget {
       builder: (controller) {
         return GestureDetector(
           onTap: () {
-            if (controller.identifierFocus.hasFocus ||
+            if (controller.firstNameFocus.hasFocus ||
+                controller.lastNameFocus.hasFocus ||
+                controller.identifierFocus.hasFocus ||
                 controller.passwordFocus.hasFocus) {
+              controller.firstNameFocus.unfocus();
+              controller.lastNameFocus.unfocus();
               controller.identifierFocus.unfocus();
               controller.passwordFocus.unfocus();
             }
@@ -108,6 +112,22 @@ class SignUpScreen extends StatelessWidget {
                     ),
                     const Gap(24),
                     MyTextField(
+                      hint: "First Name",
+                      hintColor: kBlack,
+                      controller: controller.firstNameController,
+                      focusNode: controller.firstNameFocus,
+                      radius: 25,
+                      onChanged: controller.onFirstNameChanged,
+                    ),
+                    MyTextField(
+                      hint: "Last Name",
+                      hintColor: kBlack,
+                      controller: controller.lastNameController,
+                      focusNode: controller.lastNameFocus,
+                      radius: 25,
+                      onChanged: controller.onLastNameChanged,
+                    ),
+                    MyTextField(
                       hint: controller.firstHint,
                       hintColor: kBlack,
                       controller: controller.identifierController,
@@ -175,14 +195,20 @@ class SignUpScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CommonImageView(
-                          imagePath: Assets.imagesGoogle,
-                          height: 58,
+                        Bounce(
+                          onTap: controller.continueWithGoogle,
+                          child: CommonImageView(
+                            imagePath: Assets.imagesGoogle,
+                            height: 58,
+                          ),
                         ),
                         const Gap(16),
-                        CommonImageView(
-                          imagePath: Assets.imagesAppleButton,
-                          height: 58,
+                        Bounce(
+                          onTap: controller.continueWithApple,
+                          child: CommonImageView(
+                            imagePath: Assets.imagesAppleButton,
+                            height: 58,
+                          ),
                         ),
                       ],
                     ),

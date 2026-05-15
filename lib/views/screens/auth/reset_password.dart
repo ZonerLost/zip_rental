@@ -76,6 +76,37 @@ class ResetPasswordScreen extends StatelessWidget {
                 ),
                 Gap(32),
                 MyTextField(
+                  hint: "OTP Code",
+                  hintColor: kBlack,
+                  controller: controller.otpController,
+                  focusNode: controller.otpFocus,
+                  radius: 24,
+                  keyboardType: TextInputType.number,
+                  suffix: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: controller.otpController.text.trim().length == 6
+                        ? Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: kPrimaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          )
+                        : CommonImageView(
+                            imagePath: Assets.imagesPasswordKey,
+                            height: 20,
+                            width: 20,
+                          ),
+                  ),
+                  onChanged: controller.onOtpChanged,
+                ),
+                MyTextField(
                   hint: "Create new password",
                   hintColor: kBlack,
                   controller: controller.passwordController,

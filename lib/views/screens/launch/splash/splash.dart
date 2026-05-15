@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
-import 'package:zip_peer/views/screens/auth/login.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/launch/splash/language_start.dart';
-import 'package:zip_peer/views/screens/launch/splash/onboarding.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
@@ -18,13 +18,28 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final AuthService _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
-    // Using GetX delayed navigation
-    Future.delayed(const Duration(seconds: 5), () {
-      Get.off(() => const LanguageStartScreen()); // Replace current screen
-    });
+    _bootstrapSession();
+  }
+
+  Future<void> _bootstrapSession() async {
+    await Future.delayed(const Duration(seconds: 2));
+
+    final accessToken = await _authService.ensureAccessToken();
+    if (!mounted) {
+      return;
+    }
+
+    if (accessToken != null && accessToken.isNotEmpty) {
+      Get.offAll(() => const BottomNavBar());
+      return;
+    }
+
+    Get.off(() => const LanguageStartScreen());
   }
 
   @override

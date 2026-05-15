@@ -2,22 +2,41 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
-import 'package:zip_peer/services/auth/auth_dummy_service.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 
 class OtpController extends GetxController {
-  OtpController({AuthDummyService? authService})
-    : _authService = authService ?? AuthDummyService();
+  OtpController({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
-  final AuthDummyService _authService;
+  final AuthService _authService;
 
   String otpCode = '';
+  String pendingEmail = '';
+  bool loginVerificationFlow = false;
   int secondsRemaining = 60;
   bool isResendActive = false;
   bool isSubmitting = false;
   Timer? _timer;
 
   bool get isButtonActive => otpCode.length == 6 && !isSubmitting;
+  String get maskedEmail {
+    if (pendingEmail.isEmpty || !pendingEmail.contains('@')) {
+      return '';
+    }
+    final parts = pendingEmail.split('@');
+    final local = parts.first;
+    final domain = parts.last;
+    if (local.isEmpty) {
+      return '***@$domain';
+    }
+    if (local.length <= 2) {
+      return '${local[0]}***@$domain';
+    }
+    return '${local.substring(0, 2)}***@$domain';
+  }
+
   String get formattedTime {
     final minutes = (secondsRemaining ~/ 60).toString().padLeft(2, '0');
     final seconds = (secondsRemaining % 60).toString().padLeft(2, '0');
@@ -27,7 +46,17 @@ class OtpController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    final arguments = Get.arguments;
+    if (arguments is Map && arguments['loginVerificationFlow'] == true) {
+      loginVerificationFlow = true;
+    }
+    _loadPendingEmail();
     startCountdown();
+  }
+
+  Future<void> _loadPendingEmail() async {
+    pendingEmail = await _authService.getPendingEmail() ?? '';
+    update();
   }
 
   void startCountdown() {
@@ -56,7 +85,17 @@ class OtpController extends GetxController {
     if (!isResendActive) {
       return;
     }
-    await _authService.resendOtp();
+    if (pendingEmail.isEmpty) {
+      Get.snackbar('Missing Email', 'Unable to resend OTP without email');
+      return;
+    }
+    final result = await _authService.resendVerification(
+      ResendVerificationRequest(email: pendingEmail),
+    );
+    if (!result.success) {
+      Get.snackbar('Resend Failed', result.message);
+      return;
+    }
     startCountdown();
   }
 
@@ -68,18 +107,35 @@ class OtpController extends GetxController {
     isSubmitting = true;
     update();
 
-    return _authService.verifyOtp(VerifyOtpRequest(code: otpCode)).then((
-      result,
-    ) {
+    if (pendingEmail.isEmpty) {
       isSubmitting = false;
       update();
+      Get.snackbar('Missing Email', 'Unable to verify OTP without email');
+      return Future.value();
+    }
 
-      if (result.success) {
-        showAccountCreatedBottomSheet();
-        return;
-      }
-      Get.snackbar('Verification Failed', result.message);
-    });
+    return _authService
+        .verifyEmail(
+          VerifyEmailRequest(
+            email: pendingEmail,
+            otp: otpCode,
+            type: VerifyOtpType.emailVerification,
+          ),
+        )
+        .then((result) {
+          isSubmitting = false;
+          update();
+
+          if (result.success) {
+            if (loginVerificationFlow) {
+              Get.offAll(() => const BottomNavBar());
+              return;
+            }
+            showAccountCreatedBottomSheet();
+            return;
+          }
+          Get.snackbar('Verification Failed', result.message);
+        });
   }
 
   @override

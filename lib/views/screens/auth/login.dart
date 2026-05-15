@@ -183,11 +183,20 @@ class LoginScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CommonImageView(imagePath: Assets.imagesGoogle, height: 58),
+                    Bounce(
+                      onTap: controller.continueWithGoogle,
+                      child: CommonImageView(
+                        imagePath: Assets.imagesGoogle,
+                        height: 58,
+                      ),
+                    ),
                     const Gap(16),
-                    CommonImageView(
-                      imagePath: Assets.imagesAppleButton,
-                      height: 58,
+                    Bounce(
+                      onTap: controller.continueWithApple,
+                      child: CommonImageView(
+                        imagePath: Assets.imagesAppleButton,
+                        height: 58,
+                      ),
                     ),
                   ],
                 ),

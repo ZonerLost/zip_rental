@@ -99,7 +99,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                         children: [
                           TextSpan(
                             text:
-                                "Please enter the email address that startâ€™s with",
+                                "Please enter the email address that starts with",
                             style: TextStyle(
                               color: kSubText2,
                               fontWeight: FontWeight.w500,

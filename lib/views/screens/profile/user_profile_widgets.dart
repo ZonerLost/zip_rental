@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/profile/dashboard_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/profile/edit_profile.dart';
 import 'package:zip_peer/views/screens/profile/rental.dart';
@@ -10,7 +11,10 @@ import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
 class ProfileCardWidget extends StatelessWidget {
-  const ProfileCardWidget({Key? key}) : super(key: key);
+  const ProfileCardWidget({Key? key, required this.controller})
+    : super(key: key);
+
+  final DashboardController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +50,15 @@ class ProfileCardWidget extends StatelessWidget {
           const Gap(6),
 
           // Profile Image
-          CommonImageView(imagePath: Assets.imagesChatAvatar, height: 70),
+          if ((controller.profilePhotoUrl ?? '').isNotEmpty)
+            CommonImageView(
+              url: controller.profilePhotoUrl,
+              height: 70,
+              width: 70,
+              radius: 35,
+            )
+          else
+            CommonImageView(imagePath: Assets.imagesChatAvatar, height: 70),
 
           const Gap(14),
 
@@ -56,7 +68,7 @@ class ProfileCardWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               MyText(
-                text: 'Christopher Henry',
+                text: controller.fullName,
                 size: 18,
                 color: kBlack,
                 weight: FontWeight.w600,
@@ -69,7 +81,7 @@ class ProfileCardWidget extends StatelessWidget {
 
           // Email
           MyText(
-            text: 'christopherhenry344@gmail.com',
+            text: controller.email,
             size: 14,
             color: kSubText2,
             weight: FontWeight.w400,
@@ -81,9 +93,17 @@ class ProfileCardWidget extends StatelessWidget {
           Row(
             spacing: 12,
             children: [
-              Expanded(child: _buildLargeStatCard("22 items", "I rented out")),
               Expanded(
-                child: _buildLargeStatCard("22 items", "Rented from Others"),
+                child: _buildLargeStatCard(
+                  "${controller.rentedOutCount} items",
+                  "I rented out",
+                ),
+              ),
+              Expanded(
+                child: _buildLargeStatCard(
+                  "${controller.rentedFromOthersCount} items",
+                  "Rented from Others",
+                ),
               ),
             ],
           ),
@@ -93,8 +113,18 @@ class ProfileCardWidget extends StatelessWidget {
           Row(
             spacing: 12,
             children: [
-              Expanded(child: _buildLargeStatCard("22", "Items Listed")),
-              Expanded(child: _buildLargeStatCard("4.9", "Ratings")),
+              Expanded(
+                child: _buildLargeStatCard(
+                  "${controller.listedItemsCount}",
+                  "Items Listed",
+                ),
+              ),
+              Expanded(
+                child: _buildLargeStatCard(
+                  controller.rating.toStringAsFixed(1),
+                  "Ratings",
+                ),
+              ),
             ],
           ),
         ],
@@ -127,7 +157,10 @@ class ProfileCardWidget extends StatelessWidget {
 }
 
 class EarningsCardWidget extends StatelessWidget {
-  const EarningsCardWidget({Key? key}) : super(key: key);
+  const EarningsCardWidget({Key? key, required this.controller})
+    : super(key: key);
+
+  final DashboardController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +185,7 @@ class EarningsCardWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               MyText(
-                text: "\$500.99",
+                text: "\$${controller.earnings.toStringAsFixed(2)}",
                 size: 26,
                 color: kBlack,
                 weight: FontWeight.w600,
@@ -196,7 +229,10 @@ class EarningsCardWidget extends StatelessWidget {
 }
 
 class EcoImpactCardWidget extends StatelessWidget {
-  const EcoImpactCardWidget({Key? key}) : super(key: key);
+  const EcoImpactCardWidget({Key? key, required this.controller})
+    : super(key: key);
+
+  final DashboardController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +253,7 @@ class EcoImpactCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           MyText(
-            text: "27 Kg",
+            text: "${controller.co2SavedKg.toStringAsFixed(0)} Kg",
             size: 26,
             color: kBlack,
             weight: FontWeight.w600,
@@ -255,7 +291,7 @@ class EcoImpactCardWidget extends StatelessWidget {
 
                   child: Center(
                     child: MyText(
-                      text: "That's equivalent to 500 km driven by car",
+                      text: controller.co2EquivalentText,
                       size: 14,
                       color: kPrimaryColor,
                       weight: FontWeight.w500,

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
-import 'package:zip_peer/services/auth/auth_dummy_service.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/services/auth/auth_validators.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 
 class ForgotPasswordController extends GetxController {
-  ForgotPasswordController({AuthDummyService? authService})
-    : _authService = authService ?? AuthDummyService();
+  ForgotPasswordController({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
-  final AuthDummyService _authService;
+  final AuthService _authService;
 
   final FocusNode emailFocus = FocusNode();
   final TextEditingController emailController = TextEditingController();
@@ -24,13 +25,17 @@ class ForgotPasswordController extends GetxController {
       return Future.value();
     }
 
+    final email = emailController.text.trim();
+    if (!AuthValidators.isValidEmail(email)) {
+      Get.snackbar('Invalid Email', 'Please enter a valid email address.');
+      return Future.value();
+    }
+
     isSubmitting = true;
     update();
 
     return _authService
-        .sendResetLink(
-          ForgotPasswordRequest(email: emailController.text.trim()),
-        )
+        .forgotPassword(ForgotPasswordRequest(email: email))
         .then((result) {
           isSubmitting = false;
           update();

@@ -97,20 +97,22 @@ class OtpScreen extends StatelessWidget {
                   ),
                   const Gap(12),
                   RichText(
-                    text: const TextSpan(
+                    text: TextSpan(
                       style: TextStyle(
                         fontSize: 16,
                         color: kSubText2,
                         height: 1.5,
                       ),
-                      children: [
+                      children: <InlineSpan>[
                         TextSpan(
                           text:
                               "We have sent a verification code to your email address ",
                         ),
                         TextSpan(
-                          text: "chri****@gmail.com",
-                          style: TextStyle(
+                          text: controller.maskedEmail.isEmpty
+                              ? 'your-email@example.com'
+                              : controller.maskedEmail,
+                          style: const TextStyle(
                             fontWeight: FontWeight.w500,
                             color: kPrimaryColor,
                           ),

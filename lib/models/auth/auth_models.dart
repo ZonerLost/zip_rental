@@ -1,56 +1,162 @@
 enum AuthMethod { email, phone }
 
-class LoginRequest {
-  const LoginRequest({
-    required this.method,
-    required this.identifier,
-    required this.password,
-  });
+enum VerifyOtpType { emailVerification, passwordReset }
 
-  final AuthMethod method;
-  final String identifier;
-  final String password;
+extension VerifyOtpTypeX on VerifyOtpType {
+  String get value {
+    switch (this) {
+      case VerifyOtpType.emailVerification:
+        return 'email_verification';
+      case VerifyOtpType.passwordReset:
+        return 'password_reset';
+    }
+  }
 }
 
-class SignupRequest {
-  const SignupRequest({
-    required this.method,
-    required this.identifier,
+class RegisterRequest {
+  const RegisterRequest({
+    required this.email,
     required this.password,
-    required this.useFaceId,
+    required this.firstName,
+    required this.lastName,
+    this.language,
   });
 
-  final AuthMethod method;
-  final String identifier;
+  final String email;
   final String password;
-  final bool useFaceId;
+  final String firstName;
+  final String lastName;
+  final String? language;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'email': email,
+      'password': password,
+      'firstName': firstName,
+      'lastName': lastName,
+      if (language != null && language!.isNotEmpty) 'language': language,
+    };
+  }
+}
+
+class LoginRequest {
+  const LoginRequest({required this.email, required this.password});
+
+  final String email;
+  final String password;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{'email': email, 'password': password};
+  }
+}
+
+class GoogleAuthRequest {
+  const GoogleAuthRequest({required this.idToken, this.language});
+
+  final String idToken;
+  final String? language;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'idToken': idToken,
+      if (language != null && language!.isNotEmpty) 'language': language,
+    };
+  }
+}
+
+class VerifyEmailRequest {
+  const VerifyEmailRequest({
+    required this.email,
+    required this.otp,
+    required this.type,
+  });
+
+  final String email;
+  final String otp;
+  final VerifyOtpType type;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{'email': email, 'otp': otp, 'type': type.value};
+  }
+}
+
+class ResendVerificationRequest {
+  const ResendVerificationRequest({required this.email});
+
+  final String email;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{'email': email};
+  }
 }
 
 class ForgotPasswordRequest {
   const ForgotPasswordRequest({required this.email});
 
   final String email;
-}
 
-class VerifyOtpRequest {
-  const VerifyOtpRequest({required this.code});
-
-  final String code;
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{'email': email};
+  }
 }
 
 class ResetPasswordRequest {
   const ResetPasswordRequest({
-    required this.password,
-    required this.confirmPassword,
+    required this.email,
+    required this.otp,
+    required this.newPassword,
   });
 
-  final String password;
-  final String confirmPassword;
+  final String email;
+  final String otp;
+  final String newPassword;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'email': email,
+      'otp': otp,
+      'newPassword': newPassword,
+    };
+  }
+}
+
+class RefreshTokenRequest {
+  const RefreshTokenRequest({required this.refreshToken});
+
+  final String refreshToken;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{'refreshToken': refreshToken};
+  }
+}
+
+class LogoutRequest {
+  const LogoutRequest({required this.refreshToken});
+
+  final String refreshToken;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{'refreshToken': refreshToken};
+  }
+}
+
+class AuthTokens {
+  const AuthTokens({required this.accessToken, required this.refreshToken});
+
+  final String accessToken;
+  final String refreshToken;
 }
 
 class AuthResult {
-  const AuthResult({required this.success, required this.message});
+  const AuthResult({
+    required this.success,
+    required this.message,
+    this.tokens,
+    this.data,
+  });
 
   final bool success;
   final String message;
+  final AuthTokens? tokens;
+  final Map<String, dynamic>? data;
 }

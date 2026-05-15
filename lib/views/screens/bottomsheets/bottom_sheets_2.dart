@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/double_white_contianers.dart';
@@ -14,12 +15,15 @@ import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
 void LogoutBottomSheet(BuildContext context) {
+  final authService = AuthService();
+  bool isSubmitting = false;
+
   Get.bottomSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     enableDrag: true,
     StatefulBuilder(
-      builder: (context, setState) {
+      builder: (sheetContext, setState) {
         return DoubleWhiteContainers(
           height: 500,
           mainColor: kWhite3,
@@ -52,10 +56,26 @@ void LogoutBottomSheet(BuildContext context) {
               const Gap(40),
 
               MyButton(
-                onTap: () {
+                onTap: () async {
+                  if (isSubmitting) {
+                    return;
+                  }
+                  setState(() => isSubmitting = true);
+
+                  final result = await authService.logout();
+
+                  setState(() => isSubmitting = false);
+
+                  if (!result.success &&
+                      result.message != 'No active session') {
+                    Get.snackbar('Logout Failed', result.message);
+                    return;
+                  }
+
+                  Get.back();
                   Get.offAll(() => LoginScreen());
                 },
-                buttonText: "Yes, Logout",
+                buttonText: isSubmitting ? "Logging out..." : "Yes, Logout",
                 fontColor: Colors.white,
                 height: 56,
                 radius: 28,
