@@ -15,14 +15,17 @@ class EditProfileController extends GetxController {
 
   bool isLoading = false;
   bool isSubmitting = false;
+  bool isNameExpanded = false;
 
-  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController countryController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
 
-  final FocusNode focusNodeName = FocusNode();
+  final FocusNode focusNodeFirstName = FocusNode();
+  final FocusNode focusNodeLastName = FocusNode();
   final FocusNode focusNodeEmail = FocusNode();
   final FocusNode focusNodePhone = FocusNode();
   final FocusNode focusNodeCountry = FocusNode();
@@ -33,6 +36,12 @@ class EditProfileController extends GetxController {
 
   bool get isBusy => isLoading || isSubmitting;
 
+  String get displayFullName {
+    final first = firstNameController.text.trim();
+    final last = lastNameController.text.trim();
+    return [first, last].where((s) => s.isNotEmpty).join(' ');
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -40,6 +49,21 @@ class EditProfileController extends GetxController {
   }
 
   void onFieldChanged(String _) => update();
+
+  void expandName() {
+    isNameExpanded = true;
+    update();
+    Future.delayed(const Duration(milliseconds: 50), () {
+      focusNodeFirstName.requestFocus();
+    });
+  }
+
+  void collapseNameIfEmpty() {
+    if (!focusNodeFirstName.hasFocus && !focusNodeLastName.hasFocus) {
+      isNameExpanded = false;
+      update();
+    }
+  }
 
   Future<void> loadProfile() async {
     isLoading = true;
@@ -54,21 +78,24 @@ class EditProfileController extends GetxController {
     }
 
     final profile = result.profile!;
-    fullNameController.text = profile.fullName;
+    firstNameController.text = profile.firstName ?? '';
+    lastNameController.text = profile.lastName ?? '';
     emailController.text = profile.email ?? '';
     phoneController.text = profile.phone ?? '';
-    countryController.text = profile.location?.province ?? '';
+    countryController.text =
+        profile.location?.country ?? profile.location?.province ?? '';
     addressController.text = profile.location?.city ?? '';
-    profilePhotoUrl = result.profilePhoto ?? profile.profilePhoto;
+    profilePhotoUrl = _withCacheBust(
+      result.profilePhoto ?? profile.profilePhoto,
+      profile.updatedAt,
+    );
     update();
   }
 
   Future<void> pickNewPhoto() async {
     try {
       final picked = await _picker.pickImage(source: ImageSource.gallery);
-      if (picked == null) {
-        return;
-      }
+      if (picked == null) return;
       final file = File(picked.path);
       final error = _validateImage(file.path, await file.length());
       if (error != null) {
@@ -89,23 +116,28 @@ class EditProfileController extends GetxController {
   }
 
   Future<void> submit() async {
-    final name = fullNameController.text.trim();
-    if (name.isEmpty) {
-      Get.snackbar('Missing Name', 'Please enter your full name.');
+    final firstName = firstNameController.text.trim();
+    final lastName = lastNameController.text.trim();
+    if (firstName.isEmpty) {
+      Get.snackbar('Missing Name', 'Please enter your first name.');
+      return;
+    }
+    if (lastName.isEmpty) {
+      Get.snackbar('Missing Name', 'Please enter your last name.');
       return;
     }
 
     isSubmitting = true;
     update();
 
-    final names = _splitName(name);
     final updateResult = await _profileService.updateProfile(
       UpdateProfileRequest(
-        firstName: names.$1,
-        lastName: names.$2,
+        firstName: firstName,
+        lastName: lastNameController.text.trim(),
         phone: phoneController.text.trim(),
         language: 'en',
         location: ProfileLocation(
+          country: countryController.text.trim(),
           city: addressController.text.trim(),
           province: countryController.text.trim(),
         ),
@@ -129,19 +161,23 @@ class EditProfileController extends GetxController {
         Get.snackbar('Photo Upload Failed', photoResult.message);
         return;
       }
-      profilePhotoUrl = photoResult.profilePhoto ?? profilePhotoUrl;
+      profilePhotoUrl = _withCacheBust(
+        photoResult.profilePhoto ?? profilePhotoUrl,
+        photoResult.profile?.updatedAt,
+      );
+      await _refreshProfilePhotoFromServer();
+      profilePhotoFile = null;
     }
 
     isSubmitting = false;
     update();
+    Get.back();
     Get.snackbar('Updated', 'Profile information updated successfully.');
   }
 
   String? _validateImage(String path, int bytes) {
     const maxBytes = 5 * 1024 * 1024;
-    if (bytes > maxBytes) {
-      return 'File must be 5MB or smaller.';
-    }
+    if (bytes > maxBytes) return 'File must be 5MB or smaller.';
     final lower = path.toLowerCase();
     if (lower.endsWith('.jpg') ||
         lower.endsWith('.jpeg') ||
@@ -152,30 +188,37 @@ class EditProfileController extends GetxController {
     return 'Only JPEG, PNG, or WebP are supported.';
   }
 
-  (String firstName, String lastName) _splitName(String fullName) {
-    final parts = fullName
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((element) => element.trim().isNotEmpty)
-        .toList(growable: false);
+  Future<void> _refreshProfilePhotoFromServer() async {
+    final latestResult = await _profileService.getProfile();
+    if (!latestResult.success || latestResult.profile == null) return;
+    final latestProfile = latestResult.profile!;
+    profilePhotoUrl = _withCacheBust(
+      latestResult.profilePhoto ?? latestProfile.profilePhoto,
+      latestProfile.updatedAt,
+    );
+  }
 
-    if (parts.isEmpty) {
-      return ('', '');
-    }
-    if (parts.length == 1) {
-      return (parts.first, '');
-    }
-    return (parts.first, parts.sublist(1).join(' '));
+  String? _withCacheBust(String? url, DateTime? updatedAt) {
+    final value = (url ?? '').trim();
+    if (value.isEmpty) return null;
+    if (updatedAt == null) return value;
+    final uri = Uri.tryParse(value);
+    if (uri == null) return value;
+    final query = Map<String, String>.from(uri.queryParameters);
+    query['v'] = updatedAt.millisecondsSinceEpoch.toString();
+    return uri.replace(queryParameters: query).toString();
   }
 
   @override
   void onClose() {
-    fullNameController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
     emailController.dispose();
     phoneController.dispose();
     countryController.dispose();
     addressController.dispose();
-    focusNodeName.dispose();
+    focusNodeFirstName.dispose();
+    focusNodeLastName.dispose();
     focusNodeEmail.dispose();
     focusNodePhone.dispose();
     focusNodeCountry.dispose();

@@ -3,14 +3,17 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/services/notifications/notifications_service.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 
 class OtpController extends GetxController {
   OtpController({AuthService? authService})
-    : _authService = authService ?? AuthService();
+    : _authService = authService ?? AuthService(),
+      _notificationsService = NotificationsService();
 
   final AuthService _authService;
+  final NotificationsService _notificationsService;
 
   String otpCode = '';
   String pendingEmail = '';
@@ -122,12 +125,13 @@ class OtpController extends GetxController {
             type: VerifyOtpType.emailVerification,
           ),
         )
-        .then((result) {
+        .then((result) async {
           isSubmitting = false;
           update();
 
           if (result.success) {
             if (loginVerificationFlow) {
+              await _notificationsService.syncSavedFcmTokenOnLaunch();
               Get.offAll(() => const BottomNavBar());
               return;
             }

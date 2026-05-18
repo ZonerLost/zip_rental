@@ -27,6 +27,7 @@ dependencies:
   syncfusion_flutter_sliders:
   svg_flutter:
   google_fonts:
+  google_sign_in:
   get:
   simple_gradient_text:
   weekly_date_picker:
@@ -62,6 +63,7 @@ dependencies:
 
   flutter_localizations:
     sdk: flutter
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

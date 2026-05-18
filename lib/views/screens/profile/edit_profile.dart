@@ -145,16 +145,54 @@ class EditProfileScreen extends StatelessWidget {
                     letterSpacing: 1.5,
                   ),
                   const Gap(20),
-                  MyTextField(
-                    label: 'Full name',
-                    labelColor: kSubText2,
-                    hint: 'Full Name',
-                    hintColor: kBlack.withOpacity(0.4),
-                    controller: controller.fullNameController,
-                    focusNode: controller.focusNodeName,
-                    radius: 25,
-                    onChanged: controller.onFieldChanged,
-                  ),
+                  if (!controller.isNameExpanded)
+                    GestureDetector(
+                      onTap: controller.expandName,
+                      child: MyTextField(
+                        label: 'Full name',
+                        labelColor: kSubText2,
+                        hint: 'Full Name',
+                        hintColor: kBlack.withOpacity(0.4),
+                        controller: TextEditingController(
+                          text: controller.displayFullName,
+                        ),
+                        radius: 25,
+                        isReadOnly: true,
+                        onTap: controller.expandName,
+                      ),
+                    )
+                  else
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      child: Focus(
+                        onFocusChange: (_) => controller.collapseNameIfEmpty(),
+                        child: Column(
+                          children: [
+                            MyTextField(
+                              label: 'First name',
+                              labelColor: kSubText2,
+                              hint: 'First Name',
+                              hintColor: kBlack.withOpacity(0.4),
+                              controller: controller.firstNameController,
+                              focusNode: controller.focusNodeFirstName,
+                              radius: 25,
+                              onChanged: controller.onFieldChanged,
+                            ),
+                            MyTextField(
+                              label: 'Last name',
+                              labelColor: kSubText2,
+                              hint: 'Last Name',
+                              hintColor: kBlack.withOpacity(0.4),
+                              controller: controller.lastNameController,
+                              focusNode: controller.focusNodeLastName,
+                              radius: 25,
+                              onChanged: controller.onFieldChanged,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   MyTextField(
                     label: 'Email address',
                     labelColor: kSubText2,

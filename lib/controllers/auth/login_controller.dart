@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/services/auth/google_auth_service.dart';
 import 'package:zip_peer/services/auth/auth_validators.dart';
+import 'package:zip_peer/services/notifications/notifications_service.dart';
 import 'package:zip_peer/services/profile/profile_service.dart';
 import 'package:zip_peer/views/screens/auth/forgot_password.dart';
 import 'package:zip_peer/views/screens/auth/otp.dart';
@@ -13,11 +15,19 @@ import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
 
 class LoginController extends GetxController {
   final AuthService _authService;
+  final GoogleAuthService _googleAuthService;
+  final NotificationsService _notificationsService;
   final ProfileService _profileService;
 
-  LoginController({AuthService? authService, ProfileService? profileService})
-    : _authService = authService ?? AuthService(),
-      _profileService = profileService ?? ProfileService();
+  LoginController({
+    AuthService? authService,
+    ProfileService? profileService,
+    GoogleAuthService? googleAuthService,
+    NotificationsService? notificationsService,
+  }) : _authService = authService ?? AuthService(),
+       _googleAuthService = googleAuthService ?? GoogleAuthService(),
+       _notificationsService = notificationsService ?? NotificationsService(),
+       _profileService = profileService ?? ProfileService();
 
   final TextEditingController identifierController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -30,10 +40,9 @@ class LoginController extends GetxController {
       selectedTabIndex == 0 ? 'Email address' : 'Phone Number';
   String get firstIcon =>
       selectedTabIndex == 0 ? Assets.imagesMsg : Assets.imagesCall;
-  bool get isEmailValid =>
-      selectedTabIndex == 0
-          ? AuthValidators.isValidEmail(identifierController.text.trim())
-          : identifierController.text.trim().length >= 7;
+  bool get isEmailValid => selectedTabIndex == 0
+      ? AuthValidators.isValidEmail(identifierController.text.trim())
+      : identifierController.text.trim().length >= 7;
   bool get isButtonActive =>
       identifierController.text.trim().isNotEmpty &&
       passwordController.text.trim().isNotEmpty &&
@@ -52,7 +61,10 @@ class LoginController extends GetxController {
   Future<void> submit() async {
     if (!isButtonActive) return;
     if (selectedTabIndex == 1) {
-      Get.snackbar('Unsupported', 'Phone login is not available. Use email login.');
+      Get.snackbar(
+        'Unsupported',
+        'Phone login is not available. Use email login.',
+      );
       return;
     }
     final email = identifierController.text.trim();
@@ -76,8 +88,9 @@ class LoginController extends GetxController {
       return;
     }
 
-    final requiresEmailVerification =
-        result.message.toLowerCase().contains('verify your email');
+    final requiresEmailVerification = result.message.toLowerCase().contains(
+      'verify your email',
+    );
     if (requiresEmailVerification) {
       await _authService.savePendingEmail(email);
       final resendResult = await _authService.resendVerification(
@@ -100,6 +113,7 @@ class LoginController extends GetxController {
   }
 
   Future<void> _navigateAfterLogin() async {
+    await _notificationsService.syncSavedFcmTokenOnLaunch();
     final profileResult = await _profileService.getProfile();
     final profile = profileResult.profile;
     final isComplete =
@@ -114,45 +128,36 @@ class LoginController extends GetxController {
   }
 
   Future<void> continueWithGoogle() async {
-    final tokenInputController = TextEditingController();
-    final proceed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Google Sign-In'),
-        content: TextField(
-          controller: tokenInputController,
-          decoration: const InputDecoration(hintText: 'Paste Google idToken'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Get.back(result: true), child: const Text('Continue')),
-        ],
-      ),
-    );
-
-    final idToken = tokenInputController.text.trim();
-    tokenInputController.dispose();
-
-    if (proceed != true) return;
-    if (idToken.isEmpty) {
-      Get.snackbar('Missing Token', 'Google idToken is required.');
-      return;
-    }
-
     isSubmitting = true;
     update();
+    try {
+      final idToken = await _googleAuthService.getIdToken();
+      if (idToken == null || idToken.isEmpty) {
+        isSubmitting = false;
+        update();
+        return;
+      }
 
-    final result = await _authService.googleAuth(
-      GoogleAuthRequest(idToken: idToken, language: 'en'),
-    );
+      final result = await _authService.googleAuth(
+        GoogleAuthRequest(idToken: idToken, language: 'en'),
+      );
 
-    isSubmitting = false;
-    update();
+      isSubmitting = false;
+      update();
 
-    if (result.success) {
-      await _navigateAfterLogin();
-      return;
+      if (result.success) {
+        await _navigateAfterLogin();
+        return;
+      }
+      Get.snackbar('Google Sign-In Failed', result.message);
+    } catch (_) {
+      isSubmitting = false;
+      update();
+      Get.snackbar(
+        'Google Sign-In Failed',
+        'Unable to authenticate with Google right now.',
+      );
     }
-    Get.snackbar('Google Sign-In Failed', result.message);
   }
 
   void continueWithApple() {

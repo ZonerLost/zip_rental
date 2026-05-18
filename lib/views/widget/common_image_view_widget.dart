@@ -71,26 +71,24 @@ class CommonImageView extends StatelessWidget {
             width: width,
             fit: fit,
             imageUrl: url!,
-            placeholder:
-                (context, url) => Shimmer.fromColors(
-                  baseColor: Colors.grey.shade300,
-                  highlightColor: Colors.grey.shade100,
-                  child: Container(
-                    height: height ?? 60,
-                    width: width ?? 60,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(radius ?? 0.0),
-                    ),
-                  ),
+            placeholder: (context, url) => Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                height: height ?? 60,
+                width: width ?? 60,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(radius ?? 0.0),
                 ),
-            errorWidget:
-                (context, url, error) => Container(
-                  height: 60,
-                  width: 60,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.error, color: Colors.red),
-                ),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              height: 60,
+              width: 60,
+              color: Colors.grey.shade200,
+              child: const Icon(Icons.error, color: Colors.red),
+            ),
           ),
         ),
       );
@@ -150,11 +148,11 @@ class CommonImageViewWithBorder extends StatelessWidget {
   });
 
   BorderRadius get _borderRadius => BorderRadius.only(
-        topLeft: Radius.circular(topLeftRadius ?? radius ?? 0),
-        topRight: Radius.circular(topRightRadius ?? radius ?? 0),
-        bottomLeft: Radius.circular(bottomLeftRadius ?? radius ?? 0),
-        bottomRight: Radius.circular(bottomRightRadius ?? radius ?? 0),
-      );
+    topLeft: Radius.circular(topLeftRadius ?? radius ?? 0),
+    topRight: Radius.circular(topRightRadius ?? radius ?? 0),
+    bottomLeft: Radius.circular(bottomLeftRadius ?? radius ?? 0),
+    bottomRight: Radius.circular(bottomRightRadius ?? radius ?? 0),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -201,12 +199,8 @@ class CommonImageViewWithBorder extends StatelessWidget {
               ),
             ),
           ),
-          errorWidget: (context, url, error) => Image.asset(
-            placeHolder,
-            height: height,
-            width: width,
-            fit: fit,
-          ),
+          errorWidget: (context, url, error) =>
+              Image.asset(placeHolder, height: height, width: width, fit: fit),
         ),
       );
     } else if (imagePath != null && imagePath!.isNotEmpty) {

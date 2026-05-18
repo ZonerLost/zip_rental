@@ -5,118 +5,112 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/constants/app_sizes.dart';
+import 'package:zip_peer/controllers/notifications/notifications_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/models/notifications/notification_models.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
-class NotificationScreen extends StatefulWidget {
+class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
-}
-
-class _NotificationScreenState extends State<NotificationScreen> {
-  bool _showList = false;
-
-  final List<Map<String, String>> notifications = [
-    {
-      'title': 'Account Created!',
-      'subtitle': 'Your account has been created.',
-      'time': '12:33 am',
-    },
-    {
-      'title': 'Review Plan',
-      'subtitle': 'Please review your new credit plan.',
-      'time': '12:33 am',
-    },
-    {
-      'title': 'New Message',
-      'subtitle': 'Your advisor sent you a message.',
-      'time': '12:33 am',
-    },
-    {
-      'title': 'Dispute Letter',
-      'subtitle': 'Your next dispute letter is ready.',
-      'time': '12:33 am',
-    },
-    {
-      'title': 'New Message',
-      'subtitle': 'Your advisor sent you a message.',
-      'time': 'Yesterday',
-    },
-    {
-      'title': 'Review Plan',
-      'subtitle': 'Please review your new credit plan.',
-      'time': 'Yesterday',
-    },
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: AppSizes.DEFAULT,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Gap(50),
-            // Top Bar
-            Row(
+    return GetBuilder<NotificationsController>(
+      init: NotificationsController(),
+      builder: (controller) {
+        return Scaffold(
+          body: Padding(
+            padding: AppSizes.DEFAULT,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Bounce(
-                  onTap: () => Get.back(),
-                  child: CommonImageView(
-                    imagePath: Assets.imagesBack,
-                    height: 50,
-                  ),
+                const Gap(50),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Bounce(
+                          onTap: () => Get.back(),
+                          child: CommonImageView(
+                            imagePath: Assets.imagesBack,
+                            height: 50,
+                          ),
+                        ),
+                        MyText(
+                          text: 'Notifications',
+                          size: 16,
+                          paddingLeft: 6,
+                          weight: FontWeight.w500,
+                        ),
+                      ],
+                    ),
+                    if (controller.unreadCount > 0)
+                      Bounce(
+                        onTap: controller.markAllRead,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: MyText(
+                            text: controller.isMarkingAllRead
+                                ? 'Marking...'
+                                : 'Mark all read',
+                            size: 12,
+                            weight: FontWeight.w600,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                MyText(
-                  text: "Notifications",
-                  size: 16,
-                  paddingLeft: 6,
-                  weight: FontWeight.w500,
+                const Gap(8),
+                // MyText(
+                //   text: 'Unread: ${controller.unreadCount}',
+                //   size: 13,
+                //   color: kSubText,
+                //   weight: FontWeight.w500,
+                // ),
+                const Gap(12),
+                Expanded(
+                  child: controller.isLoadingInitial
+                      ? const Center(child: CircularProgressIndicator())
+                      : controller.notifications.isEmpty
+                      ? _buildEmptyView()
+                      : RefreshIndicator(
+                          onRefresh: controller.refreshNotifications,
+                          child: _buildNotificationList(controller),
+                        ),
                 ),
               ],
             ),
-            Gap(20),
-
-            // Animated section
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                child: _showList ? _buildNotificationList() : _buildEmptyView(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildEmptyView() {
     return Center(
-      key: const ValueKey('empty'),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Bounce(
-            onTap: () {
-              setState(() {
-                _showList = true;
-              });
-            },
-            child: CommonImageView(imagePath: Assets.imagesBell, height: 120),
-          ),
+          CommonImageView(imagePath: Assets.imagesBell, height: 120),
           const Gap(20),
           MyText(
-            text: "No New Notifications",
+            text: 'No New Notifications',
             size: 18,
             weight: FontWeight.w600,
           ),
           const Gap(6),
           MyText(
-            text: "No alerts right now—keep up the great progress!",
+            text: 'No alerts right now-keep up the great progress!',
             size: 13,
             color: kSubText,
             textAlign: TextAlign.center,
@@ -126,14 +120,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _buildNotificationList() {
+  Widget _buildNotificationList(NotificationsController controller) {
+    final itemCount =
+        controller.notifications.length + (controller.isLoadingMore ? 1 : 0);
+
     return ListView.builder(
-      key: const ValueKey('list'),
-      itemCount: notifications.length,
+      controller: controller.scrollController,
+      itemCount: itemCount,
       padding: EdgeInsets.zero,
       itemBuilder: (context, index) {
-        final item = notifications[index];
+        if (index >= controller.notifications.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
+        final item = controller.notifications[index];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Slidable(
@@ -144,6 +147,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Bounce(
+                    onTap: () => controller.deleteNotification(item.id),
                     child: CommonImageView(
                       imagePath: Assets.imagesTrashNew,
                       height: 80,
@@ -152,78 +156,122 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ],
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: kWhite,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          (item['title']!.startsWith('A')
-                                  ? Colors.green
-                                  : Colors.amber)
-                              .withOpacity(0.2),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      item['title']![0].toUpperCase(),
-                      style: TextStyle(
-                        color: item['title']!.startsWith('A')
-                            ? Colors.green
-                            : Colors.amber,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MyText(
-                          text: item['title']!,
-                          size: 16,
-                          weight: FontWeight.w600,
-                          color: kBlack,
-                        ),
-                        const Gap(4),
-                        MyText(
-                          text: item['subtitle']!,
-                          size: 14,
-                          weight: FontWeight.w500,
-                          color: kSubText,
-                        ),
-                      ],
-                    ),
-                  ),
-                  MyText(
-                    text: item['time']!,
-                    size: 14,
-                    weight: FontWeight.w500,
-                    color: kSubText,
-                  ),
-                ],
-              ),
+            child: Bounce(
+              onTap: () => controller.markOneRead(item.id),
+              child: _notificationCard(controller, item),
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _notificationCard(
+    NotificationsController controller,
+    NotificationItem item,
+  ) {
+    final isUnread = !item.isRead;
+    final accentColor = _colorForType(item.type);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isUnread ? kPrimaryColor.withOpacity(0.08) : kWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: isUnread
+            ? Border.all(color: kPrimaryColor.withOpacity(0.25))
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accentColor.withOpacity(0.2),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              item.title.isEmpty ? 'N' : item.title[0].toUpperCase(),
+              style: TextStyle(
+                color: accentColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MyText(
+                  text: item.title,
+                  size: 16,
+                  weight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                  color: kBlack,
+                ),
+                const Gap(4),
+                MyText(
+                  text: item.message,
+                  size: 14,
+                  weight: FontWeight.w500,
+                  color: kSubText,
+                ),
+              ],
+            ),
+          ),
+          const Gap(8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              MyText(
+                text: controller.formatTime(item.createdAt),
+                size: 12,
+                weight: FontWeight.w500,
+                color: kSubText,
+              ),
+              if (isUnread) ...[
+                const Gap(8),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: kPrimaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _colorForType(String type) {
+    final normalized = type.toLowerCase();
+    if (normalized.contains('booking')) {
+      return Colors.green;
+    }
+    if (normalized.contains('dispute')) {
+      return Colors.redAccent;
+    }
+    if (normalized.contains('payment')) {
+      return Colors.blueAccent;
+    }
+    if (normalized.contains('review')) {
+      return Colors.amber;
+    }
+    return kPrimaryColor;
   }
 }

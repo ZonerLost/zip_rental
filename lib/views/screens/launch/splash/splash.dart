@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/services/notifications/notifications_service.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/launch/splash/language_start.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -19,6 +20,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final AuthService _authService = AuthService();
+  final NotificationsService _notificationsService = NotificationsService();
 
   @override
   void initState() {
@@ -35,6 +37,8 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (accessToken != null && accessToken.isNotEmpty) {
+      print('Access token found: $accessToken');
+      await _notificationsService.syncSavedFcmTokenOnLaunch();
       Get.offAll(() => const BottomNavBar());
       return;
     }

@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/services/auth/google_auth_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/double_white_contianers.dart';
@@ -16,6 +17,7 @@ import 'package:zip_peer/views/widget/my_textfeild.dart';
 
 void LogoutBottomSheet(BuildContext context) {
   final authService = AuthService();
+  final googleAuthService = GoogleAuthService();
   bool isSubmitting = false;
 
   Get.bottomSheet(
@@ -71,6 +73,9 @@ void LogoutBottomSheet(BuildContext context) {
                     Get.snackbar('Logout Failed', result.message);
                     return;
                   }
+                  try {
+                    await googleAuthService.signOut();
+                  } catch (_) {}
 
                   Get.back();
                   Get.offAll(() => LoginScreen());

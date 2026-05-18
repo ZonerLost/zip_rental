@@ -38,7 +38,10 @@ class ProfileCardWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Bounce(
-                onTap: () => Get.to(() => EditProfileScreen()),
+                onTap: () async {
+                  await Get.to(() => EditProfileScreen());
+                  await controller.loadDashboard();
+                },
                 child: CommonImageView(
                   imagePath: Assets.imagesEditProfile,
                   height: 40,
@@ -56,6 +59,7 @@ class ProfileCardWidget extends StatelessWidget {
               height: 70,
               width: 70,
               radius: 35,
+              placeHolder: Assets.imagesChatAvatar,
             )
           else
             CommonImageView(imagePath: Assets.imagesChatAvatar, height: 70),
@@ -85,8 +89,8 @@ class ProfileCardWidget extends StatelessWidget {
             size: 14,
             color: kSubText2,
             weight: FontWeight.w400,
+            textAlign: TextAlign.center,
           ),
-
           const Gap(20),
 
           // ===== STATS GRID (2x2) =====

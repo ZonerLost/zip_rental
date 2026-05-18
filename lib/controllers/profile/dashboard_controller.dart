@@ -30,6 +30,21 @@ class DashboardController extends GetxController {
     return value.isEmpty ? 'No email available' : value;
   }
 
+  String get phone {
+    final value = (profile?.phone ?? '').trim();
+    return value.isEmpty ? 'No phone added' : value;
+  }
+
+  String get locationLabel {
+    final value = (profile?.locationLabel ?? '').trim();
+    return value.isEmpty ? 'No location added' : value;
+  }
+
+  String get language {
+    final value = (profile?.language ?? '').trim();
+    return value.isEmpty ? 'en' : value;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -48,7 +63,10 @@ class DashboardController extends GetxController {
     }
 
     profile = result.profile;
-    profilePhotoUrl = result.profilePhoto ?? result.profile?.profilePhoto;
+    profilePhotoUrl = _withCacheBust(
+      _bestPhotoUrl(result),
+      _resolvePhotoVersion(result),
+    );
 
     final root = result.data ?? <String, dynamic>{};
     rentedOutCount = _readInt(root, const [
@@ -141,5 +159,69 @@ class DashboardController extends GetxController {
       }
     }
     return current;
+  }
+
+  String? _bestPhotoUrl(ProfileResult result) {
+    final candidates = <String?>[
+      result.profilePhoto,
+      result.profile?.profilePhoto,
+      _getValueByPath(
+        result.data ?? <String, dynamic>{},
+        'data.profilePhoto',
+      )?.toString(),
+      _getValueByPath(
+        result.data ?? <String, dynamic>{},
+        'profilePhoto',
+      )?.toString(),
+    ];
+    for (final candidate in candidates) {
+      final value = candidate?.trim() ?? '';
+      if (value.isNotEmpty && value.toLowerCase() != 'null') {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  String? _resolvePhotoVersion(ProfileResult result) {
+    final updatedAtFromProfile = result.profile?.updatedAt;
+    if (updatedAtFromProfile != null) {
+      return updatedAtFromProfile.millisecondsSinceEpoch.toString();
+    }
+
+    final rawUpdatedAt =
+        _getValueByPath(
+          result.data ?? <String, dynamic>{},
+          'data.updatedAt',
+        )?.toString() ??
+        _getValueByPath(
+          result.data ?? <String, dynamic>{},
+          'updatedAt',
+        )?.toString();
+    if (rawUpdatedAt == null || rawUpdatedAt.trim().isEmpty) {
+      return null;
+    }
+    final parsed = DateTime.tryParse(rawUpdatedAt.trim());
+    if (parsed == null) {
+      return null;
+    }
+    return parsed.millisecondsSinceEpoch.toString();
+  }
+
+  String? _withCacheBust(String? url, String? version) {
+    final value = (url ?? '').trim();
+    if (value.isEmpty) {
+      return null;
+    }
+    if (version == null || version.trim().isEmpty) {
+      return value;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null) {
+      return value;
+    }
+    final query = Map<String, String>.from(uri.queryParameters);
+    query['v'] = version.trim();
+    return uri.replace(queryParameters: query).toString();
   }
 }

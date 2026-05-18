@@ -20,14 +20,22 @@ class ProfileCoordinates {
 }
 
 class ProfileLocation {
-  const ProfileLocation({this.city, this.province, this.coordinates});
+  const ProfileLocation({
+    this.country,
+    this.city,
+    this.province,
+    this.coordinates,
+  });
 
+  final String? country;
   final String? city;
   final String? province;
   final ProfileCoordinates? coordinates;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      if (country != null && country!.trim().isNotEmpty)
+        'country': country!.trim(),
       if (city != null && city!.trim().isNotEmpty) 'city': city!.trim(),
       if (province != null && province!.trim().isNotEmpty)
         'province': province!.trim(),
@@ -38,11 +46,15 @@ class ProfileLocation {
 
   factory ProfileLocation.fromJson(Map<String, dynamic> json) {
     final rawCoordinates = json['coordinates'];
+    final coordinatesMap = rawCoordinates is Map
+        ? rawCoordinates.map((key, value) => MapEntry(key.toString(), value))
+        : null;
     return ProfileLocation(
+      country: json['country']?.toString(),
       city: json['city']?.toString(),
       province: json['province']?.toString(),
-      coordinates: rawCoordinates is Map<String, dynamic>
-          ? ProfileCoordinates.fromJson(rawCoordinates)
+      coordinates: coordinatesMap != null
+          ? ProfileCoordinates.fromJson(coordinatesMap)
           : null,
     );
   }
@@ -80,6 +92,7 @@ class UpdateProfileRequest {
 
 class UserProfile {
   const UserProfile({
+    this.id,
     this.firstName,
     this.lastName,
     this.email,
@@ -87,8 +100,13 @@ class UserProfile {
     this.language,
     this.profilePhoto,
     this.location,
+    this.role,
+    this.isEmailVerified,
+    this.isIdentityVerified,
+    this.updatedAt,
   });
 
+  final String? id;
   final String? firstName;
   final String? lastName;
   final String? email;
@@ -96,22 +114,51 @@ class UserProfile {
   final String? language;
   final String? profilePhoto;
   final ProfileLocation? location;
+  final String? role;
+  final bool? isEmailVerified;
+  final bool? isIdentityVerified;
+  final DateTime? updatedAt;
 
   String get fullName =>
       '${(firstName ?? '').trim()} ${(lastName ?? '').trim()}'.trim();
 
+  String get locationLabel {
+    final parts = <String>[
+      (location?.city ?? '').trim(),
+      (location?.province ?? '').trim(),
+      (location?.country ?? '').trim(),
+    ].where((value) => value.isNotEmpty).toList(growable: false);
+    return parts.join(', ');
+  }
+
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final rawLocation = json['location'];
+    final locationMap = rawLocation is Map
+        ? rawLocation.map((key, value) => MapEntry(key.toString(), value))
+        : null;
     return UserProfile(
-      firstName: json['firstName']?.toString(),
-      lastName: json['lastName']?.toString(),
+      id: _firstString(json, const ['_id', 'id']),
+      firstName: _firstString(json, const ['firstName', 'first_name']),
+      lastName: _firstString(json, const ['lastName', 'last_name']),
       email: json['email']?.toString(),
       phone: json['phone']?.toString(),
       language: json['language']?.toString(),
-      profilePhoto: json['profilePhoto']?.toString(),
-      location: rawLocation is Map<String, dynamic>
-          ? ProfileLocation.fromJson(rawLocation)
+      profilePhoto: _firstString(json, const [
+        'profilePhoto',
+        'profile_photo',
+        'avatar',
+        'avatarUrl',
+        'avatar_url',
+        'photo',
+        'image',
+      ]),
+      location: locationMap != null
+          ? ProfileLocation.fromJson(locationMap)
           : null,
+      role: json['role']?.toString(),
+      isEmailVerified: _asBool(json['isEmailVerified']),
+      isIdentityVerified: _asBool(json['isIdentityVerified']),
+      updatedAt: _asDateTime(json['updatedAt']),
     );
   }
 }
@@ -140,4 +187,46 @@ double? _asDouble(dynamic value) {
     return value.toDouble();
   }
   return double.tryParse(value.toString());
+}
+
+bool? _asBool(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is bool) {
+    return value;
+  }
+  final normalized = value.toString().trim().toLowerCase();
+  if (normalized == 'true' || normalized == '1') {
+    return true;
+  }
+  if (normalized == 'false' || normalized == '0') {
+    return false;
+  }
+  return null;
+}
+
+DateTime? _asDateTime(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is DateTime) {
+    return value;
+  }
+  return DateTime.tryParse(value.toString());
+}
+
+String? _firstString(Map<String, dynamic> map, List<String> keys) {
+  for (final key in keys) {
+    final value = map[key];
+    if (value == null) {
+      continue;
+    }
+    final normalized = value.toString().trim();
+    if (normalized.isEmpty || normalized.toLowerCase() == 'null') {
+      continue;
+    }
+    return normalized;
+  }
+  return null;
 }

@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:zip_peer/config/api/api_config.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
@@ -43,8 +45,8 @@ class ProfileService {
   }
 
   Future<ProfileResult> uploadProfilePhoto(File file) {
-    return _uploadFile(
-      method: _HttpMethod.put,
+    return _multipartRequest(
+      method: 'PUT',
       path: '/users/profile/photo',
       fieldName: 'photo',
       file: file,
@@ -52,27 +54,84 @@ class ProfileService {
   }
 
   Future<ProfileResult> verifyIdentity(File file) {
-    return _uploadFile(
-      method: _HttpMethod.post,
+    return _multipartRequest(
+      method: 'POST',
       path: '/users/identity-verify',
       fieldName: 'document',
       file: file,
     );
   }
 
-  Future<ProfileResult> _uploadFile({
-    required _HttpMethod method,
+  Future<ProfileResult> _multipartRequest({
+    required String method,
     required String path,
     required String fieldName,
     required File file,
   }) async {
-    final fileName = _extractFileName(file.path);
-    final mimeType = _mimeTypeFromPath(file.path);
-    final formData = FormData(<String, dynamic>{
-      fieldName: MultipartFile(file, filename: fileName, contentType: mimeType),
-    });
+    if (!_hasValidBaseUrl) {
+      return const ProfileResult(
+        success: false,
+        message: 'API base URL missing or invalid.',
+      );
+    }
+    final accessToken = await _authService.ensureAccessToken();
+    if (accessToken == null || accessToken.isEmpty) {
+      return const ProfileResult(
+        success: false,
+        message: 'You are not authenticated. Please log in again.',
+      );
+    }
 
-    return _request(method: method, path: path, body: formData);
+    Future<ProfileResult> doRequest(String token) async {
+      final uri = Uri.parse('${_client.baseUrl}$path');
+      final request = http.MultipartRequest(method, uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..headers['Accept'] = 'application/json'
+        ..files.add(await http.MultipartFile.fromPath(
+          fieldName,
+          file.path,
+          contentType: _mediaTypeFromPath(file.path),
+        ));
+      final streamed = await request.send();
+      final body = await streamed.stream.bytesToString();
+      final decoded = jsonDecode(body);
+      final map = decoded is Map ? _stringKeyMap(decoded) : <String, dynamic>{};
+      final profile = _resolveProfile(map);
+      final success = map['success'] == true ||
+          (streamed.statusCode >= 200 && streamed.statusCode < 300 && map['success'] != false);
+      final message = map['message']?.toString() ??
+          (success ? 'Request successful' : 'Request failed');
+      return ProfileResult(
+        success: success,
+        message: message,
+        data: map,
+        profile: profile,
+        profilePhoto: _resolveProfilePhoto(map, profile),
+      );
+    }
+
+    var result = await doRequest(accessToken);
+    // retry once on 401
+    if (!result.success && (result.data?['statusCode'] == 401 || result.data?['status'] == 401)) {
+      final refreshResult = await _authService.refreshToken();
+      if (refreshResult.success) {
+        final newToken = await _authService.getAccessToken();
+        if (newToken != null && newToken.isNotEmpty) {
+          result = await doRequest(newToken);
+        }
+      }
+    }
+    return result;
+  }
+
+  http.MediaType _mediaTypeFromPath(String path) {
+    final lower = path.toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return http.MediaType('image', 'jpeg');
+    }
+    if (lower.endsWith('.png')) return http.MediaType('image', 'png');
+    if (lower.endsWith('.webp')) return http.MediaType('image', 'webp');
+    return http.MediaType('application', 'octet-stream');
   }
 
   Future<ProfileResult> _request({
@@ -148,9 +207,7 @@ class ProfileService {
 
   ProfileResult _toProfileResult(Response<dynamic> response) {
     final raw = response.body;
-    final map = raw is Map<String, dynamic>
-        ? raw
-        : <String, dynamic>{'raw': raw};
+    final map = raw is Map ? _stringKeyMap(raw) : <String, dynamic>{'raw': raw};
     final profile = _resolveProfile(map);
     final success = _resolveSuccess(response, map);
     final message = _resolveMessage(map, success, response.statusText);
@@ -166,25 +223,21 @@ class ProfileService {
   }
 
   UserProfile? _resolveProfile(Map<String, dynamic> root) {
-    final directUser = root['user'];
-    if (directUser is Map<String, dynamic>) {
-      return UserProfile.fromJson(directUser);
-    }
-    final data = root['data'];
-    if (data is Map<String, dynamic>) {
-      if (data['user'] is Map<String, dynamic>) {
-        return UserProfile.fromJson(data['user'] as Map<String, dynamic>);
-      }
-      return UserProfile.fromJson(data);
-    }
+    final candidates = <Map<String, dynamic>>[
+      ..._collectMapsAtPaths(root, const [
+        'user',
+        'profile',
+        'data.user',
+        'data.profile',
+        'data',
+      ]),
+      root,
+    ];
 
-    final hasKnownFields =
-        root.containsKey('firstName') ||
-        root.containsKey('lastName') ||
-        root.containsKey('email') ||
-        root.containsKey('phone');
-    if (hasKnownFields) {
-      return UserProfile.fromJson(root);
+    for (final candidate in candidates) {
+      if (_looksLikeProfile(candidate)) {
+        return UserProfile.fromJson(candidate);
+      }
     }
     return null;
   }
@@ -237,40 +290,142 @@ class ProfileService {
     Map<String, dynamic> root,
     UserProfile? profile,
   ) {
-    final direct = root['profilePhoto']?.toString();
-    if (direct != null && direct.isNotEmpty) {
-      return direct;
+    final extracted = _extractPhotoFromMap(root);
+    if (extracted != null) {
+      return extracted;
     }
-    final data = root['data'];
-    if (data is Map<String, dynamic>) {
-      final nested = data['profilePhoto']?.toString();
-      if (nested != null && nested.isNotEmpty) {
-        return nested;
+    return _normalizePhotoUrl(profile?.profilePhoto);
+  }
+
+bool _looksLikeProfile(Map<String, dynamic> data) {
+    return data.containsKey('firstName') ||
+        data.containsKey('first_name') ||
+        data.containsKey('lastName') ||
+        data.containsKey('last_name') ||
+        data.containsKey('email') ||
+        data.containsKey('phone') ||
+        data.containsKey('profilePhoto') ||
+        data.containsKey('profile_photo') ||
+        data.containsKey('avatar');
+  }
+
+  List<Map<String, dynamic>> _collectMapsAtPaths(
+    Map<String, dynamic> root,
+    List<String> paths,
+  ) {
+    final results = <Map<String, dynamic>>[];
+    for (final path in paths) {
+      final value = _getByPath(root, path);
+      if (value is Map) {
+        results.add(_stringKeyMap(value));
       }
     }
-    return profile?.profilePhoto;
+    return results;
   }
 
-  String _extractFileName(String path) {
-    final normalized = path.replaceAll('\\', '/');
-    final segments = normalized.split('/');
-    return segments.isNotEmpty && segments.last.trim().isNotEmpty
-        ? segments.last
-        : 'upload_file';
+  dynamic _getByPath(Map<String, dynamic> root, String path) {
+    final parts = path.split('.');
+    dynamic current = root;
+    for (final part in parts) {
+      if (current is Map<String, dynamic> && current.containsKey(part)) {
+        current = current[part];
+      } else {
+        return null;
+      }
+    }
+    return current;
   }
 
-  String _mimeTypeFromPath(String path) {
-    final lower = path.toLowerCase();
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
-      return 'image/jpeg';
+  String? _extractPhotoFromMap(Map<String, dynamic> root) {
+    final pathCandidates = <String>[
+      'profilePhoto',
+      'profile_photo',
+      'avatar',
+      'avatarUrl',
+      'avatar_url',
+      'photo',
+      'image',
+      'user.profilePhoto',
+      'user.profile_photo',
+      'user.avatar',
+      'profile.profilePhoto',
+      'profile.profile_photo',
+      'profile.avatar',
+      'data.profilePhoto',
+      'data.profile_photo',
+      'data.avatar',
+      'data.user.profilePhoto',
+      'data.user.profile_photo',
+      'data.user.avatar',
+      'data.profile.profilePhoto',
+      'data.profile.profile_photo',
+      'data.profile.avatar',
+    ];
+
+    for (final path in pathCandidates) {
+      final value = _getByPath(root, path);
+      final normalized = _normalizePhotoUrl(value?.toString());
+      if (normalized != null) {
+        return normalized;
+      }
     }
-    if (lower.endsWith('.png')) {
-      return 'image/png';
+    return null;
+  }
+
+  String? _normalizePhotoUrl(String? raw) {
+    if (raw == null) {
+      return null;
     }
-    if (lower.endsWith('.webp')) {
-      return 'image/webp';
+    final value = raw.trim();
+    if (value.isEmpty || value.toLowerCase() == 'null') {
+      return null;
     }
-    return 'application/octet-stream';
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+    if (value.startsWith('//')) {
+      return 'https:$value';
+    }
+
+    final base = _client.baseUrl ?? '';
+    final baseUri = Uri.tryParse(base);
+    if (baseUri == null || baseUri.host.isEmpty || baseUri.scheme.isEmpty) {
+      return value;
+    }
+
+    final origin =
+        '${baseUri.scheme}://${baseUri.host}'
+        '${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+    if (value.startsWith('/')) {
+      return '$origin$value';
+    }
+    return '$origin/$value';
+  }
+
+  Map<String, dynamic> _stringKeyMap(Map<dynamic, dynamic> source) {
+    return source.map((key, value) {
+      if (value is Map) {
+        return MapEntry(key.toString(), _stringKeyMap(value));
+      }
+      if (value is List) {
+        return MapEntry(key.toString(), _normalizeList(value));
+      }
+      return MapEntry(key.toString(), value);
+    });
+  }
+
+  List<dynamic> _normalizeList(List<dynamic> values) {
+    return values
+        .map((value) {
+          if (value is Map) {
+            return _stringKeyMap(value);
+          }
+          if (value is List) {
+            return _normalizeList(value);
+          }
+          return value;
+        })
+        .toList(growable: false);
   }
 }
 

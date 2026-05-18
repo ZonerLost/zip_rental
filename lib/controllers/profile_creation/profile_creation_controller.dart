@@ -116,18 +116,23 @@ class ProfileCreationController extends GetxController {
       phoneController.text = profile.phone!.trim();
     }
     final city = profile.location?.city?.trim() ?? '';
+    final country = profile.location?.country?.trim() ?? '';
     final province = profile.location?.province?.trim() ?? '';
     if (city.isNotEmpty) {
       streetController.text = city;
       completeAddressController.text = city;
     }
-    if (province.isNotEmpty) {
-      selectedCountry = province;
-      if (!countries.contains(province)) {
-        countries.add(province);
+    final preferredLocationCountry = country.isNotEmpty ? country : province;
+    if (preferredLocationCountry.isNotEmpty) {
+      selectedCountry = preferredLocationCountry;
+      if (!countries.contains(preferredLocationCountry)) {
+        countries.add(preferredLocationCountry);
       }
     }
-    profilePhotoUrl = result.profilePhoto ?? profile.profilePhoto;
+    profilePhotoUrl = _withCacheBust(
+      result.profilePhoto ?? profile.profilePhoto,
+      profile.updatedAt,
+    );
     update();
   }
 
@@ -237,7 +242,12 @@ class ProfileCreationController extends GetxController {
         Get.snackbar('Photo Upload Failed', photoResult.message);
         return;
       }
-      profilePhotoUrl = photoResult.profilePhoto ?? profilePhotoUrl;
+      profilePhotoUrl = _withCacheBust(
+        photoResult.profilePhoto ?? profilePhotoUrl,
+        photoResult.profile?.updatedAt,
+      );
+      await _refreshProfilePhotoFromServer();
+      profilePhotoFile = null;
     }
 
     isSubmitting = false;
@@ -285,7 +295,11 @@ class ProfileCreationController extends GetxController {
 
     final result = await _profileService.updateProfile(
       UpdateProfileRequest(
-        location: ProfileLocation(city: city, province: selectedCountry),
+        location: ProfileLocation(
+          country: selectedCountry,
+          city: city,
+          province: selectedCountry,
+        ),
       ),
     );
 
@@ -366,6 +380,35 @@ class ProfileCreationController extends GetxController {
     final first = parts.first;
     final last = parts.sublist(1).join(' ');
     return (first, last);
+  }
+
+  Future<void> _refreshProfilePhotoFromServer() async {
+    final latestResult = await _profileService.getProfile();
+    if (!latestResult.success || latestResult.profile == null) {
+      return;
+    }
+    final latestProfile = latestResult.profile!;
+    profilePhotoUrl = _withCacheBust(
+      latestResult.profilePhoto ?? latestProfile.profilePhoto,
+      latestProfile.updatedAt,
+    );
+  }
+
+  String? _withCacheBust(String? url, DateTime? updatedAt) {
+    final value = (url ?? '').trim();
+    if (value.isEmpty) {
+      return null;
+    }
+    if (updatedAt == null) {
+      return value;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null) {
+      return value;
+    }
+    final query = Map<String, String>.from(uri.queryParameters);
+    query['v'] = updatedAt.millisecondsSinceEpoch.toString();
+    return uri.replace(queryParameters: query).toString();
   }
 
   @override
