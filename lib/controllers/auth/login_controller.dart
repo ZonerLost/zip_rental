@@ -4,21 +4,23 @@ import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/auth_validators.dart';
+import 'package:zip_peer/services/profile/profile_service.dart';
 import 'package:zip_peer/views/screens/auth/forgot_password.dart';
 import 'package:zip_peer/views/screens/auth/otp.dart';
 import 'package:zip_peer/views/screens/auth/signup.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
+import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
 
 class LoginController extends GetxController {
-  LoginController({AuthService? authService})
-    : _authService = authService ?? AuthService();
-
   final AuthService _authService;
+  final ProfileService _profileService;
+
+  LoginController({AuthService? authService, ProfileService? profileService})
+    : _authService = authService ?? AuthService(),
+      _profileService = profileService ?? ProfileService();
 
   final TextEditingController identifierController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final FocusNode identifierFocus = FocusNode();
-  final FocusNode passwordFocus = FocusNode();
 
   final List<String> tabs = const ['Email address', 'Phone Number'];
   int selectedTabIndex = 0;
@@ -28,33 +30,29 @@ class LoginController extends GetxController {
       selectedTabIndex == 0 ? 'Email address' : 'Phone Number';
   String get firstIcon =>
       selectedTabIndex == 0 ? Assets.imagesMsg : Assets.imagesCall;
+  bool get isEmailValid =>
+      selectedTabIndex == 0
+          ? AuthValidators.isValidEmail(identifierController.text.trim())
+          : identifierController.text.trim().length >= 7;
   bool get isButtonActive =>
       identifierController.text.trim().isNotEmpty &&
       passwordController.text.trim().isNotEmpty &&
       !isSubmitting;
 
   void selectTab(int index) {
-    if (selectedTabIndex == index) {
-      return;
-    }
+    if (selectedTabIndex == index) return;
     selectedTabIndex = index;
     identifierController.clear();
     update();
   }
 
   void onIdentifierChanged(String _) => update();
-
   void onPasswordChanged(String _) => update();
 
   Future<void> submit() async {
-    if (!isButtonActive) {
-      return;
-    }
+    if (!isButtonActive) return;
     if (selectedTabIndex == 1) {
-      Get.snackbar(
-        'Unsupported',
-        'Phone login is not available in API 1.4. Use email login.',
-      );
+      Get.snackbar('Unsupported', 'Phone login is not available. Use email login.');
       return;
     }
     final email = identifierController.text.trim();
@@ -74,13 +72,12 @@ class LoginController extends GetxController {
     update();
 
     if (result.success) {
-      Get.to(() => BottomNavBar());
+      await _navigateAfterLogin();
       return;
     }
 
-    final requiresEmailVerification = result.message.toLowerCase().contains(
-      'verify your email',
-    );
+    final requiresEmailVerification =
+        result.message.toLowerCase().contains('verify your email');
     if (requiresEmailVerification) {
       await _authService.savePendingEmail(email);
       final resendResult = await _authService.resendVerification(
@@ -102,6 +99,20 @@ class LoginController extends GetxController {
     Get.snackbar('Login Failed', result.message);
   }
 
+  Future<void> _navigateAfterLogin() async {
+    final profileResult = await _profileService.getProfile();
+    final profile = profileResult.profile;
+    final isComplete =
+        profile != null &&
+        (profile.phone ?? '').trim().isNotEmpty &&
+        (profile.location?.city ?? '').trim().isNotEmpty;
+    if (isComplete) {
+      Get.offAll(() => const BottomNavBar());
+    } else {
+      Get.offAll(() => CompleteYourProfileScreen());
+    }
+  }
+
   Future<void> continueWithGoogle() async {
     final tokenInputController = TextEditingController();
     final proceed = await Get.dialog<bool>(
@@ -112,14 +123,8 @@ class LoginController extends GetxController {
           decoration: const InputDecoration(hintText: 'Paste Google idToken'),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Continue'),
-          ),
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(result: true), child: const Text('Continue')),
         ],
       ),
     );
@@ -127,9 +132,7 @@ class LoginController extends GetxController {
     final idToken = tokenInputController.text.trim();
     tokenInputController.dispose();
 
-    if (proceed != true) {
-      return;
-    }
+    if (proceed != true) return;
     if (idToken.isEmpty) {
       Get.snackbar('Missing Token', 'Google idToken is required.');
       return;
@@ -146,30 +149,23 @@ class LoginController extends GetxController {
     update();
 
     if (result.success) {
-      Get.offAll(() => BottomNavBar());
+      await _navigateAfterLogin();
       return;
     }
-
     Get.snackbar('Google Sign-In Failed', result.message);
   }
 
   void continueWithApple() {
-    Get.snackbar(
-      'Not Integrated',
-      'Apple Sign-In endpoint is not available in auth module flow.',
-    );
+    Get.snackbar('Not Integrated', 'Apple Sign-In is not available.');
   }
 
   void openForgotPassword() => Get.to(() => ForgotPasswordScreen());
-
   void openSignup() => Get.to(() => SignUpScreen());
 
   @override
   void onClose() {
     identifierController.dispose();
     passwordController.dispose();
-    identifierFocus.dispose();
-    passwordFocus.dispose();
     super.onClose();
   }
 }

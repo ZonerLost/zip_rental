@@ -12,8 +12,21 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final FocusNode emailFocus = FocusNode();
+
+  @override
+  void dispose() {
+    emailFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,8 +111,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                         style: const TextStyle(fontSize: 14, height: 1.5),
                         children: [
                           TextSpan(
-                            text:
-                                "Please enter the email address that starts with",
+                            text: "Please enter the email address that starts with",
                             style: TextStyle(
                               color: kSubText2,
                               fontWeight: FontWeight.w500,
@@ -121,11 +133,11 @@ class ForgotPasswordScreen extends StatelessWidget {
                       hintColor: kBlack,
                       controller: controller.emailController,
                       alwaysShowLabel: true,
-                      focusNode: controller.emailFocus,
+                      focusNode: emailFocus,
                       radius: 24,
                       suffix: Padding(
                         padding: const EdgeInsets.all(12.0),
-                        child: controller.emailController.text.trim().isNotEmpty
+                        child: controller.isEmailValid
                             ? Container(
                                 width: 20,
                                 height: 20,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
-import 'package:zip_peer/controllers/profile_creation_controller.dart';
+import 'package:zip_peer/controllers/profile_creation/profile_creation_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';

@@ -11,19 +11,18 @@ class ForgotPasswordController extends GetxController {
 
   final AuthService _authService;
 
-  final FocusNode emailFocus = FocusNode();
   final TextEditingController emailController = TextEditingController();
   bool isSubmitting = false;
 
   bool get isButtonActive =>
       emailController.text.trim().isNotEmpty && !isSubmitting;
+  bool get isEmailValid =>
+      AuthValidators.isValidEmail(emailController.text.trim());
 
   void onEmailChanged(String _) => update();
 
   Future<void> sendVerificationLink() {
-    if (!isButtonActive) {
-      return Future.value();
-    }
+    if (!isButtonActive) return Future.value();
 
     final email = emailController.text.trim();
     if (!AuthValidators.isValidEmail(email)) {
@@ -39,7 +38,6 @@ class ForgotPasswordController extends GetxController {
         .then((result) {
           isSubmitting = false;
           update();
-
           if (result.success) {
             emailSendBottomSheet();
             return;
@@ -50,7 +48,6 @@ class ForgotPasswordController extends GetxController {
 
   @override
   void onClose() {
-    emailFocus.dispose();
     emailController.dispose();
     super.onClose();
   }

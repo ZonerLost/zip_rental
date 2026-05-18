@@ -148,129 +148,129 @@ class SneakerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Top image section
-              CommonImageView(
-                imagePath: imageUrl,
-                fit: BoxFit.contain,
-                height: 280,
-              ),
-
-              // Heart icon
-              Positioned(
-                top: 5,
-                right: 10,
-                child: CommonImageView(
-                  imagePath: Assets.imagesHeartEmpty,
-                  height: 30,
-                ),
-              ),
-
-              Positioned(
-                bottom: 10,
-                right: 10,
-                left: 10,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        CommonImageView(imagePath: avatarUrl, height: 30),
-
-                        const SizedBox(width: 12),
-                        Column(
-                          spacing: 5,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MyText(
-                              text: userName,
-
-                              size: 14,
-                              color: kBlack,
-                              weight: FontWeight.w500,
-                            ),
-
-                            Container(
-                              width: 40,
-                              height: 4,
-
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: List.generate(3, (i) {
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: i == 0 ? 25 : 8,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: i == 0 ? kWhite : kWhite,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Gap(10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            MyText(
-              text: title,
-
-              size: 16,
-              color: kBlack,
-              weight: FontWeight.w500,
-            ),
-
-            Row(
-              children: [
-                MyText(
-                  text: price,
-
-                  size: 14,
-                  color: kBlack,
-                  weight: FontWeight.w500,
-                ),
-                MyText(
-                  text: "/month",
-
-                  size: 14,
-                  color: kSubText,
-                  weight: FontWeight.w500,
+    return SizedBox(
+      width: 200,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 200,
+            height: 240,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
-          ],
-        ),
-      ],
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: CommonImageView(
+                    imagePath: imageUrl,
+                    fit: BoxFit.cover,
+                    height: 240,
+                    width: 200,
+                  ),
+                ),
+
+                // Heart icon
+                Positioned(
+                  top: 5,
+                  right: 10,
+                  child: CommonImageView(
+                    imagePath: Assets.imagesHeartEmpty,
+                    height: 30,
+                  ),
+                ),
+
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  left: 10,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          CommonImageView(imagePath: avatarUrl, height: 30),
+                          const SizedBox(width: 12),
+                          Column(
+                            spacing: 5,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MyText(
+                                text: userName,
+                                size: 14,
+                                color: kBlack,
+                                weight: FontWeight.w500,
+                              ),
+                              Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: List.generate(3, (i) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: i == 0 ? 25 : 8,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: kWhite,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Gap(10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MyText(
+                text: title,
+                size: 16,
+                color: kBlack,
+                weight: FontWeight.w500,
+              ),
+              Row(
+                children: [
+                  MyText(
+                    text: price,
+                    size: 14,
+                    color: kBlack,
+                    weight: FontWeight.w500,
+                  ),
+                  MyText(
+                    text: "/month",
+                    size: 14,
+                    color: kSubText,
+                    weight: FontWeight.w500,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -13,8 +13,27 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final FocusNode firstNameFocus = FocusNode();
+  final FocusNode lastNameFocus = FocusNode();
+  final FocusNode identifierFocus = FocusNode();
+  final FocusNode passwordFocus = FocusNode();
+
+  @override
+  void dispose() {
+    firstNameFocus.dispose();
+    lastNameFocus.dispose();
+    identifierFocus.dispose();
+    passwordFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,15 +42,10 @@ class SignUpScreen extends StatelessWidget {
       builder: (controller) {
         return GestureDetector(
           onTap: () {
-            if (controller.firstNameFocus.hasFocus ||
-                controller.lastNameFocus.hasFocus ||
-                controller.identifierFocus.hasFocus ||
-                controller.passwordFocus.hasFocus) {
-              controller.firstNameFocus.unfocus();
-              controller.lastNameFocus.unfocus();
-              controller.identifierFocus.unfocus();
-              controller.passwordFocus.unfocus();
-            }
+            firstNameFocus.unfocus();
+            lastNameFocus.unfocus();
+            identifierFocus.unfocus();
+            passwordFocus.unfocus();
           },
           child: Scaffold(
             body: AnimatedListView(
@@ -64,8 +78,7 @@ class SignUpScreen extends StatelessWidget {
                     ),
                     const Gap(8),
                     MyText(
-                      text:
-                          "Please enter your information to register yourself.",
+                      text: "Please enter your information to register yourself.",
                       size: 14,
                       color: kSubText2,
                       weight: FontWeight.w500,
@@ -78,11 +91,8 @@ class SignUpScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Row(
-                        children: List.generate(controller.tabs.length, (
-                          index,
-                        ) {
-                          final isSelected =
-                              controller.selectedTabIndex == index;
+                        children: List.generate(controller.tabs.length, (index) {
+                          final isSelected = controller.selectedTabIndex == index;
                           return Expanded(
                             child: GestureDetector(
                               onTap: () => controller.selectTab(index),
@@ -115,7 +125,7 @@ class SignUpScreen extends StatelessWidget {
                       hint: "First Name",
                       hintColor: kBlack,
                       controller: controller.firstNameController,
-                      focusNode: controller.firstNameFocus,
+                      focusNode: firstNameFocus,
                       radius: 25,
                       onChanged: controller.onFirstNameChanged,
                     ),
@@ -123,7 +133,7 @@ class SignUpScreen extends StatelessWidget {
                       hint: "Last Name",
                       hintColor: kBlack,
                       controller: controller.lastNameController,
-                      focusNode: controller.lastNameFocus,
+                      focusNode: lastNameFocus,
                       radius: 25,
                       onChanged: controller.onLastNameChanged,
                     ),
@@ -131,14 +141,28 @@ class SignUpScreen extends StatelessWidget {
                       hint: controller.firstHint,
                       hintColor: kBlack,
                       controller: controller.identifierController,
-                      focusNode: controller.identifierFocus,
+                      focusNode: identifierFocus,
                       radius: 25,
                       suffix: Padding(
                         padding: const EdgeInsets.all(12),
-                        child: CommonImageView(
-                          imagePath: controller.firstIcon,
-                          height: 24,
-                        ),
+                        child: controller.isEmailValid
+                            ? Container(
+                                width: 20,
+                                height: 20,
+                                decoration: const BoxDecoration(
+                                  color: kPrimaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              )
+                            : CommonImageView(
+                                imagePath: controller.firstIcon,
+                                height: 24,
+                              ),
                       ),
                       onChanged: controller.onIdentifierChanged,
                     ),
@@ -147,15 +171,33 @@ class SignUpScreen extends StatelessWidget {
                       hintColor: kBlack,
                       controller: controller.passwordController,
                       isObSecure: true,
-                      focusNode: controller.passwordFocus,
+                      showObscureToggle: true,
+                      focusNode: passwordFocus,
                       radius: 25,
-                      suffix: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: CommonImageView(
-                          imagePath: Assets.imagesEye,
-                          height: 24,
-                        ),
-                      ),
+                      suffix: controller.passwordController.text.isNotEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: controller.isPasswordStrong
+                                  ? Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: const BoxDecoration(
+                                        color: kPrimaryColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.close,
+                                      color: Colors.red,
+                                      size: 20,
+                                    ),
+                            )
+                          : null,
                       onChanged: controller.onPasswordChanged,
                     ),
                     const Gap(120),

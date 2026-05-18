@@ -11,8 +11,25 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-class ResetPasswordScreen extends StatelessWidget {
+class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
+
+  @override
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+}
+
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final FocusNode otpFocus = FocusNode();
+  final FocusNode passwordFocus = FocusNode();
+  final FocusNode confirmPasswordFocus = FocusNode();
+
+  @override
+  void dispose() {
+    otpFocus.dispose();
+    passwordFocus.dispose();
+    confirmPasswordFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +85,7 @@ class ResetPasswordScreen extends StatelessWidget {
                 ),
                 Gap(8),
                 MyText(
-                  text:
-                      "Please create your new password. Do not share your password with anyone.",
+                  text: "Please create your new password. Do not share your password with anyone.",
                   size: 14,
                   color: kSubText2,
                   weight: FontWeight.w500,
@@ -79,7 +95,7 @@ class ResetPasswordScreen extends StatelessWidget {
                   hint: "OTP Code",
                   hintColor: kBlack,
                   controller: controller.otpController,
-                  focusNode: controller.otpFocus,
+                  focusNode: otpFocus,
                   radius: 24,
                   keyboardType: TextInputType.number,
                   suffix: Padding(
@@ -111,47 +127,13 @@ class ResetPasswordScreen extends StatelessWidget {
                   hintColor: kBlack,
                   controller: controller.passwordController,
                   isObSecure: true,
-                  focusNode: controller.passwordFocus,
+                  showObscureToggle: true,
+                  focusNode: passwordFocus,
                   radius: 24,
-                  suffix: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: controller.passwordController.text.trim().isNotEmpty
-                        ? Container(
-                            width: 20,
-                            height: 20,
-                            decoration: const BoxDecoration(
-                              color: kPrimaryColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          )
-                        : CommonImageView(
-                            imagePath: Assets.imagesEye,
-                            height: 20,
-                            width: 20,
-                          ),
-                  ),
-                  onChanged: controller.onPasswordChanged,
-                ),
-                MyTextField(
-                  hint: "Confirm new password",
-                  hintColor: kBlack,
-                  controller: controller.confirmPasswordController,
-                  isObSecure: true,
-                  focusNode: controller.confirmPasswordFocus,
-                  radius: 24,
-                  suffix: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child:
-                        controller.confirmPasswordController.text
-                            .trim()
-                            .isNotEmpty
-                        ? (controller.confirmPasswordController.text.trim() ==
-                                  controller.passwordController.text.trim()
+                  suffix: controller.passwordController.text.trim().isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: controller.isPasswordStrong
                               ? Container(
                                   width: 20,
                                   height: 20,
@@ -169,13 +151,43 @@ class ResetPasswordScreen extends StatelessWidget {
                                   Icons.close,
                                   color: Colors.red,
                                   size: 20,
-                                ))
-                        : CommonImageView(
-                            imagePath: Assets.imagesEye,
-                            height: 20,
-                            width: 20,
-                          ),
-                  ),
+                                ),
+                        )
+                      : null,
+                  onChanged: controller.onPasswordChanged,
+                ),
+                MyTextField(
+                  hint: "Confirm new password",
+                  hintColor: kBlack,
+                  controller: controller.confirmPasswordController,
+                  isObSecure: true,
+                  showObscureToggle: true,
+                  focusNode: confirmPasswordFocus,
+                  radius: 24,
+                  suffix: controller.confirmPasswordController.text.trim().isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: controller.isPasswordMatch
+                              ? Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: const BoxDecoration(
+                                    color: kPrimaryColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.close,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
+                        )
+                      : null,
                   onChanged: controller.onConfirmPasswordChanged,
                 ),
               ],

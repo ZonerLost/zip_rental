@@ -9,10 +9,10 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/screens/auth/reset_password.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/home/item_detail/check_out_2.dart';
-import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_checkbox_widget.dart';
 import 'package:zip_peer/views/widget/custom_dropdown.dart';
@@ -87,7 +87,8 @@ void showAccountCreatedBottomSheet() {
               // Done Button
               MyButton(
                 onTap: () {
-                  Get.to(() => CompleteYourProfileScreen());
+                  Get.back();
+                  Get.offAll(() => LoginScreen());
                 },
                 buttonText: "Done",
                 fontColor: Colors.white,

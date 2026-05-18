@@ -11,13 +11,9 @@ class ResetPasswordController extends GetxController {
 
   final AuthService _authService;
 
-  final FocusNode otpFocus = FocusNode();
-  final FocusNode passwordFocus = FocusNode();
-  final FocusNode confirmPasswordFocus = FocusNode();
   final TextEditingController otpController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   String pendingEmail = '';
   bool isSubmitting = false;
 
@@ -38,23 +34,24 @@ class ResetPasswordController extends GetxController {
       confirmPasswordController.text.trim().isNotEmpty &&
       passwordController.text.trim() == confirmPasswordController.text.trim() &&
       !isSubmitting;
+  bool get isPasswordStrong =>
+      AuthValidators.isStrongPassword(passwordController.text.trim());
+  bool get isPasswordMatch =>
+      confirmPasswordController.text.trim().isNotEmpty &&
+      confirmPasswordController.text.trim() == passwordController.text.trim();
 
   void onOtpChanged(String _) => update();
-
   void onPasswordChanged(String _) => update();
-
   void onConfirmPasswordChanged(String _) => update();
 
   Future<void> submit() async {
-    if (!isButtonActive) {
-      return;
-    }
+    if (!isButtonActive) return;
 
     final newPassword = passwordController.text.trim();
     if (!AuthValidators.isStrongPassword(newPassword)) {
       Get.snackbar(
         'Weak Password',
-        'Password must be at least 8 characters and include an uppercase letter and a number.',
+        'Password must be at least 8 characters with uppercase, lowercase, and a number.',
       );
       return;
     }
@@ -89,9 +86,6 @@ class ResetPasswordController extends GetxController {
 
   @override
   void onClose() {
-    otpFocus.dispose();
-    passwordFocus.dispose();
-    confirmPasswordFocus.dispose();
     otpController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();

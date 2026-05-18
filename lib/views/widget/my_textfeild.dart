@@ -24,6 +24,8 @@ class MyTextField extends StatefulWidget {
   final Color? borderColor;
   final String? errorText;
   final bool alwaysShowLabel;
+  /// If true, renders an eye-toggle button instead of [suffix] for password fields.
+  final bool showObscureToggle;
 
   const MyTextField({
     super.key,
@@ -56,6 +58,7 @@ class MyTextField extends StatefulWidget {
     this.borderColor,
     this.errorText,
     this.alwaysShowLabel = true,
+    this.showObscureToggle = false,
   });
 
   @override
@@ -64,10 +67,12 @@ class MyTextField extends StatefulWidget {
 
 class _MyTextFieldState extends State<MyTextField> {
   bool _isFocused = false;
+  late bool _obscure;
 
   @override
   void initState() {
     super.initState();
+    _obscure = widget.isObSecure ?? false;
     widget.focusNode?.addListener(_onFocusChange);
   }
 
@@ -137,7 +142,7 @@ class _MyTextFieldState extends State<MyTextField> {
                   readOnly: widget.isReadOnly ?? false,
                   controller: widget.controller,
                   onChanged: widget.onChanged,
-                  obscureText: widget.isObSecure ?? false,
+                  obscureText: widget.showObscureToggle ? _obscure : (widget.isObSecure ?? false),
                   obscuringCharacter: '•',
                   style: const TextStyle(
                     fontSize: 15,
@@ -163,7 +168,19 @@ class _MyTextFieldState extends State<MyTextField> {
                       minWidth: 24,
                       minHeight: 24,
                     ),
-                    suffixIcon: widget.suffix,
+                    suffixIcon: widget.showObscureToggle
+                        ? GestureDetector(
+                            onTap: () => setState(() => _obscure = !_obscure),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Icon(
+                                _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                size: 22,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        : widget.suffix,
                     suffixIconConstraints: const BoxConstraints(
                       minWidth: 24,
                       minHeight: 24,

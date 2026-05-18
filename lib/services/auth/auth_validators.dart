@@ -5,6 +5,7 @@ class AuthValidators {
     r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
   );
   static final RegExp _uppercaseRegex = RegExp(r'[A-Z]');
+  static final RegExp _lowercaseRegex = RegExp(r'[a-z]');
   static final RegExp _numberRegex = RegExp(r'\d');
 
   static bool isValidEmail(String value) => _emailRegex.hasMatch(value.trim());
@@ -13,6 +14,7 @@ class AuthValidators {
     final password = value.trim();
     return password.length >= 8 &&
         _uppercaseRegex.hasMatch(password) &&
+        _lowercaseRegex.hasMatch(password) &&
         _numberRegex.hasMatch(password);
   }
 }

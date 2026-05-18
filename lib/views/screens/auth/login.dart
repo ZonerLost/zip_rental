@@ -12,8 +12,23 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final FocusNode identifierFocus = FocusNode();
+  final FocusNode passwordFocus = FocusNode();
+
+  @override
+  void dispose() {
+    identifierFocus.dispose();
+    passwordFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +37,8 @@ class LoginScreen extends StatelessWidget {
       builder: (controller) {
         return GestureDetector(
           onTap: () {
-            if (controller.identifierFocus.hasFocus ||
-                controller.passwordFocus.hasFocus) {
-              controller.identifierFocus.unfocus();
-              controller.passwordFocus.unfocus();
-            }
+            identifierFocus.unfocus();
+            passwordFocus.unfocus();
           },
           child: Scaffold(
             backgroundColor: kbackground,
@@ -89,14 +101,28 @@ class LoginScreen extends StatelessWidget {
                   hint: controller.firstHint,
                   hintColor: kBlack,
                   controller: controller.identifierController,
-                  focusNode: controller.identifierFocus,
+                  focusNode: identifierFocus,
                   radius: 25,
                   suffix: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: CommonImageView(
-                      imagePath: controller.firstIcon,
-                      height: 24,
-                    ),
+                    child: controller.isEmailValid
+                        ? Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: kPrimaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          )
+                        : CommonImageView(
+                            imagePath: controller.firstIcon,
+                            height: 24,
+                          ),
                   ),
                   onChanged: controller.onIdentifierChanged,
                 ),
@@ -105,15 +131,9 @@ class LoginScreen extends StatelessWidget {
                   hintColor: kBlack,
                   controller: controller.passwordController,
                   isObSecure: true,
-                  focusNode: controller.passwordFocus,
+                  showObscureToggle: true,
+                  focusNode: passwordFocus,
                   radius: 25,
-                  suffix: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: CommonImageView(
-                      imagePath: Assets.imagesEye,
-                      height: 24,
-                    ),
-                  ),
                   onChanged: controller.onPasswordChanged,
                 ),
                 const Gap(12),

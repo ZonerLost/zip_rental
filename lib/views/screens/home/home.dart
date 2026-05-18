@@ -272,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Gap(20),
           SizedBox(
-            height: 330,
+            height: 310,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: sneakers.length,
@@ -322,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Gap(20),
           SizedBox(
-            height: 350,
+            height: 310,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: recents.length,
@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Gap(20),
           SizedBox(
-            height: 350,
+            height: 310,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: sneakers.length,
@@ -415,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Gap(20),
           SizedBox(
-            height: 350,
+            height: 310,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: sneakers.length,

@@ -18,10 +18,6 @@ class SignupController extends GetxController {
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController identifierController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final FocusNode firstNameFocus = FocusNode();
-  final FocusNode lastNameFocus = FocusNode();
-  final FocusNode identifierFocus = FocusNode();
-  final FocusNode passwordFocus = FocusNode();
 
   final List<String> tabs = const ['Email address', 'Phone Number'];
   int selectedTabIndex = 0;
@@ -32,6 +28,12 @@ class SignupController extends GetxController {
       selectedTabIndex == 0 ? 'Email address' : 'Phone Number';
   String get firstIcon =>
       selectedTabIndex == 0 ? Assets.imagesMsg : Assets.imagesCall;
+  bool get isEmailValid =>
+      selectedTabIndex == 0
+          ? AuthValidators.isValidEmail(identifierController.text.trim())
+          : identifierController.text.trim().length >= 7;
+  bool get isPasswordStrong =>
+      AuthValidators.isStrongPassword(passwordController.text.trim());
   bool get isButtonActive =>
       firstNameController.text.trim().isNotEmpty &&
       lastNameController.text.trim().isNotEmpty &&
@@ -40,20 +42,15 @@ class SignupController extends GetxController {
       !isSubmitting;
 
   void selectTab(int index) {
-    if (selectedTabIndex == index) {
-      return;
-    }
+    if (selectedTabIndex == index) return;
     selectedTabIndex = index;
     identifierController.clear();
     update();
   }
 
   void onIdentifierChanged(String _) => update();
-
   void onPasswordChanged(String _) => update();
-
   void onFirstNameChanged(String _) => update();
-
   void onLastNameChanged(String _) => update();
 
   void onFaceIdChanged(bool value) {
@@ -62,14 +59,9 @@ class SignupController extends GetxController {
   }
 
   Future<void> submit() async {
-    if (!isButtonActive) {
-      return;
-    }
+    if (!isButtonActive) return;
     if (selectedTabIndex == 1) {
-      Get.snackbar(
-        'Unsupported',
-        'Phone signup is not available in API 1.1. Use email signup.',
-      );
+      Get.snackbar('Unsupported', 'Phone signup is not available. Use email signup.');
       return;
     }
     final email = identifierController.text.trim();
@@ -79,11 +71,10 @@ class SignupController extends GetxController {
       Get.snackbar('Invalid Email', 'Please enter a valid email address.');
       return;
     }
-
     if (!AuthValidators.isStrongPassword(password)) {
       Get.snackbar(
         'Weak Password',
-        'Password must be at least 8 characters and include an uppercase letter and a number.',
+        'Password must be at least 8 characters with uppercase, lowercase, and a number.',
       );
       return;
     }
@@ -121,14 +112,8 @@ class SignupController extends GetxController {
           decoration: const InputDecoration(hintText: 'Paste Google idToken'),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Continue'),
-          ),
+          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(result: true), child: const Text('Continue')),
         ],
       ),
     );
@@ -136,9 +121,7 @@ class SignupController extends GetxController {
     final idToken = tokenInputController.text.trim();
     tokenInputController.dispose();
 
-    if (proceed != true) {
-      return;
-    }
+    if (proceed != true) return;
     if (idToken.isEmpty) {
       Get.snackbar('Missing Token', 'Google idToken is required.');
       return;
@@ -158,15 +141,11 @@ class SignupController extends GetxController {
       Get.offAll(() => BottomNavBar());
       return;
     }
-
     Get.snackbar('Google Auth Failed', result.message);
   }
 
   void continueWithApple() {
-    Get.snackbar(
-      'Not Integrated',
-      'Apple Sign-In endpoint is not available in auth module flow.',
-    );
+    Get.snackbar('Not Integrated', 'Apple Sign-In is not available.');
   }
 
   void openLogin() => Get.to(() => LoginScreen());
@@ -177,10 +156,6 @@ class SignupController extends GetxController {
     lastNameController.dispose();
     identifierController.dispose();
     passwordController.dispose();
-    firstNameFocus.dispose();
-    lastNameFocus.dispose();
-    identifierFocus.dispose();
-    passwordFocus.dispose();
     super.onClose();
   }
 }
