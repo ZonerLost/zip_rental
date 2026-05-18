@@ -1,4 +1,3 @@
-
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -32,12 +31,18 @@ class _DeliveryFeeScreenState extends State<DeliveryFeeScreen> {
   int _selectedDeliveryIndex = -1;
   bool _showSelectDeliveryError = false;
   String rentalType = 'delivery'; // Get from previous screen
+  Map<String, dynamic>? itemDraft;
 
   @override
   void initState() {
     super.initState();
-    if (Get.arguments != null && Get.arguments['rentalType'] != null) {
-      rentalType = Get.arguments['rentalType'];
+    if (Get.arguments != null) {
+      if (Get.arguments['rentalType'] != null) {
+        rentalType = Get.arguments['rentalType'];
+      }
+      if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
+        itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
+      }
     }
   }
 
@@ -58,11 +63,11 @@ class _DeliveryFeeScreenState extends State<DeliveryFeeScreen> {
                   });
                   return;
                 }
-                
+
                 // Navigate to Delivery Availability with rental type
                 Get.to(
                   () => DeliveryAvailabilityScreen(),
-                  arguments: {'rentalType': rentalType},
+                  arguments: {'rentalType': rentalType, 'itemDraft': itemDraft},
                 );
               },
               buttonText: "Continue",

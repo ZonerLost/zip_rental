@@ -3,122 +3,257 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/models/items/item_models.dart';
+import 'package:zip_peer/views/screens/home/item_detail/add_item.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
-class HomeItemScreen extends StatefulWidget {
+class HomeItemScreen extends StatelessWidget {
   const HomeItemScreen({super.key});
 
   @override
-  State<HomeItemScreen> createState() => _HomeItemScreenState();
+  Widget build(BuildContext context) {
+    return GetBuilder<BrowseItemsController>(
+      init: Get.isRegistered<BrowseItemsController>()
+          ? Get.find<BrowseItemsController>()
+          : Get.put(BrowseItemsController()),
+      builder: (controller) {
+        return Scaffold(
+          body: RefreshIndicator(
+            onRefresh: controller.refreshItems,
+            child: AnimatedListView(
+              controller: controller.scrollController,
+              padding: const EdgeInsets.all(20),
+              children: [
+                const Gap(50),
+                Row(
+                  children: [
+                    Bounce(
+                      onTap: () => Get.back(),
+                      child: CommonImageView(
+                        imagePath: Assets.imagesBack,
+                        height: 42,
+                        width: 42,
+                      ),
+                    ),
+                    const Gap(12),
+                    MyText(
+                      text: controller.category ?? 'Browse Items',
+                      size: 20,
+                      color: kBlack,
+                      weight: FontWeight.w600,
+                    ),
+                  ],
+                ),
+                const Gap(25),
+                Row(
+                  children: [
+                    MyText(
+                      text: '${controller.items.length} Results found',
+                      size: 14,
+                      color: kSubText,
+                      weight: FontWeight.w500,
+                    ),
+                    if ((controller.search ?? '').isNotEmpty) ...[
+                      MyText(
+                        text: ' for ',
+                        size: 14,
+                        color: kSubText,
+                        weight: FontWeight.w500,
+                      ),
+                      MyText(
+                        text: controller.search ?? '',
+                        size: 14,
+                        color: kBlack,
+                        weight: FontWeight.w600,
+                      ),
+                    ],
+                  ],
+                ),
+                const Gap(20),
+                if (controller.isLoadingInitial)
+                  const Center(child: CircularProgressIndicator())
+                else if (controller.errorMessage != null &&
+                    controller.items.isEmpty)
+                  _ErrorView(
+                    message: controller.errorMessage!,
+                    onRetry: () => controller.loadItems(reset: true),
+                  )
+                else if (controller.items.isEmpty)
+                  const _EmptyView()
+                else
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: controller.items.length,
+                    padding: EdgeInsets.zero,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.56,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 18,
+                        ),
+                    itemBuilder: (context, index) {
+                      final item = controller.items[index];
+                      return _SneakerGridCard(item: item);
+                    },
+                  ),
+                if (controller.isLoadingMore)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _HomeItemScreenState extends State<HomeItemScreen> {
-  final List<Map<String, dynamic>> sneakers = const [
-    {
-      "title": "Nike Jordan’s 3310",
-      "price": "€49.99",
-      "image": Assets.imagesShoes1,
-      "user": "Chris T.",
-      "avatar": Assets.imagesChatAvatar,
-    },
-    {
-      "title": "Nike Air P90 45’ Size",
-      "price": "€49.99",
-      "image": Assets.imagesShoes2,
-      "user": "Mike H.",
-      "avatar": Assets.imagesChatAvatar,
-    },
-    {
-      "title": "Nike Red Special Edition",
-      "price": "€49.99",
-      "image": Assets.imagesShoes3,
-      "user": "Josh B.",
-      "avatar": Assets.imagesChatAvatar,
-    },
-    {
-      "title": "Nike Pro 2 Limited",
-      "price": "€49.99",
-      "image": Assets.imagesShoes4,
-      "user": "Melisa P.",
-      "avatar": Assets.imagesChatAvatar,
-    },
-  ];
+class _SneakerGridCard extends StatelessWidget {
+  const _SneakerGridCard({required this.item});
+
+  final ItemModel item;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedListView(
-        padding: EdgeInsets.all(20),
-        children: [
-          const Gap(50),
+    final imageUrl = item.thumbnailUrl;
+    final hasNetworkImage =
+        imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
 
-          Row(
+    final avatarUrl = item.owner?.profilePhoto ?? '';
+    final hasNetworkAvatar =
+        avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://');
+
+    return Bounce(
+      onTap: () {
+        Get.to(() => ItemDetailsScreen(itemId: item.id));
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
             children: [
-              Bounce(
-                onTap: () => Get.back(),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
                 child: CommonImageView(
-                  imagePath: Assets.imagesBack,
-                  height: 42,
-                  width: 42,
+                  imagePath: hasNetworkImage ? null : Assets.imagesShoes1,
+                  url: hasNetworkImage ? imageUrl : null,
+                  placeHolder: Assets.imagesShoes1,
+                  height: 250,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                 ),
               ),
-              const Gap(12),
-              MyText(
-                text: "Footwear",
-                size: 20,
-                color: kBlack,
-                weight: FontWeight.w600,
+              Positioned(
+                top: 5,
+                right: 10,
+                child: CommonImageView(
+                  imagePath: Assets.imagesHeartEmpty,
+                  height: 30,
+                ),
+              ),
+              Positioned(
+                bottom: 10,
+                right: 10,
+                left: 10,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Row(
+                        children: [
+                          CommonImageView(
+                            imagePath: hasNetworkAvatar
+                                ? null
+                                : Assets.imagesChatAvatar,
+                            url: hasNetworkAvatar ? avatarUrl : null,
+                            placeHolder: Assets.imagesChatAvatar,
+                            height: 25,
+                            width: 25,
+                            radius: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Column(
+                              spacing: 5,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                MyText(
+                                  text: item.ownerName,
+                                  size: 12,
+                                  color: kBlack,
+                                  weight: FontWeight.w500,
+                                  maxLines: 1,
+                                  textOverflow: TextOverflow.ellipsis,
+                                ),
+                                Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      children: List.generate(3, (i) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: i == 0 ? 20 : 8,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: kWhite,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-
-          const Gap(25),
-
-          /// RESULTS TEXT
+          const Gap(8),
+          MyText(
+            text: item.title ?? 'Untitled',
+            size: 14,
+            color: kBlack,
+            weight: FontWeight.w600,
+          ),
+          const Gap(4),
           Row(
             children: [
-              MyText(
-                text: "8 Results found for ",
-                size: 14,
-                color: kSubText,
-                weight: FontWeight.w500,
+              Flexible(
+                child: MyText(
+                  text:
+                      '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                  size: 14,
+                  color: kBlack,
+                  weight: FontWeight.w600,
+                  maxLines: 1,
+                  textOverflow: TextOverflow.ellipsis,
+                ),
               ),
               MyText(
-                text: "Nike Jordans",
-                size: 14,
-                color: kBlack,
-                weight: FontWeight.w600,
+                text: ' /day',
+                size: 12,
+                color: kSubText,
+                weight: FontWeight.w400,
+                maxLines: 1,
               ),
             ],
-          ),
-
-          const Gap(20),
-
-          /// 2-COLUMN GRID CARDS
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: sneakers.length,
-            padding: EdgeInsets.zero,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.56,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 18,
-            ),
-            itemBuilder: (context, index) {
-              final item = sneakers[index];
-              return _SneakerGridCard(
-                title: item["title"],
-                price: item["price"],
-                image: item["image"],
-                user: item["user"],
-                avatar: item["avatar"],
-              );
-            },
           ),
         ],
       ),
@@ -126,135 +261,62 @@ class _HomeItemScreenState extends State<HomeItemScreen> {
   }
 }
 
-class _SneakerGridCard extends StatelessWidget {
-  final String title;
-  final String price;
-  final String image;
-  final String user;
-  final String avatar;
-
-  const _SneakerGridCard({
-    super.key,
-    required this.title,
-    required this.price,
-    required this.image,
-    required this.user,
-    required this.avatar,
-  });
+class _EmptyView extends StatelessWidget {
+  const _EmptyView();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// IMAGE + HEART BUTTON + USER ROW
-        Stack(
-          children: [
-            /// PRODUCT IMAGE
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: CommonImageView(
-                imagePath: image,
-                height: 250,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-
-            /// HEART ICON
-            Positioned(
-              top: 5,
-              right: 10,
-              child: CommonImageView(
-                imagePath: Assets.imagesHeartEmpty,
-                height: 30,
-              ),
-            ),
-
-            Positioned(
-              bottom: 10,
-              right: 10,
-              left: 10,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      CommonImageView(
-                        imagePath: Assets.imagesChatAvatar,
-                        height: 25,
-                      ),
-
-                      const SizedBox(width: 12),
-                      Column(
-                        spacing: 5,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          MyText(
-                            text: user,
-
-                            size: 12,
-                            color: kBlack,
-                            weight: FontWeight.w500,
-                          ),
-
-                          Container(
-                            width: 40,
-                            height: 4,
-
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: List.generate(3, (i) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: i == 0 ? 20 : 8,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: i == 0 ? kWhite : kWhite,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 50),
+      child: Center(
+        child: MyText(
+          text: 'No items found.',
+          size: 16,
+          color: kSubText,
+          weight: FontWeight.w500,
         ),
+      ),
+    );
+  }
+}
 
-        const Gap(8),
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
 
-        /// TITLE
-        MyText(text: title, size: 14, color: kBlack, weight: FontWeight.w600),
+  final String message;
+  final VoidCallback onRetry;
 
-        const Gap(4),
-
-        /// PRICE + MONTH
-        Row(
-          children: [
-            MyText(
-              text: price,
-              size: 14,
-              color: kBlack,
-              weight: FontWeight.w600,
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        children: [
+          MyText(
+            text: message,
+            size: 14,
+            color: Colors.red,
+            textAlign: TextAlign.center,
+          ),
+          const Gap(12),
+          Bounce(
+            onTap: onRetry,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: kPrimaryColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: MyText(
+                text: 'Retry',
+                size: 13,
+                color: kPrimaryColor,
+                weight: FontWeight.w600,
+              ),
             ),
-            MyText(
-              text: " /month",
-              size: 12,
-              color: kSubText,
-              weight: FontWeight.w400,
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

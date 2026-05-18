@@ -1,4 +1,3 @@
-
 // ignore_for_file: prefer_final_fields
 
 import 'package:bounce/bounce.dart';
@@ -7,8 +6,9 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/constants/app_sizes.dart';
+import 'package:zip_peer/controllers/items/item_details_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/home/item_detail/check_out.dart';
+import 'package:zip_peer/models/items/item_models.dart';
 import 'package:zip_peer/views/screens/home/item_detail/check_out_2.dart';
 import 'package:zip_peer/views/screens/home/item_detail/comments.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -17,499 +17,502 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
 class ItemDetailsScreen extends StatefulWidget {
-  const ItemDetailsScreen({super.key});
+  const ItemDetailsScreen({super.key, required this.itemId});
+
+  final String itemId;
 
   @override
   State<ItemDetailsScreen> createState() => _ItemDetailsScreenState();
 }
 
 class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
-  int _currentImageIndex = 2;
   int _monthCount = 1;
-  bool isDeliveryEnabled = true; // owner enabled delivery
-  bool isPickupEnabled = true; // owner enabled pickup
+  int _currentImageIndex = 1;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: kWhite,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MyText(text: "€98.99", size: 24, weight: FontWeight.w700),
-                      MyText(text: "Total amount", size: 14, color: kSubText),
-                    ],
-                  ),
-                  Gap(20),
-                  Expanded(
-                    child: MyButton(
-                      onTap: () {
-                        Get.to(() => const CheckoutScreen2());
-                      },
-                      buttonText: "Book Now",
-                      height: 56,
-                      radius: 30,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: AnimatedListView(
-        padding: EdgeInsets.all(10),
-        children: [
-          Gap(50),
+    return GetBuilder<ItemDetailsController>(
+      init: ItemDetailsController(itemId: widget.itemId),
+      builder: (controller) {
+        final item = controller.item;
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Scaffold(
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Bounce(
-                onTap: () => Get.back(),
-                child: Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.arrow_back, size: 24),
-                ),
-              ),
-              Bounce(
-                onTap: () {},
-                child: CommonImageView(
-                  imagePath: Assets.imagesHeartIcon,
-                  height: 50,
-                ),
-              ),
-            ],
-          ),
-
-          Gap(20),
-          Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: CommonImageView(
-                  height: 350,
-                  width: double.infinity,
-                  radius: 25,
-                  imagePath: Assets.imagesShoes1,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              // Top bar
-              Positioned(
-                top: 20,
-                left: 30,
-                right: 30,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: List.generate(3, (i) {
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: i == 0 ? 25 : 8,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: i == 0 ? kWhite : kWhite,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        );
-                      }),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kWhite,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: MyText(
-                        text: "$_currentImageIndex/5",
-                        size: 14,
-                        color: kBlack,
-                        weight: FontWeight.w600,
-                      ),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
                     ),
                   ],
                 ),
-              ),
-              // Image indicator
-              Positioned(
-                bottom: 10,
-                left: 20,
-                right: 20,
-                child: Container(
-                  margin: EdgeInsets.symmetric(vertical: 10),
-                  padding: EdgeInsets.symmetric(horizontal: 3, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                child: SafeArea(
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Bounce(
-                        onTap: () {
-                          if (_monthCount > 1) {
-                            setState(() {
-                              _monthCount--;
-                            });
-                          }
-                        },
-                        child: CommonImageView(
-                          imagePath: Assets.imagesMinusItemDetail,
-                          height: 50,
-                        ),
-                      ),
-                      MyText(
-                        text: "${_monthCount.toString().padLeft(2, '0')} Month",
-                        size: 18,
-                        weight: FontWeight.w600,
-                      ),
-                      Bounce(
-                        onTap: () {
-                          setState(() {
-                            _monthCount++;
-                          });
-                        },
-                        child: CommonImageView(
-                          imagePath: Assets.imagesAddItemDetail,
-                          height: 50,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Gap(10),
-          // Details section
-          Padding(
-            padding: AppSizes.DEFAULT,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        spacing: 5,
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           MyText(
-                            text: "Nike's Jordan 3310",
+                            text:
+                                '${item?.currency ?? 'CAD'} ${(item?.dailyRate ?? 0).toStringAsFixed(2)}',
                             size: 24,
                             weight: FontWeight.w700,
                           ),
-                          Gap(8),
                           MyText(
-                            text: "20 Times rented | used, like new",
+                            text: 'Total amount',
                             size: 14,
                             color: kSubText,
                           ),
                         ],
                       ),
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        MyText(
-                          text: "\$49.99",
-                          size: 20,
-                          weight: FontWeight.w700,
+                      const Gap(20),
+                      Expanded(
+                        child: MyButton(
+                          onTap: () {
+                            Get.to(() => const CheckoutScreen2());
+                          },
+                          buttonText: 'Book Now',
+                          height: 56,
+                          radius: 30,
+                          fontSize: 16,
                         ),
-                        MyText(text: "/ month", size: 14, color: kSubText),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          body: controller.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : controller.errorMessage != null
+              ? _ErrorView(
+                  message: controller.errorMessage!,
+                  onRetry: controller.fetchItem,
+                )
+              : item == null
+              ? const _ErrorView(message: 'Item not found')
+              : _buildContent(item),
+        );
+      },
+    );
+  }
+
+  Widget _buildContent(ItemModel item) {
+    final photos = item.photos;
+    final hasPhotos = photos.isNotEmpty;
+    final imageIndex = (_currentImageIndex - 1).clamp(
+      0,
+      hasPhotos ? photos.length - 1 : 0,
+    );
+    final imageUrl = hasPhotos ? photos[imageIndex] : '';
+
+    final ownerPhoto = item.owner?.profilePhoto ?? '';
+    final hasOwnerPhoto =
+        ownerPhoto.startsWith('http://') || ownerPhoto.startsWith('https://');
+
+    final locationText = item.location?.fullLocation.isNotEmpty == true
+        ? item.location!.fullLocation
+        : 'Location unavailable';
+
+    return AnimatedListView(
+      padding: const EdgeInsets.all(10),
+      children: [
+        const Gap(50),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Bounce(
+              onTap: () => Get.back(),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: kWhite,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back, size: 24),
+              ),
+            ),
+            Bounce(
+              onTap: () {},
+              child: CommonImageView(
+                imagePath: Assets.imagesHeartIcon,
+                height: 50,
+              ),
+            ),
+          ],
+        ),
+        const Gap(20),
+        Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: CommonImageView(
+                height: 350,
+                width: double.infinity,
+                radius: 25,
+                imagePath: hasPhotos ? null : Assets.imagesShoes1,
+                url: hasPhotos ? imageUrl : null,
+                fit: BoxFit.cover,
+                placeHolder: Assets.imagesShoes1,
+              ),
+            ),
+            Positioned(
+              top: 20,
+              left: 30,
+              right: 30,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: List.generate(3, (i) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: i == 0 ? 25 : 8,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: kWhite,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kWhite,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: MyText(
+                      text:
+                          '${hasPhotos ? imageIndex + 1 : 1}/${hasPhotos ? photos.length : 1}',
+                      size: 14,
+                      color: kBlack,
+                      weight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 10,
+              left: 20,
+              right: 20,
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 3,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Bounce(
+                      onTap: () {
+                        if (_monthCount > 1) {
+                          setState(() {
+                            _monthCount--;
+                          });
+                        }
+                      },
+                      child: CommonImageView(
+                        imagePath: Assets.imagesMinusItemDetail,
+                        height: 50,
+                      ),
+                    ),
+                    MyText(
+                      text: '${_monthCount.toString().padLeft(2, '0')} Month',
+                      size: 18,
+                      weight: FontWeight.w600,
+                    ),
+                    Bounce(
+                      onTap: () {
+                        setState(() {
+                          _monthCount++;
+                        });
+                      },
+                      child: CommonImageView(
+                        imagePath: Assets.imagesAddItemDetail,
+                        height: 50,
+                      ),
                     ),
                   ],
                 ),
-                Gap(20),
-                // Owner info
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          CommonImageView(
-                            imagePath: Assets.imagesChatAvatar,
-                            height: 40,
-                          ),
-                          Gap(12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              MyText(
-                                text: "Christopher Henry",
-                                size: 16,
-                                weight: FontWeight.w600,
-                              ),
-                              Gap(4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: Colors.amber,
-                                  ),
-                                  Gap(4),
-                                  MyText(
-                                    text: "4.7 ratings",
-                                    size: 14,
-                                    color: kBlack,
-                                  ),
-                                  Gap(12),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Bounce(
-                        onTap: () {
-                          Get.to(() => const CommentsScreen());
-                        },
-                        child: CommonImageView(
-                          imagePath: Assets.imagesCommentsNewIcon,
-                          height: 40,
+              ),
+            ),
+          ],
+        ),
+        const Gap(10),
+        Padding(
+          padding: AppSizes.DEFAULT,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      spacing: 5,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        MyText(
+                          text: item.title ?? 'Untitled item',
+                          size: 24,
+                          weight: FontWeight.w700,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Gap(20),
-                MyText(
-                  text:
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text: "Ut enim ad minim veniam, quis nostrud exercitation",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text:
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text: "Ut enim ad minim veniam, quis nostrud exercitation",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text:
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text: "Ut enim ad minim veniam, quis nostrud exercitation",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text:
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text: "Ut enim ad minim veniam, quis nostrud exercitation",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text:
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text: "Ut enim ad minim veniam, quis nostrud exercitation",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text:
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(8),
-                MyText(
-                  text: "Ut enim ad minim veniam, quis nostrud exercitation",
-                  size: 14,
-                  color: kSubText,
-                ),
-                Gap(20),
-
-                // Informational availability section - NO BUTTONS, NO SELECTION
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MyText(
-                        text: "Available Options",
-                        size: 18,
-                        weight: FontWeight.w700,
-                      ),
-                      Gap(16),
-                      
-                      // Show available options based on what owner enabled
-                      if (isPickupEnabled && isDeliveryEnabled)
+                        const Gap(8),
                         MyText(
-                          text: "✓ Pickup & Delivery available",
-                          size: 16,
-                          color: kBlack,
-                        )
-                      else if (isPickupEnabled)
-                        MyText(
-                          text: "✓ Pickup only",
-                          size: 16,
-                          color: kBlack,
-                        )
-                      else if (isDeliveryEnabled)
-                        MyText(
-                          text: "✓ Delivery only",
-                          size: 16,
-                          color: kBlack,
-                        ),
-                      
-                      // Show map preview if pickup is available
-                      if (isPickupEnabled) ...[
-                        Gap(16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: kWhite3,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on, color: kPrimaryColor, size: 24),
-                              Gap(12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    MyText(
-                                      text: "Approximate pickup location",
-                                      size: 14,
-                                      weight: FontWeight.w600,
-                                    ),
-                                    Gap(4),
-                                    MyText(
-                                      text: "Downtown area, City Center",
-                                      size: 12,
-                                      color: kSubText,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          text:
+                              '${item.totalRentals ?? 0} Times rented | ${item.condition ?? 'n/a'}',
+                          size: 14,
+                          color: kSubText,
                         ),
                       ],
-                      
-                      // Show delivery info if delivery is available
-                      if (isDeliveryEnabled) ...[
-                        Gap(16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: kWhite3,
-                            borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      MyText(
+                        text:
+                            '${item.currency ?? 'CAD'} ${(item.dailyRate ?? 0).toStringAsFixed(2)}',
+                        size: 20,
+                        weight: FontWeight.w700,
+                      ),
+                      MyText(text: '/ day', size: 14, color: kSubText),
+                    ],
+                  ),
+                ],
+              ),
+              const Gap(20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        CommonImageView(
+                          imagePath: hasOwnerPhoto
+                              ? null
+                              : Assets.imagesChatAvatar,
+                          url: hasOwnerPhoto ? ownerPhoto : null,
+                          placeHolder: Assets.imagesChatAvatar,
+                          height: 40,
+                          width: 40,
+                          radius: 20,
+                        ),
+                        const Gap(12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText(
+                              text: item.ownerName,
+                              size: 16,
+                              weight: FontWeight.w600,
+                            ),
+                            const Gap(4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  size: 16,
+                                  color: Colors.amber,
+                                ),
+                                const Gap(4),
+                                MyText(
+                                  text:
+                                      '${(item.owner?.averageRating ?? item.averageRating ?? 0).toStringAsFixed(1)} ratings',
+                                  size: 14,
+                                  color: kBlack,
+                                ),
+                                const Gap(12),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Bounce(
+                      onTap: () {
+                        Get.to(() => const CommentsScreen());
+                      },
+                      child: CommonImageView(
+                        imagePath: Assets.imagesCommentsNewIcon,
+                        height: 40,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Gap(20),
+              MyText(
+                text: (item.description ?? '').isNotEmpty
+                    ? item.description!
+                    : 'No description available.',
+                size: 14,
+                color: kSubText,
+              ),
+              const Gap(20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    MyText(
+                      text: 'Available Options',
+                      size: 18,
+                      weight: FontWeight.w700,
+                    ),
+                    const Gap(16),
+                    MyText(
+                      text: (item.availability?.isAvailable ?? true)
+                          ? 'Available for booking'
+                          : 'Currently unavailable',
+                      size: 16,
+                      color: kBlack,
+                    ),
+                    const Gap(16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: kWhite3,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: kPrimaryColor,
+                            size: 24,
                           ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.local_shipping, color: kPrimaryColor, size: 24),
-                              Gap(12),
-                              Expanded(
-                                child: MyText(
-                                  text: "Delivery address will be requested in next step",
+                          const Gap(12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                MyText(
+                                  text: 'Approximate pickup location',
+                                  size: 14,
+                                  weight: FontWeight.w600,
+                                ),
+                                const Gap(4),
+                                MyText(
+                                  text: locationText,
                                   size: 12,
                                   color: kSubText,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    if ((item.availability?.blockedDates ?? const <String>[])
+                        .isNotEmpty) ...[
+                      const Gap(14),
+                      MyText(
+                        text:
+                            'Blocked dates: ${item.availability!.blockedDates.join(', ')}',
+                        size: 12,
+                        color: kSubText,
+                      ),
                     ],
+                    // TODO: If S3 returns AccessDenied for image URLs, backend should return public URLs or signed URLs.
+                  ],
+                ),
+              ),
+              const Gap(50),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            MyText(
+              text: message,
+              size: 14,
+              color: Colors.red,
+              textAlign: TextAlign.center,
+            ),
+            if (onRetry != null) ...[
+              const Gap(12),
+              Bounce(
+                onTap: onRetry,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: MyText(
+                    text: 'Retry',
+                    size: 13,
+                    color: kPrimaryColor,
+                    weight: FontWeight.w600,
                   ),
                 ),
-
-                Gap(50),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

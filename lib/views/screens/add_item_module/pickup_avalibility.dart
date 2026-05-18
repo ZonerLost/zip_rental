@@ -1,4 +1,3 @@
-
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -25,6 +24,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
   String? scheduleType; // recurring or specific
   String? bookingType; // manual or instant
   String? rentalType; // delivery, pickup, or both
+  Map<String, dynamic>? itemDraft;
 
   final Map<String, bool> dayAvailability = {
     'Monday': true,
@@ -86,6 +86,9 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
       scheduleType = Get.arguments['scheduleType'];
       bookingType = Get.arguments['bookingType'];
       rentalType = Get.arguments['rentalType'];
+      if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
+        itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
+      }
     }
   }
 
@@ -167,6 +170,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                     'bookingType': bookingType,
                     'rentalType': rentalType,
                     'scheduleType': scheduleType,
+                    'itemDraft': itemDraft,
                   },
                 );
               },
@@ -256,7 +260,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
           ...dayAvailability.keys.map((day) {
             final isEnabled = dayAvailability[day]!;
             final isAllDay = dayAllDayMode[day]!;
-            
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Container(
@@ -294,7 +298,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                       Gap(10),
                       Divider(color: kDividerColor),
                       Gap(10),
-                      
+
                       // "All Day" toggle with explanation
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -323,7 +327,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                           ),
                         ],
                       ),
-                      
+
                       // Show time pickers only if NOT in "All Day" mode
                       if (!isAllDay) ...[
                         Gap(12),
@@ -339,7 +343,8 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       MyText(
                                         text: "From",
@@ -370,7 +375,8 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       MyText(
                                         text: "To",

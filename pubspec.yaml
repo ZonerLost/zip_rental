@@ -27,7 +27,7 @@ dependencies:
   syncfusion_flutter_sliders:
   svg_flutter:
   google_fonts:
-  google_sign_in:
+  google_sign_in: ^7.2.0
   get:
   simple_gradient_text:
   weekly_date_picker:

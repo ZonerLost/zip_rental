@@ -24,6 +24,7 @@ class _InstantBookingOptionsScreenState
   bool _showError = false;
   String bookingType = 'instant';
   String rentalType = 'delivery';
+  Map<String, dynamic>? itemDraft;
 
   @override
   void initState() {
@@ -34,6 +35,9 @@ class _InstantBookingOptionsScreenState
       }
       if (Get.arguments['rentalType'] != null) {
         rentalType = Get.arguments['rentalType'];
+      }
+      if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
+        itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
     }
   }
@@ -61,8 +65,10 @@ class _InstantBookingOptionsScreenState
                   arguments: {
                     'bookingType': bookingType,
                     'rentalType': rentalType,
-                    'scheduleType':
-                        _selectedOption == 0 ? 'recurring' : 'specific',
+                    'scheduleType': _selectedOption == 0
+                        ? 'recurring'
+                        : 'specific',
+                    'itemDraft': itemDraft,
                   },
                 );
               },

@@ -1,0 +1,473 @@
+class CoordinatesModel {
+  const CoordinatesModel({this.lat, this.lng});
+
+  final double? lat;
+  final double? lng;
+
+  factory CoordinatesModel.fromJson(Map<String, dynamic> json) {
+    return CoordinatesModel(
+      lat: _asDouble(json['lat']),
+      lng: _asDouble(json['lng']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+    };
+  }
+}
+
+class ItemLocationModel {
+  const ItemLocationModel({
+    this.address,
+    this.city,
+    this.province,
+    this.country,
+    this.coordinates,
+  });
+
+  final String? address;
+  final String? city;
+  final String? province;
+  final String? country;
+  final CoordinatesModel? coordinates;
+
+  factory ItemLocationModel.fromJson(Map<String, dynamic> json) {
+    final rawCoordinates = json['coordinates'];
+    final coordinatesMap = rawCoordinates is Map
+        ? rawCoordinates.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+
+    return ItemLocationModel(
+      address: _asString(json['address']),
+      city: _asString(json['city']),
+      province: _asString(json['province']),
+      country: _asString(json['country']),
+      coordinates: coordinatesMap == null
+          ? null
+          : CoordinatesModel.fromJson(coordinatesMap),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if ((address ?? '').trim().isNotEmpty) 'address': address!.trim(),
+      if ((city ?? '').trim().isNotEmpty) 'city': city!.trim(),
+      if ((province ?? '').trim().isNotEmpty) 'province': province!.trim(),
+      if ((country ?? '').trim().isNotEmpty) 'country': country!.trim(),
+      if (coordinates != null && coordinates!.toJson().isNotEmpty)
+        'coordinates': coordinates!.toJson(),
+    };
+  }
+
+  String get fullLocation {
+    final parts = <String>[
+      (city ?? '').trim(),
+      (province ?? '').trim(),
+      (country ?? '').trim(),
+    ].where((part) => part.isNotEmpty).toList(growable: false);
+
+    return parts.join(', ');
+  }
+}
+
+class OwnerModel {
+  const OwnerModel({
+    this.id,
+    this.firstName,
+    this.lastName,
+    this.averageRating,
+    this.profilePhoto,
+  });
+
+  final String? id;
+  final String? firstName;
+  final String? lastName;
+  final double? averageRating;
+  final String? profilePhoto;
+
+  factory OwnerModel.fromJson(Map<String, dynamic> json) {
+    return OwnerModel(
+      id: _asString(json['_id']) ?? _asString(json['id']),
+      firstName: _asString(json['firstName']) ?? _asString(json['first_name']),
+      lastName: _asString(json['lastName']) ?? _asString(json['last_name']),
+      averageRating:
+          _asDouble(json['averageRating']) ?? _asDouble(json['rating']),
+      profilePhoto:
+          _asString(json['profilePhoto']) ?? _asString(json['avatar']),
+    );
+  }
+
+  String get fullName =>
+      '${(firstName ?? '').trim()} ${(lastName ?? '').trim()}'.trim();
+}
+
+class ItemAvailabilityModel {
+  const ItemAvailabilityModel({this.isAvailable, this.blockedDates = const []});
+
+  final bool? isAvailable;
+  final List<String> blockedDates;
+
+  factory ItemAvailabilityModel.fromJson(Map<String, dynamic> json) {
+    return ItemAvailabilityModel(
+      isAvailable: _asBool(json['isAvailable']),
+      blockedDates: _toStringList(json['blockedDates']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (isAvailable != null) 'isAvailable': isAvailable,
+      if (blockedDates.isNotEmpty) 'blockedDates': blockedDates,
+    };
+  }
+}
+
+class ItemModel {
+  const ItemModel({
+    required this.id,
+    this.ownerId,
+    this.owner,
+    this.location,
+    this.availability,
+    this.title,
+    this.description,
+    this.category,
+    this.subCategory,
+    this.photos = const [],
+    this.dailyRate,
+    this.currency,
+    this.condition,
+    this.isFeatured,
+    this.averageRating,
+    this.totalReviews,
+    this.totalRentals,
+    this.isActive,
+    this.tags = const [],
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String? ownerId;
+  final OwnerModel? owner;
+  final ItemLocationModel? location;
+  final ItemAvailabilityModel? availability;
+  final String? title;
+  final String? description;
+  final String? category;
+  final String? subCategory;
+  final List<String> photos;
+  final double? dailyRate;
+  final String? currency;
+  final String? condition;
+  final bool? isFeatured;
+  final double? averageRating;
+  final int? totalReviews;
+  final int? totalRentals;
+  final bool? isActive;
+  final List<String> tags;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory ItemModel.fromJson(Map<String, dynamic> json) {
+    final ownerRaw = json['owner'];
+    final ownerMap = ownerRaw is Map
+        ? ownerRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+    final ownerId = ownerRaw is String
+        ? ownerRaw
+        : _asString(json['ownerId']) ??
+            _asString(json['owner_id']) ??
+            _asString(json['owner']);
+
+    final locationRaw = json['location'];
+    final locationMap = locationRaw is Map
+        ? locationRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+
+    final availabilityRaw = json['availability'];
+    final availabilityMap = availabilityRaw is Map
+        ? availabilityRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+
+    return ItemModel(
+      id: _asString(json['_id']) ?? _asString(json['id']) ?? '',
+      ownerId: ownerId,
+      owner: ownerMap == null ? null : OwnerModel.fromJson(ownerMap),
+      location: locationMap == null
+          ? null
+          : ItemLocationModel.fromJson(locationMap),
+      availability: availabilityMap == null
+          ? null
+          : ItemAvailabilityModel.fromJson(availabilityMap),
+      title: _asString(json['title']),
+      description: _asString(json['description']),
+      category: _asString(json['category']),
+      subCategory: _asString(json['subCategory']),
+      photos: _toStringList(json['photos']),
+      dailyRate: _asDouble(json['dailyRate']),
+      currency: _asString(json['currency']),
+      condition: _asString(json['condition']),
+      isFeatured: _asBool(json['isFeatured']),
+      averageRating: _asDouble(json['averageRating']),
+      totalReviews: _asInt(json['totalReviews']),
+      totalRentals: _asInt(json['totalRentals']),
+      isActive: _asBool(json['isActive']),
+      tags: _toStringList(json['tags']),
+      createdAt: _asDateTime(json['createdAt']),
+      updatedAt: _asDateTime(json['updatedAt']),
+    );
+  }
+
+  String get thumbnailUrl => photos.isNotEmpty ? photos.first : '';
+
+  String get ownerName {
+    final name = owner?.fullName ?? '';
+    return name.isEmpty ? 'Unknown owner' : name;
+  }
+
+  ItemModel copyWith({
+    OwnerModel? owner,
+    ItemLocationModel? location,
+    ItemAvailabilityModel? availability,
+    String? title,
+    String? description,
+    String? category,
+    String? subCategory,
+    List<String>? photos,
+    double? dailyRate,
+    String? currency,
+    String? condition,
+    bool? isFeatured,
+    double? averageRating,
+    int? totalReviews,
+    int? totalRentals,
+    bool? isActive,
+    List<String>? tags,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return ItemModel(
+      id: id,
+      ownerId: ownerId,
+      owner: owner ?? this.owner,
+      location: location ?? this.location,
+      availability: availability ?? this.availability,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      subCategory: subCategory ?? this.subCategory,
+      photos: photos ?? this.photos,
+      dailyRate: dailyRate ?? this.dailyRate,
+      currency: currency ?? this.currency,
+      condition: condition ?? this.condition,
+      isFeatured: isFeatured ?? this.isFeatured,
+      averageRating: averageRating ?? this.averageRating,
+      totalReviews: totalReviews ?? this.totalReviews,
+      totalRentals: totalRentals ?? this.totalRentals,
+      isActive: isActive ?? this.isActive,
+      tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+class PaginationModel {
+  const PaginationModel({
+    this.page = 1,
+    this.limit = 10,
+    this.total = 0,
+    this.totalPages = 0,
+    this.hasNext = false,
+    this.hasPrev = false,
+  });
+
+  final int page;
+  final int limit;
+  final int total;
+  final int totalPages;
+  final bool hasNext;
+  final bool hasPrev;
+
+  factory PaginationModel.fromJson(Map<String, dynamic> json) {
+    return PaginationModel(
+      page: _asInt(json['page']) ?? 1,
+      limit: _asInt(json['limit']) ?? 10,
+      total: _asInt(json['total']) ?? 0,
+      totalPages: _asInt(json['totalPages']) ?? 0,
+      hasNext: _asBool(json['hasNext']) ?? false,
+      hasPrev: _asBool(json['hasPrev']) ?? false,
+    );
+  }
+}
+
+class ItemsResponseModel {
+  const ItemsResponseModel({
+    required this.success,
+    required this.message,
+    this.items = const [],
+    this.pagination,
+    this.raw,
+  });
+
+  final bool success;
+  final String message;
+  final List<ItemModel> items;
+  final PaginationModel? pagination;
+  final Map<String, dynamic>? raw;
+}
+
+class PaginatedItemsResponse {
+  const PaginatedItemsResponse({
+    required this.success,
+    required this.message,
+    this.items = const [],
+    this.pagination,
+    this.raw,
+  });
+
+  final bool success;
+  final String message;
+  final List<ItemModel> items;
+  final PaginationModel? pagination;
+  final Map<String, dynamic>? raw;
+}
+
+class CreateItemRequest {
+  const CreateItemRequest({
+    required this.title,
+    required this.description,
+    required this.category,
+    this.subCategory,
+    required this.dailyRate,
+    required this.condition,
+    required this.location,
+    this.tags = const [],
+  });
+
+  final String title;
+  final String description;
+  final String category;
+  final String? subCategory;
+  final double dailyRate;
+  final String condition;
+  final ItemLocationModel location;
+  final List<String> tags;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'title': title.trim(),
+      'description': description.trim(),
+      'category': category.trim(),
+      if ((subCategory ?? '').trim().isNotEmpty)
+        'subCategory': subCategory!.trim(),
+      'dailyRate': dailyRate,
+      'condition': condition.trim(),
+      'location': location.toJson(),
+      if (tags.isNotEmpty) 'tags': tags,
+    };
+  }
+}
+
+class UpdateItemRequest {
+  const UpdateItemRequest({
+    this.title,
+    this.description,
+    this.dailyRate,
+    this.condition,
+    this.tags,
+  });
+
+  final String? title;
+  final String? description;
+  final double? dailyRate;
+  final String? condition;
+  final List<String>? tags;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (title != null && title!.trim().isNotEmpty) 'title': title!.trim(),
+      if (description != null && description!.trim().isNotEmpty)
+        'description': description!.trim(),
+      if (dailyRate != null) 'dailyRate': dailyRate,
+      if (condition != null && condition!.trim().isNotEmpty)
+        'condition': condition!.trim(),
+      if (tags != null) 'tags': tags,
+    };
+  }
+}
+
+double? _asDouble(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value.toString());
+}
+
+int? _asInt(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  return int.tryParse(value.toString());
+}
+
+bool? _asBool(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is bool) {
+    return value;
+  }
+  final normalized = value.toString().trim().toLowerCase();
+  if (normalized == 'true' || normalized == '1') {
+    return true;
+  }
+  if (normalized == 'false' || normalized == '0') {
+    return false;
+  }
+  return null;
+}
+
+DateTime? _asDateTime(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is DateTime) {
+    return value;
+  }
+  return DateTime.tryParse(value.toString());
+}
+
+String? _asString(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  final normalized = value.toString().trim();
+  if (normalized.isEmpty || normalized.toLowerCase() == 'null') {
+    return null;
+  }
+  return normalized;
+}
+
+List<String> _toStringList(dynamic value) {
+  if (value is! List) {
+    return const <String>[];
+  }
+  return value
+      .map((element) => _asString(element))
+      .whereType<String>()
+      .toList(growable: false);
+}

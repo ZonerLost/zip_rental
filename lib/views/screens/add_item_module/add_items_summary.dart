@@ -1,11 +1,13 @@
+import 'dart:io';
 
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
+import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -23,6 +25,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
   String? rentalType; // delivery, pickup, or both
   String? scheduleType; // recurring or specific
   bool boosted = false;
+  Map<String, dynamic>? itemDraft;
 
   @override
   void initState() {
@@ -32,6 +35,9 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
       rentalType = Get.arguments['rentalType'];
       scheduleType = Get.arguments['scheduleType'];
       boosted = Get.arguments['boosted'] ?? false;
+      if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
+        itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
+      }
     }
   }
 
@@ -52,24 +58,41 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MyButton(
-              onTap: () {
-                ItemAddedBottomSheet(context);
-              },
-              buttonText: "Add Item",
-              fontColor: Colors.white,
-              height: 56,
-              radius: 28,
-              hasgrad: false,
-              fontSize: 17,
-            ),
-            Gap(20),
-          ],
+      bottomNavigationBar: GetBuilder<AddItemController>(
+        init: Get.isRegistered<AddItemController>()
+            ? Get.find<AddItemController>()
+            : Get.put(AddItemController()),
+        builder: (addItemController) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MyButton(
+                onTap: () async {
+                  final didCreate = await addItemController.createItemFromDraft(
+                    itemDraft ?? const <String, dynamic>{},
+                  );
+                  if (!didCreate) {
+                    return;
+                  }
+                  if (!mounted) {
+                    return;
+                  }
+                  Get.snackbar('Success', 'Item added successfully.');
+                  Get.offAll(() => const BottomNavBar(initialIndex: 3));
+                },
+                buttonText: addItemController.isSubmitting
+                    ? 'Adding...'
+                    : 'Add Item',
+                fontColor: Colors.white,
+                height: 56,
+                radius: 28,
+                hasgrad: false,
+                fontSize: 17,
+              ),
+              Gap(20),
+            ],
+          ),
         ),
       ),
       body: AnimatedListView(
@@ -141,6 +164,24 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     itemCount: 5,
                     separatorBuilder: (context, index) => Gap(12),
                     itemBuilder: (context, index) {
+                      final photos =
+                          (itemDraft?['photos'] as List?) ?? const <dynamic>[];
+                      if (photos.isNotEmpty && index < photos.length) {
+                        final photoEntry = photos[index];
+                        final filePath = photoEntry is File
+                            ? photoEntry.path
+                            : photoEntry.toString();
+                        return CommonImageView(
+                          height: 60,
+                          width: 80,
+                          radius: 12,
+                          file: filePath.isNotEmpty ? File(filePath) : null,
+                          imagePath: filePath.isEmpty
+                              ? Assets.imagesShoes1
+                              : null,
+                          fit: BoxFit.cover,
+                        );
+                      }
                       return CommonImageView(
                         height: 60,
                         width: 80,
@@ -157,7 +198,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   children: [
                     MyText(text: 'Product Name', size: 14, color: kSubText),
                     MyText(
-                      text: 'Nike Jordan 6',
+                      text: (itemDraft?['title'] ?? 'Nike Jordan 6').toString(),
                       size: 16,
                       weight: FontWeight.w600,
                     ),
@@ -169,7 +210,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   children: [
                     MyText(text: 'Category', size: 14, color: kSubText),
                     MyText(
-                      text: 'Footwear',
+                      text: (itemDraft?['category'] ?? 'Footwear').toString(),
                       size: 16,
                       weight: FontWeight.w600,
                     ),
@@ -181,7 +222,8 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   children: [
                     MyText(text: 'Condition', size: 14, color: kSubText),
                     MyText(
-                      text: 'Used, good condition',
+                      text: (itemDraft?['condition'] ?? 'Used, good condition')
+                          .toString(),
                       size: 16,
                       weight: FontWeight.w600,
                     ),
@@ -207,7 +249,8 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     Row(
                       children: [
                         MyText(
-                          text: '\$45.00 ',
+                          text:
+                              '\$${(itemDraft?['dailyRate'] ?? '45.00').toString()} ',
                           size: 16,
                           weight: FontWeight.w600,
                         ),
@@ -228,7 +271,10 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     children: [
                       MyText(text: 'Delivery Fees', size: 14, color: kSubText),
                       MyText(
-                          text: '\$10.00', size: 16, weight: FontWeight.w600),
+                        text: '\$10.00',
+                        size: 16,
+                        weight: FontWeight.w600,
+                      ),
                     ],
                   ),
                 ],
@@ -238,7 +284,10 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   children: [
                     MyText(text: 'Description', size: 14, color: kSubText),
                     MyText(
-                      text: 'Lorem upsum dlor isem teiyr',
+                      text:
+                          (itemDraft?['description'] ??
+                                  'Lorem upsum dlor isem teiyr')
+                              .toString(),
                       size: 16,
                       weight: FontWeight.w600,
                     ),

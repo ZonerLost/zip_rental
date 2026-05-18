@@ -1,5 +1,3 @@
-
-
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -22,6 +20,7 @@ class _BoostScreenState extends State<BoostScreen> {
   String? bookingType;
   String? rentalType;
   String? scheduleType;
+  Map<String, dynamic>? itemDraft;
 
   @override
   void initState() {
@@ -30,6 +29,9 @@ class _BoostScreenState extends State<BoostScreen> {
       bookingType = Get.arguments['bookingType'];
       rentalType = Get.arguments['rentalType'];
       scheduleType = Get.arguments['scheduleType'];
+      if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
+        itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
+      }
     }
   }
 
@@ -51,6 +53,7 @@ class _BoostScreenState extends State<BoostScreen> {
                     'rentalType': rentalType,
                     'scheduleType': scheduleType,
                     'boosted': true,
+                    'itemDraft': itemDraft,
                   },
                 );
               },
@@ -71,6 +74,7 @@ class _BoostScreenState extends State<BoostScreen> {
                     'rentalType': rentalType,
                     'scheduleType': scheduleType,
                     'boosted': false,
+                    'itemDraft': itemDraft,
                   },
                 );
               },

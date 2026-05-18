@@ -148,6 +148,11 @@ class SneakerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasNetworkImage =
+        imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    final hasNetworkAvatar =
+        avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://');
+
     return SizedBox(
       width: 200,
       child: Column(
@@ -172,7 +177,8 @@ class SneakerCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: CommonImageView(
-                    imagePath: imageUrl,
+                    imagePath: hasNetworkImage ? null : imageUrl,
+                    url: hasNetworkImage ? imageUrl : null,
                     fit: BoxFit.cover,
                     height: 240,
                     width: 200,
@@ -194,39 +200,51 @@ class SneakerCard extends StatelessWidget {
                   right: 10,
                   left: 10,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          CommonImageView(imagePath: avatarUrl, height: 30),
-                          const SizedBox(width: 12),
-                          Column(
-                            spacing: 5,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              MyText(
-                                text: userName,
-                                size: 14,
-                                color: kBlack,
-                                weight: FontWeight.w500,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            CommonImageView(
+                              imagePath: hasNetworkAvatar ? null : avatarUrl,
+                              url: hasNetworkAvatar ? avatarUrl : null,
+                              height: 30,
+                              width: 30,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                spacing: 5,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  MyText(
+                                    text: userName,
+                                    size: 14,
+                                    color: kBlack,
+                                    weight: FontWeight.w500,
+                                    maxLines: 1,
+                                    textOverflow: TextOverflow.ellipsis,
+                                  ),
+                                  Container(
+                                    width: 40,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Container(
-                                width: 40,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: List.generate(3, (i) {
                           return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: i == 0 ? 25 : 8,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: i == 0 ? 18 : 6,
                             height: 6,
                             decoration: BoxDecoration(
                               color: kWhite,
