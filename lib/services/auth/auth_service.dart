@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:zip_peer/config/api/api_config.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
 import 'package:zip_peer/services/auth/auth_session_store.dart';
+import 'package:zip_peer/services/auth/token_refresh_service.dart';
 
 class AuthService {
   AuthService({AuthSessionStore? sessionStore})
@@ -72,6 +74,7 @@ class AuthService {
         refreshToken: result.tokens!.refreshToken,
       );
       await _sessionStore.clearPendingEmail();
+      unawaited(TokenRefreshService.start());
     }
     return result;
   }
@@ -88,6 +91,7 @@ class AuthService {
             ? result.tokens!.refreshToken
             : (existingRefresh ?? ''),
       );
+      unawaited(TokenRefreshService.start());
     }
     return result;
   }
@@ -109,6 +113,15 @@ class AuthService {
       await _sessionStore.clearPendingEmail();
     }
     return result;
+  }
+
+  Future<AuthResult> changePassword(UpdatePasswordRequest request) async {
+    final accessToken = await ensureAccessToken();
+    return _post(
+      '/auth/change-password',
+      request.toJson(),
+      authToken: accessToken,
+    );
   }
 
   Future<AuthResult> refreshToken([String? refreshToken]) async {
@@ -144,15 +157,15 @@ class AuthService {
   }
 
   Future<String?> ensureAccessToken() async {
-    final existingAccessToken = await _sessionStore.getAccessToken();
-    if (existingAccessToken != null && existingAccessToken.isNotEmpty) {
-      return existingAccessToken;
-    }
+    final existing = await _sessionStore.getAccessToken();
+    if (existing != null && existing.isNotEmpty) return existing;
 
-    final refreshResult = await refreshToken();
-    if (!refreshResult.success) {
-      return null;
-    }
+    // Access token expired — silently refresh using the refresh token.
+    final refreshToken = await _sessionStore.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+
+    final refreshResult = await this.refreshToken(refreshToken);
+    if (!refreshResult.success) return null;
     return _sessionStore.getAccessToken();
   }
 
@@ -205,6 +218,7 @@ class AuthService {
 
     if (result.success) {
       await _sessionStore.clearTokens();
+      TokenRefreshService.stop();
     }
     return result;
   }
@@ -239,28 +253,6 @@ class AuthService {
     };
 
     var response = await _client.post(path, payload, headers: headers);
-
-    final shouldRetryWithRefresh =
-        authToken != null &&
-        authToken.isNotEmpty &&
-        response.statusCode == 401 &&
-        path != '/auth/refresh-token';
-
-    if (shouldRetryWithRefresh) {
-      final refreshResult = await refreshToken();
-      if (refreshResult.success) {
-        final retriedAccessToken = await _sessionStore.getAccessToken();
-        if (retriedAccessToken != null &&
-            retriedAccessToken.isNotEmpty &&
-            retriedAccessToken != authToken) {
-          final retryHeaders = <String, String>{
-            ...headers,
-            'Authorization': 'Bearer $retriedAccessToken',
-          };
-          response = await _client.post(path, payload, headers: retryHeaders);
-        }
-      }
-    }
 
     return _toAuthResult(response);
   }

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:zip_peer/controllers/bottom_nav_controller.dart';
+import 'package:zip_peer/controllers/profile/dashboard_controller.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
 import 'package:zip_peer/services/profile/profile_service.dart';
 
@@ -33,6 +35,7 @@ class EditProfileController extends GetxController {
 
   File? profilePhotoFile;
   String? profilePhotoUrl;
+  bool removeExistingPhotoOnUpdate = false;
 
   bool get isBusy => isLoading || isSubmitting;
 
@@ -89,6 +92,7 @@ class EditProfileController extends GetxController {
       result.profilePhoto ?? profile.profilePhoto,
       profile.updatedAt,
     );
+    removeExistingPhotoOnUpdate = false;
     update();
   }
 
@@ -103,6 +107,7 @@ class EditProfileController extends GetxController {
         return;
       }
       profilePhotoFile = file;
+      removeExistingPhotoOnUpdate = false;
       update();
     } catch (_) {
       Get.snackbar('Photo Error', 'Unable to pick an image right now.');
@@ -110,8 +115,10 @@ class EditProfileController extends GetxController {
   }
 
   void removePhoto() {
+    final hadPersistedPhoto = (profilePhotoUrl ?? '').trim().isNotEmpty;
     profilePhotoFile = null;
     profilePhotoUrl = null;
+    removeExistingPhotoOnUpdate = hadPersistedPhoto;
     update();
   }
 
@@ -151,6 +158,18 @@ class EditProfileController extends GetxController {
       return;
     }
 
+    if (removeExistingPhotoOnUpdate && profilePhotoFile == null) {
+      final deletePhotoResult = await _profileService.deleteProfilePhoto();
+      if (!deletePhotoResult.success) {
+        isSubmitting = false;
+        update();
+        Get.snackbar('Photo Remove Failed', deletePhotoResult.message);
+        return;
+      }
+      profilePhotoUrl = null;
+      removeExistingPhotoOnUpdate = false;
+    }
+
     if (profilePhotoFile != null) {
       final photoResult = await _profileService.uploadProfilePhoto(
         profilePhotoFile!,
@@ -167,10 +186,17 @@ class EditProfileController extends GetxController {
       );
       await _refreshProfilePhotoFromServer();
       profilePhotoFile = null;
+      removeExistingPhotoOnUpdate = false;
     }
 
     isSubmitting = false;
     update();
+    if (Get.isRegistered<BottomNavController>()) {
+      await BottomNavController.to.refreshProfilePhoto();
+    }
+    if (Get.isRegistered<DashboardController>()) {
+      await Get.find<DashboardController>().loadDashboard();
+    }
     Get.back();
     Get.snackbar('Updated', 'Profile information updated successfully.');
   }

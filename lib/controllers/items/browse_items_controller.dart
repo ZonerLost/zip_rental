@@ -31,6 +31,7 @@ class BrowseItemsController extends GetxController {
   String? search;
   String? sortBy;
   String? sortOrder;
+  double? distance;
 
   Timer? _searchDebounce;
 
@@ -68,6 +69,7 @@ class BrowseItemsController extends GetxController {
       search: search,
       sortBy: sortBy,
       sortOrder: sortOrder,
+      distance: distance,
     );
 
     if (!result.success) {
@@ -129,6 +131,7 @@ class BrowseItemsController extends GetxController {
     String? conditionValue,
     String? sortByValue,
     String? sortOrderValue,
+    double? distanceValue,
   }) {
     category = _normalized(categoryValue);
     city = _normalized(cityValue);
@@ -137,6 +140,7 @@ class BrowseItemsController extends GetxController {
     condition = _normalized(conditionValue);
     sortBy = _normalized(sortByValue);
     sortOrder = _normalized(sortOrderValue);
+    distance = distanceValue;
 
     loadItems(reset: true);
   }
@@ -149,6 +153,7 @@ class BrowseItemsController extends GetxController {
     condition = null;
     sortBy = null;
     sortOrder = null;
+    distance = null;
     loadItems(reset: true);
   }
 

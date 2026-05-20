@@ -120,6 +120,23 @@ class ResetPasswordRequest {
   }
 }
 
+class UpdatePasswordRequest {
+  const UpdatePasswordRequest({
+    required this.currentPassword,
+    required this.newPassword,
+  });
+
+  final String currentPassword;
+  final String newPassword;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    };
+  }
+}
+
 class RefreshTokenRequest {
   const RefreshTokenRequest({required this.refreshToken});
 

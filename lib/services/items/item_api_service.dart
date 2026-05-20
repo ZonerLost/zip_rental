@@ -41,6 +41,7 @@ class ItemApiService {
     String? search,
     String? sortBy,
     String? sortOrder,
+    double? distance,
   }) async {
     final response = await _request(
       method: _HttpMethod.get,
@@ -57,6 +58,7 @@ class ItemApiService {
         if ((search ?? '').trim().isNotEmpty) 'search': search!.trim(),
         if ((sortBy ?? '').trim().isNotEmpty) 'sortBy': sortBy!.trim(),
         if ((sortOrder ?? '').trim().isNotEmpty) 'sortOrder': sortOrder!.trim(),
+        if (distance != null) 'distance': distance.toString(),
       },
     );
 
@@ -226,14 +228,14 @@ class ItemApiService {
     required bool requiresAuth,
     dynamic body,
     Map<String, dynamic>? query,
+    bool isRetry = false,
   }) async {
     if (!_hasValidBaseUrl) {
       return Response<dynamic>(
         statusCode: 0,
         body: <String, dynamic>{
           'success': false,
-          'message':
-              'API base URL missing or invalid. Run with --dart-define=API_BASE_URL=https://your-domain.com',
+          'message': 'API base URL missing or invalid.',
         },
       );
     }
@@ -241,18 +243,9 @@ class ItemApiService {
     String? accessToken;
     if (requiresAuth) {
       accessToken = await _authService.ensureAccessToken();
-      if (accessToken == null || accessToken.isEmpty) {
-        return Response<dynamic>(
-          statusCode: 401,
-          body: <String, dynamic>{
-            'success': false,
-            'message': 'Session expired. Please login again.',
-          },
-        );
-      }
     }
 
-    var response = await _dispatch(
+    final response = await _dispatch(
       method: method,
       path: path,
       body: body,
@@ -260,21 +253,17 @@ class ItemApiService {
       accessToken: accessToken,
     );
 
-    if (requiresAuth && response.statusCode == 401) {
+    if (response.statusCode == 401 && requiresAuth && !isRetry) {
       final refreshResult = await _authService.refreshToken();
       if (refreshResult.success) {
-        final retriedAccessToken = await _authService.getAccessToken();
-        if (retriedAccessToken != null &&
-            retriedAccessToken.isNotEmpty &&
-            retriedAccessToken != accessToken) {
-          response = await _dispatch(
-            method: method,
-            path: path,
-            body: body,
-            query: query,
-            accessToken: retriedAccessToken,
-          );
-        }
+        return _request(
+          method: method,
+          path: path,
+          requiresAuth: true,
+          body: body,
+          query: query,
+          isRetry: true,
+        );
       }
     }
 
@@ -403,6 +392,10 @@ class ItemApiService {
     final map = _asMap(response.body);
     final dynamic message = map['message'] ?? map['msg'] ?? map['detail'];
     if (message is String && message.trim().isNotEmpty) {
+      final enriched = _extractDetailedValidationMessage(map);
+      if (enriched != null) {
+        return '$message: $enriched';
+      }
       return message;
     }
     final errors = map['errors'];
@@ -410,6 +403,12 @@ class ItemApiService {
       final firstError = errors.first;
       if (firstError is String && firstError.trim().isNotEmpty) {
         return firstError;
+      }
+      if (firstError is Map) {
+        final details = _readErrorMap(firstError);
+        if (details != null) {
+          return details;
+        }
       }
     }
     final statusText = response.statusText;
@@ -504,6 +503,66 @@ class ItemApiService {
         .whereType<String>()
         .where((e) => e.isNotEmpty)
         .toList(growable: false);
+  }
+
+  String? _extractDetailedValidationMessage(Map<String, dynamic> map) {
+    final errors = map['errors'];
+    if (errors is List && errors.isNotEmpty) {
+      final firstError = errors.first;
+      if (firstError is String && firstError.trim().isNotEmpty) {
+        return firstError.trim();
+      }
+      if (firstError is Map) {
+        return _readErrorMap(firstError);
+      }
+    }
+
+    final error = map['error'];
+    if (error is Map) {
+      return _readErrorMap(error);
+    }
+    if (error is String && error.trim().isNotEmpty) {
+      return error.trim();
+    }
+    return null;
+  }
+
+  String? _readErrorMap(Map<dynamic, dynamic> raw) {
+    final map = _stringKeyMap(raw);
+    final field =
+        map['field']?.toString().trim() ??
+        map['path']?.toString().trim() ??
+        map['property']?.toString().trim();
+
+    final msg =
+        map['message']?.toString().trim() ??
+        map['msg']?.toString().trim() ??
+        map['detail']?.toString().trim();
+
+    if ((field ?? '').isNotEmpty && (msg ?? '').isNotEmpty) {
+      return '$field: $msg';
+    }
+    if ((msg ?? '').isNotEmpty) {
+      return msg;
+    }
+
+    final constraints = map['constraints'];
+    if (constraints is Map) {
+      final values = constraints.values
+          .map((e) => e?.toString().trim())
+          .whereType<String>()
+          .where((e) => e.isNotEmpty)
+          .toList(growable: false);
+      if (values.isNotEmpty) {
+        final text = values.join(', ');
+        if ((field ?? '').isNotEmpty) {
+          return '$field: $text';
+        }
+        return text;
+      }
+    }
+
+    return null;
   }
 }
 

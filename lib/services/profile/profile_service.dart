@@ -53,6 +53,10 @@ class ProfileService {
     );
   }
 
+  Future<ProfileResult> deleteProfilePhoto() async {
+    return _request(method: _HttpMethod.delete, path: '/users/profile/photo');
+  }
+
   Future<ProfileResult> verifyIdentity(File file) {
     return _multipartRequest(
       method: 'POST',
@@ -67,6 +71,7 @@ class ProfileService {
     required String path,
     required String fieldName,
     required File file,
+    bool isRetry = false,
   }) async {
     if (!_hasValidBaseUrl) {
       return const ProfileResult(
@@ -74,54 +79,54 @@ class ProfileService {
         message: 'API base URL missing or invalid.',
       );
     }
-    final accessToken = await _authService.ensureAccessToken();
-    if (accessToken == null || accessToken.isEmpty) {
-      return const ProfileResult(
-        success: false,
-        message: 'You are not authenticated. Please log in again.',
-      );
-    }
 
-    Future<ProfileResult> doRequest(String token) async {
-      final uri = Uri.parse('${_client.baseUrl}$path');
-      final request = http.MultipartRequest(method, uri)
-        ..headers['Authorization'] = 'Bearer $token'
-        ..headers['Accept'] = 'application/json'
-        ..files.add(await http.MultipartFile.fromPath(
+    final accessToken = await _authService.ensureAccessToken();
+
+    final uri = Uri.parse('${_client.baseUrl}$path');
+    final request = http.MultipartRequest(method, uri)
+      ..headers['Authorization'] = 'Bearer ${accessToken ?? ''}'
+      ..headers['Accept'] = 'application/json'
+      ..files.add(
+        await http.MultipartFile.fromPath(
           fieldName,
           file.path,
           contentType: _mediaTypeFromPath(file.path),
-        ));
-      final streamed = await request.send();
-      final body = await streamed.stream.bytesToString();
-      final decoded = jsonDecode(body);
-      final map = decoded is Map ? _stringKeyMap(decoded) : <String, dynamic>{};
-      final profile = _resolveProfile(map);
-      final success = map['success'] == true ||
-          (streamed.statusCode >= 200 && streamed.statusCode < 300 && map['success'] != false);
-      final message = map['message']?.toString() ??
-          (success ? 'Request successful' : 'Request failed');
-      return ProfileResult(
-        success: success,
-        message: message,
-        data: map,
-        profile: profile,
-        profilePhoto: _resolveProfilePhoto(map, profile),
+        ),
       );
-    }
+    final streamed = await request.send();
 
-    var result = await doRequest(accessToken);
-    // retry once on 401
-    if (!result.success && (result.data?['statusCode'] == 401 || result.data?['status'] == 401)) {
+    if (streamed.statusCode == 401 && !isRetry) {
       final refreshResult = await _authService.refreshToken();
       if (refreshResult.success) {
-        final newToken = await _authService.getAccessToken();
-        if (newToken != null && newToken.isNotEmpty) {
-          result = await doRequest(newToken);
-        }
+        return _multipartRequest(
+          method: method,
+          path: path,
+          fieldName: fieldName,
+          file: file,
+          isRetry: true,
+        );
       }
     }
-    return result;
+
+    final body = await streamed.stream.bytesToString();
+    final decoded = jsonDecode(body);
+    final map = decoded is Map ? _stringKeyMap(decoded) : <String, dynamic>{};
+    final profile = _resolveProfile(map);
+    final success =
+        map['success'] == true ||
+        (streamed.statusCode >= 200 &&
+            streamed.statusCode < 300 &&
+            map['success'] != false);
+    final message =
+        map['message']?.toString() ??
+        (success ? 'Request successful' : 'Request failed');
+    return ProfileResult(
+      success: success,
+      message: message,
+      data: map,
+      profile: profile,
+      profilePhoto: _resolveProfilePhoto(map, profile),
+    );
   }
 
   http.MediaType _mediaTypeFromPath(String path) {
@@ -138,6 +143,7 @@ class ProfileService {
     required _HttpMethod method,
     required String path,
     dynamic body,
+    bool isRetry = false,
   }) async {
     if (!_hasValidBaseUrl) {
       return const ProfileResult(
@@ -148,34 +154,18 @@ class ProfileService {
     }
 
     final accessToken = await _authService.ensureAccessToken();
-    if (accessToken == null || accessToken.isEmpty) {
-      return const ProfileResult(
-        success: false,
-        message: 'You are not authenticated. Please log in again.',
-      );
-    }
 
-    Response<dynamic> response = await _dispatch(
+    final response = await _dispatch(
       method: method,
       path: path,
       body: body,
-      accessToken: accessToken,
+      accessToken: accessToken ?? '',
     );
 
-    if (response.statusCode == 401) {
+    if (response.statusCode == 401 && !isRetry) {
       final refreshResult = await _authService.refreshToken();
       if (refreshResult.success) {
-        final retriedAccessToken = await _authService.getAccessToken();
-        if (retriedAccessToken != null &&
-            retriedAccessToken.isNotEmpty &&
-            retriedAccessToken != accessToken) {
-          response = await _dispatch(
-            method: method,
-            path: path,
-            body: body,
-            accessToken: retriedAccessToken,
-          );
-        }
+        return _request(method: method, path: path, body: body, isRetry: true);
       }
     }
 
@@ -202,6 +192,8 @@ class ProfileService {
         return _client.post(path, body, headers: headers);
       case _HttpMethod.put:
         return _client.put(path, body, headers: headers);
+      case _HttpMethod.delete:
+        return _client.delete(path, headers: headers);
     }
   }
 
@@ -297,7 +289,7 @@ class ProfileService {
     return _normalizePhotoUrl(profile?.profilePhoto);
   }
 
-bool _looksLikeProfile(Map<String, dynamic> data) {
+  bool _looksLikeProfile(Map<String, dynamic> data) {
     return data.containsKey('firstName') ||
         data.containsKey('first_name') ||
         data.containsKey('lastName') ||
@@ -429,4 +421,4 @@ bool _looksLikeProfile(Map<String, dynamic> data) {
   }
 }
 
-enum _HttpMethod { get, post, put }
+enum _HttpMethod { get, post, put, delete }

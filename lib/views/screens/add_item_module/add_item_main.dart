@@ -13,15 +13,32 @@ import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
 
-class AddNewItemScreen extends StatelessWidget {
+class AddNewItemScreen extends StatefulWidget {
   const AddNewItemScreen({super.key});
+
+  @override
+  State<AddNewItemScreen> createState() => _AddNewItemScreenState();
+}
+
+class _AddNewItemScreenState extends State<AddNewItemScreen> {
+  late final AddItemController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(AddItemController());
+  }
+
+  @override
+  void dispose() {
+    Get.delete<AddItemController>();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<AddItemController>(
-      init: Get.isRegistered<AddItemController>()
-          ? Get.find<AddItemController>()
-          : Get.put(AddItemController()),
+      init: _controller,
       builder: (controller) {
         return Scaffold(
           body: SingleChildScrollView(
@@ -226,7 +243,7 @@ class AddNewItemScreen extends StatelessWidget {
                         weight: FontWeight.w500,
                       ),
                       CustomDropDown(
-                        hint: 'Footwear',
+                        hint: 'Tools',
                         items: controller.uiCategories,
                         selectedValue: controller.selectedCategory,
                         onChanged: controller.onCategoryChanged,

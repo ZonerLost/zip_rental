@@ -1,6 +1,8 @@
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/bottom_nav_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/add_item_module/add_item_main.dart';
 import 'package:zip_peer/views/screens/booking/booking.dart';
@@ -20,8 +22,8 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  int? currentIndex = 0;
-  late List<Map<String, dynamic>> items;
+  late final BottomNavController _navController;
+
   final List<Widget> screens = [
     const HomeScreen(),
     const BookingsScreen(),
@@ -34,74 +36,76 @@ class _BottomNavBarState extends State<BottomNavBar> {
   @override
   void initState() {
     super.initState();
-    currentIndex = widget.initialIndex;
-    updateItems();
+    _navController = Get.put(BottomNavController());
+    _navController.currentIndex = widget.initialIndex;
   }
 
-  void updateItems() {
-    items = [
+  @override
+  void dispose() {
+    Get.delete<BottomNavController>();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> _buildItems(int currentIndex) {
+    return [
       {
         'image': currentIndex == 0
             ? Assets.imagesBottomNavBarSearch
             : Assets.imagesBottomNavBarSearch2,
-        'label': "Search",
+        'label': 'Search',
       },
       {
         'image': currentIndex == 1
             ? Assets.imagesBottomNavBarBooking2
             : Assets.imagesBottomNavBarBooking,
-        'label': "Bookings",
+        'label': 'Bookings',
       },
       {
         'image': currentIndex == 2
             ? Assets.imagesNewAddNav2
             : Assets.imagesNewAddNav,
-        'label': "Add Item",
+        'label': 'Add Item',
       },
       {
         'image': currentIndex == 3
             ? Assets.imagesBottomNavBarChat2
             : Assets.imagesBottomNavBarChat,
-        'label': "My Listings",
+        'label': 'My Listings',
       },
       {
         'image': currentIndex == 4
             ? Assets.imagesBottomNavBarListing2
             : Assets.imagesBottomNavBarLisitng,
-        'label': "Chats",
+        'label': 'Chats',
       },
-      {
-        'image': currentIndex == 5
-            ? Assets.imagesBottomNavBarDashboard2
-            : Assets.imagesBottomNavBarDashboard,
-        'label': "Dashboard",
-      },
+      {'isProfile': true, 'label': 'Dashboard'},
     ];
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      currentIndex = index;
-      updateItems();
-    });
-  }
-
-  Widget _buildNavItem(int index) {
+  Widget _buildNavItem(
+    int index,
+    int currentIndex,
+    List<Map<String, dynamic>> items,
+    BottomNavController nav,
+  ) {
     final isSelected = currentIndex == index;
-
+    final isProfileItem = items[index]['isProfile'] == true;
     return Bounce(
-      onTap: () => _onItemTapped(index),
+      onTap: () => _navController.switchTo(index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CommonImageView(
-              imagePath: items[index]['image'],
-              fit: BoxFit.cover,
-              height: 24,
-            ),
+            if (isProfileItem)
+              _buildProfileAvatar(nav.profilePhotoUrl, isSelected)
+            else
+              CommonImageView(
+                imagePath: items[index]['image'],
+                fit: BoxFit.cover,
+                height: 24,
+              ),
             const SizedBox(height: 6),
             MyText(
               text: items[index]['label'],
@@ -115,43 +119,90 @@ class _BottomNavBarState extends State<BottomNavBar> {
     );
   }
 
-  Widget _buildBottomNavBar() {
+  Widget _buildProfileAvatar(String? url, bool isSelected) {
+    final hasPhoto = (url ?? '').trim().isNotEmpty;
+    final borderColor = isSelected ? kPrimaryColor : Colors.grey.shade300;
+
     return Container(
-      height: 100,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 1.5),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: List.generate(6, (index) => _buildNavItem(index)),
+      child: ClipOval(
+        child: hasPhoto
+            ? CommonImageView(
+                url: url,
+                fit: BoxFit.cover,
+                height: 24,
+                width: 24,
+                placeHolder: Assets.imagesPersonIcon,
+              )
+            : Container(
+                color: Colors.grey.shade100,
+                child: CommonImageView(
+                  imagePath: Assets.imagesPersonIcon,
+                  fit: BoxFit.contain,
+                  height: 14,
+                  width: 14,
+                ),
+              ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kWhite,
-      extendBody: true,
-      body: Stack(
-        children: [
-          screens[currentIndex!],
-          Positioned(left: 0, right: 0, bottom: 0, child: _buildBottomNavBar()),
-        ],
-      ),
+    return GetBuilder<BottomNavController>(
+      init: _navController,
+      builder: (nav) {
+        final items = _buildItems(nav.currentIndex);
+        return Scaffold(
+          backgroundColor: kWhite,
+          extendBody: true,
+          body: Stack(
+            children: [
+              screens[nav.currentIndex],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: 100,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: List.generate(
+                      6,
+                      (index) =>
+                          _buildNavItem(index, nav.currentIndex, items, nav),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

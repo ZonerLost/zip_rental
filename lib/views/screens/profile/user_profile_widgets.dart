@@ -59,10 +59,10 @@ class ProfileCardWidget extends StatelessWidget {
               height: 70,
               width: 70,
               radius: 35,
-              placeHolder: Assets.imagesChatAvatar,
+              placeHolder: Assets.imagesPersonIcon,
             )
           else
-            CommonImageView(imagePath: Assets.imagesChatAvatar, height: 70),
+            CommonImageView(imagePath: Assets.imagesPersonIcon, height: 70),
 
           const Gap(14),
 

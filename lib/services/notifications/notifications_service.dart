@@ -143,6 +143,7 @@ class NotificationsService {
     required String path,
     dynamic body,
     Map<String, dynamic>? query,
+    bool isRetry = false,
   }) async {
     if (!_hasValidBaseUrl) {
       return Response<dynamic>(
@@ -156,39 +157,25 @@ class NotificationsService {
     }
 
     final accessToken = await _authService.ensureAccessToken();
-    if (accessToken == null || accessToken.isEmpty) {
-      return Response<dynamic>(
-        statusCode: 401,
-        body: <String, dynamic>{
-          'success': false,
-          'message': 'You are not authenticated. Please log in again.',
-        },
-      );
-    }
 
-    var response = await _dispatch(
+    final response = await _dispatch(
       method: method,
       path: path,
-      accessToken: accessToken,
+      accessToken: accessToken ?? '',
       body: body,
       query: query,
     );
 
-    if (response.statusCode == 401) {
+    if (response.statusCode == 401 && !isRetry) {
       final refreshResult = await _authService.refreshToken();
       if (refreshResult.success) {
-        final retriedAccessToken = await _authService.getAccessToken();
-        if (retriedAccessToken != null &&
-            retriedAccessToken.isNotEmpty &&
-            retriedAccessToken != accessToken) {
-          response = await _dispatch(
-            method: method,
-            path: path,
-            accessToken: retriedAccessToken,
-            body: body,
-            query: query,
-          );
-        }
+        return _request(
+          method: method,
+          path: path,
+          body: body,
+          query: query,
+          isRetry: true,
+        );
       }
     }
 

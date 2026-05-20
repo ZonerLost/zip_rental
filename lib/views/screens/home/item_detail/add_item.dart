@@ -27,7 +27,20 @@ class ItemDetailsScreen extends StatefulWidget {
 
 class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   int _monthCount = 1;
-  int _currentImageIndex = 1;
+  int _currentImageIndex = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,11 +121,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   Widget _buildContent(ItemModel item) {
     final photos = item.photos;
     final hasPhotos = photos.isNotEmpty;
-    final imageIndex = (_currentImageIndex - 1).clamp(
-      0,
-      hasPhotos ? photos.length - 1 : 0,
-    );
-    final imageUrl = hasPhotos ? photos[imageIndex] : '';
 
     final ownerPhoto = item.owner?.profilePhoto ?? '';
     final hasOwnerPhoto =
@@ -154,14 +162,34 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: CommonImageView(
-                height: 350,
-                width: double.infinity,
-                radius: 25,
-                imagePath: hasPhotos ? null : Assets.imagesShoes1,
-                url: hasPhotos ? imageUrl : null,
-                fit: BoxFit.cover,
-                placeHolder: Assets.imagesShoes1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: SizedBox(
+                  height: 350,
+                  child: hasPhotos
+                      ? PageView.builder(
+                          controller: _pageController,
+                          itemCount: photos.length,
+                          onPageChanged: (index) {
+                            setState(() => _currentImageIndex = index);
+                          },
+                          itemBuilder: (context, index) {
+                            return CommonImageView(
+                              height: 350,
+                              width: double.infinity,
+                              url: photos[index],
+                              fit: BoxFit.cover,
+                              placeHolder: Assets.imagesShoes1,
+                            );
+                          },
+                        )
+                      : CommonImageView(
+                          height: 350,
+                          width: double.infinity,
+                          imagePath: Assets.imagesShoes1,
+                          fit: BoxFit.cover,
+                        ),
+                ),
               ),
             ),
             Positioned(
@@ -172,17 +200,18 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
-                    children: List.generate(3, (i) {
-                      return Container(
+                    children: List.generate(
+                      hasPhotos ? photos.length.clamp(0, 5) : 1,
+                      (i) => Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: i == 0 ? 25 : 8,
+                        width: i == _currentImageIndex ? 25 : 8,
                         height: 6,
                         decoration: BoxDecoration(
                           color: kWhite,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -195,7 +224,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     ),
                     child: MyText(
                       text:
-                          '${hasPhotos ? imageIndex + 1 : 1}/${hasPhotos ? photos.length : 1}',
+                          '${hasPhotos ? _currentImageIndex + 1 : 1}/${hasPhotos ? photos.length : 1}',
                       size: 14,
                       color: kBlack,
                       weight: FontWeight.w600,

@@ -4,10 +4,10 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/constants/app_sizes.dart';
+import 'package:zip_peer/controllers/bottom_nav_controller.dart';
 import 'package:zip_peer/controllers/items/my_listings_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/items/item_models.dart';
-import 'package:zip_peer/views/screens/add_item_module/add_item_main.dart';
 import 'package:zip_peer/views/screens/listing_module/item_details.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
@@ -37,7 +37,7 @@ class MyListedItemsScreen extends StatelessWidget {
                       ),
                       Bounce(
                         onTap: () {
-                          Get.to(() => const AddNewItemScreen());
+                          BottomNavController.to.switchTo(2);
                         },
                         child: CommonImageView(
                           imagePath: Assets.imagesNavAdd,

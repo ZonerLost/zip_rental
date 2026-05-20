@@ -1,11 +1,23 @@
+import 'dart:async';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/config/routes/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:zip_peer/services/auth/auth_session_store.dart';
+import 'package:zip_peer/services/auth/token_refresh_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _maybeStartTokenRefresh();
   runApp(MyApp());
+}
+
+Future<void> _maybeStartTokenRefresh() async {
+  final store = AuthSessionStore();
+  final refreshToken = await store.getRefreshToken();
+  if (refreshToken != null && refreshToken.isNotEmpty) {
+    unawaited(TokenRefreshService.start());
+  }
 }
 
 class MyApp extends StatelessWidget {

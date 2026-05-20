@@ -4,7 +4,7 @@ class GoogleAuthService {
   // Replace with your Web OAuth 2.0 Client ID from Google Cloud Console
   // APIs & Services → Credentials → Web application client ID
   static const String _webClientId =
-      'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+      '112360729895-pfbkvn8kav52rrr82tcrk0g3a400mdbl.apps.googleusercontent.com';
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   static bool _isInitialized = false;

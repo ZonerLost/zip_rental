@@ -1,7 +1,9 @@
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -45,87 +47,136 @@ class HeaderRow2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      spacing: 10,
-      children: [
-        Bounce(
-          onTap: () {
-            showFiltersBottomSheet(context);
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              spacing: 10,
-              children: [
-                CommonImageView(
-                  imagePath: Assets.imagesCategoryFootwear,
-                  height: 16,
-                ),
-                MyText(
-                  text: "Footwear",
-                  size: 14,
-                  weight: FontWeight.w400,
-                  color: kBlack,
-                ),
-              ],
-            ),
-          ),
-        ),
+    return GetBuilder<BrowseItemsController>(
+      builder: (controller) {
+        final categoryLabel =
+            controller.category?.isNotEmpty == true
+                ? controller.category!
+                : controller.search?.isNotEmpty == true
+                ? controller.search!
+                : 'All';
 
-        Bounce(
-          onTap: () {
-            showFiltersBottomSheet(context);
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              spacing: 10,
-              children: [
-                CommonImageView(imagePath: Assets.imagesDiscover, height: 16),
-                MyText(
-                  text: "Boorklyn, USA",
-                  size: 14,
-                  weight: FontWeight.w400,
-                  color: kBlack,
-                ),
-              ],
-            ),
-          ),
-        ),
+        final locationLabel =
+            controller.city?.isNotEmpty == true ? controller.city! : 'All';
 
-        Bounce(
-          onTap: () {
-            showFiltersBottomSheet(context);
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              spacing: 10,
-              children: [
-                CommonImageView(imagePath: Assets.imagesDiscover, height: 16),
-                MyText(
-                  text: "10 km",
-                  size: 14,
-                  weight: FontWeight.w400,
-                  color: kBlack,
+        final distanceLabel = controller.distance != null
+            ? controller.distance! < 1
+                ? '${(controller.distance! * 1000).toInt()} m'
+                : '${controller.distance!.toStringAsFixed(controller.distance! % 1 == 0 ? 0 : 1)} km'
+            : 'All';
+
+        return Row(
+          children: [
+            Expanded(
+              child: Bounce(
+                onTap: () => showFiltersBottomSheet(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Row(
+                    spacing: 6,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CommonImageView(
+                        imagePath: Assets.imagesCategoryFootwear,
+                        height: 16,
+                      ),
+                      Flexible(
+                        child: MyText(
+                          text: categoryLabel,
+                          size: 14,
+                          weight: FontWeight.w400,
+                          color: kBlack,
+                          maxLines: 1,
+                          textOverflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ],
+            const Gap(10),
+            Expanded(
+              child: Bounce(
+                onTap: () => showFiltersBottomSheet(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Row(
+                    spacing: 6,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CommonImageView(
+                        imagePath: Assets.imagesDiscover,
+                        height: 16,
+                      ),
+                      Flexible(
+                        child: MyText(
+                          text: locationLabel,
+                          size: 14,
+                          weight: FontWeight.w400,
+                          color: kBlack,
+                          maxLines: 1,
+                          textOverflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Gap(10),
+            Expanded(
+              child: Bounce(
+                onTap: () => showFiltersBottomSheet(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Row(
+                    spacing: 6,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CommonImageView(
+                        imagePath: Assets.imagesDiscover,
+                        height: 16,
+                      ),
+                      Flexible(
+                        child: MyText(
+                          text: distanceLabel,
+                          size: 14,
+                          weight: FontWeight.w400,
+                          color: kBlack,
+                          maxLines: 1,
+                          textOverflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,4 +1,4 @@
-package com.example.zip_peer
+package com.sequoia.sequoiaapp
 
 import io.flutter.embedding.android.FlutterActivity
 

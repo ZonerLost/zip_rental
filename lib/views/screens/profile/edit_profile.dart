@@ -85,10 +85,20 @@ class EditProfileScreen extends StatelessWidget {
                             radius: 60,
                           )
                         else
-                          CommonImageView(
-                            imagePath: Assets.imagesUpload,
+                          Container(
                             height: 120,
                             width: 120,
+                            decoration: BoxDecoration(
+                              color: kWhite3,
+                              borderRadius: BorderRadius.circular(60),
+                            ),
+                            child: Center(
+                              child: CommonImageView(
+                                imagePath: Assets.imagesPersonIcon,
+                                height: 52,
+                                width: 52,
+                              ),
+                            ),
                           ),
                         const Gap(24),
                         MyText(

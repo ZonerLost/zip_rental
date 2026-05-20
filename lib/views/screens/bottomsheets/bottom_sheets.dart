@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/screens/auth/reset_password.dart';
@@ -1140,6 +1141,132 @@ void ReviewBottomSheet(BuildContext context) {
   );
 }
 
+// Category field: free text + dropdown suggestions
+class _CategoryField extends StatefulWidget {
+  const _CategoryField({required this.controller, required this.options});
+  final TextEditingController controller;
+  final List<String> options;
+
+  @override
+  State<_CategoryField> createState() => _CategoryFieldState();
+}
+
+class _CategoryFieldState extends State<_CategoryField> {
+  List<String> _filtered = [];
+  bool _showSuggestions = false;
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (!_focus.hasFocus) setState(() => _showSuggestions = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    final q = value.trim().toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? widget.options
+          : widget.options.where((o) => o.toLowerCase().contains(q)).toList();
+      _showSuggestions = true;
+    });
+  }
+
+  void _select(String value) {
+    widget.controller.text = value;
+    setState(() => _showSuggestions = false);
+    _focus.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MyTextField(
+          controller: widget.controller,
+          focusNode: _focus,
+          hint: 'e.g. Footwear...',
+          hintColor: kBlack.withOpacity(0.4),
+          radius: 12,
+          backgroundColor: Colors.white,
+          onChanged: _onChanged,
+          onTap: () {
+            setState(() {
+              _filtered = widget.options;
+              _showSuggestions = true;
+            });
+          },
+          suffix: widget.controller.text.isNotEmpty
+              ? GestureDetector(
+                  onTap: () {
+                    widget.controller.clear();
+                    setState(() => _showSuggestions = false);
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(Icons.close, size: 18, color: Colors.grey),
+                  ),
+                )
+              : const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 22,
+                    color: Colors.grey,
+                  ),
+                ),
+        ),
+        if (_showSuggestions && _filtered.isNotEmpty)
+          Container(
+            constraints: const BoxConstraints(maxHeight: 180),
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              shrinkWrap: true,
+              itemCount: _filtered.length,
+              itemBuilder: (_, i) => InkWell(
+                onTap: () => _select(_filtered[i]),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: MyText(
+                    text: _filtered[i],
+                    size: 14,
+                    color: kBlack,
+                    weight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const Gap(12),
+      ],
+    );
+  }
+}
+
 // Helper: Distance Chip
 Widget _buildDistanceChip(String label, bool isSelected, VoidCallback onTap) {
   return Bounce(
@@ -1160,20 +1287,34 @@ Widget _buildDistanceChip(String label, bool isSelected, VoidCallback onTap) {
 }
 
 void showFiltersBottomSheet(BuildContext context) {
-  // Profile Type Selection
+  final browseController = Get.find<BrowseItemsController>();
 
+  final TextEditingController searchController = TextEditingController(
+    text: browseController.search ?? browseController.category ?? '',
+  );
   final TextEditingController locationController = TextEditingController();
-  final TextEditingController hashtagController = TextEditingController();
 
-  String selectedLookingFor = 'Footwear';
-  double selectedDistance = 2.5; // in km
+  const List<String> categoryOptions = [
+    'Footwear',
+    'Mens Outfit',
+    'Womens Outfit',
+    'Children Outfit',
+    'Jacket',
+    'Electronics',
+    'Tools',
+    'Sports',
+    'Furniture',
+    'Other',
+  ];
+
+  double selectedDistance = browseController.distance ?? 2.5;
 
   Get.bottomSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     enableDrag: false,
     DoubleWhiteContainers(
-      height: MediaQuery.of(context).size.height * 0.75,
+      height: MediaQuery.of(context).size.height * 0.80,
       mainColor: kWhite3,
       topColor: kWhite,
       handleHeight: 14,
@@ -1182,7 +1323,6 @@ void showFiltersBottomSheet(BuildContext context) {
         builder: (context, setState) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Back Button
             GestureDetector(
               onTap: () => Get.back(),
               child: Row(
@@ -1191,8 +1331,8 @@ void showFiltersBottomSheet(BuildContext context) {
                     imagePath: Assets.imagesBackSimple,
                     height: 32,
                   ),
-                  Gap(8),
-                  MyText(
+                  const Gap(8),
+                  const MyText(
                     text: "Back",
                     size: 16,
                     weight: FontWeight.w600,
@@ -1201,9 +1341,7 @@ void showFiltersBottomSheet(BuildContext context) {
                 ],
               ),
             ),
-            const Gap(20),
-
-            // Title
+            const Gap(16),
             const MyText(
               text: "Select Filters",
               size: 20,
@@ -1216,91 +1354,51 @@ void showFiltersBottomSheet(BuildContext context) {
               size: 14,
               color: Colors.grey[600],
             ),
-
             const Gap(8),
             Divider(color: kDividerColor),
             const Gap(8),
 
-            // Profile Types
-            MyText(
+            // Search + Category combo
+            const MyText(
               text: "Search products",
               size: 14,
               weight: FontWeight.w500,
               color: Colors.black87,
             ),
-            const Gap(12),
+            const Gap(8),
+            _CategoryField(
+              controller: searchController,
+              options: categoryOptions,
+            ),
+
+            // Location
+            const MyText(
+              text: "Location",
+              size: 14,
+              weight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            const Gap(8),
             MyTextField(
               controller: locationController,
-              hint: "Search ",
-              hintColor: kBlack,
-              hintWeight: FontWeight.w600,
-              suffix: CommonImageView(
-                imagePath: Assets.imagesMynauiSearch,
-                height: 24,
-              ),
+              hint: "e.g. Brooklyn, New York",
+              hintColor: kBlack.withOpacity(0.4),
               radius: 12,
               backgroundColor: Colors.white,
-            ),
-            MyText(
-              text: "Select Category",
-              size: 16,
-              weight: FontWeight.w600,
-              color: kSubText2,
-            ),
-            const Gap(12),
-            CustomDropDown(
-              hint: 'Footwear',
-              items: const [
-                'Footwear',
-                'Mens Outfit',
-                'Womens Outfit',
-                'Children Outfit',
-                'Jacket',
-              ],
-              selectedValue: selectedLookingFor,
-              onChanged: (value) {
-                setState(() => selectedLookingFor = value);
-              },
-              bgColor: Colors.white,
-              labelText: null,
-            ),
-            const Gap(12),
-
-            MyText(
-              text: "Search by location",
-              size: 16,
-              weight: FontWeight.w600,
-              color: kSubText2,
-            ),
-            const Gap(12),
-            MyTextField(
-              controller: hashtagController,
-              hint: "Brookyln , USA",
-              hintColor: kBlack,
-              hintWeight: FontWeight.w600,
               suffix: CommonImageView(
-                imagePath: Assets.imagesMynauiSearch,
-                height: 24,
+                imagePath: Assets.imagesDiscover,
+                height: 20,
               ),
-              radius: 12,
-              backgroundColor: Colors.white,
             ),
-
-            const Gap(24),
 
             // Distance
-            Row(
-              children: [
-                MyText(
-                  text: "Distance",
-                  size: 16,
-                  weight: FontWeight.w600,
-                  color: kSubText2,
-                ),
-              ],
+            const MyText(
+              text: "Distance",
+              size: 14,
+              weight: FontWeight.w500,
+              color: Colors.black87,
             ),
-
-            const Gap(16),
+            const Gap(12),
             Row(
               children: [
                 _buildDistanceChip(
@@ -1328,13 +1426,14 @@ void showFiltersBottomSheet(BuildContext context) {
                 ),
               ],
             ),
-            const Gap(24),
+            const Spacer(),
             Row(
               children: [
                 Expanded(
                   child: MyButton(
                     onTap: () {
-                      // Reset all
+                      browseController.clearFilters();
+                      Get.back();
                     },
                     buttonText: "Reset",
                     backgroundColor: Colors.white,
@@ -1349,9 +1448,23 @@ void showFiltersBottomSheet(BuildContext context) {
                 Expanded(
                   child: MyButton(
                     onTap: () {
-                      // Apply filters logic here
+                      final query = searchController.text.trim();
+                      final isExactCategory = categoryOptions.any(
+                        (o) => o.toLowerCase() == query.toLowerCase(),
+                      );
+                      browseController.applyFilters(
+                        categoryValue: isExactCategory ? query : null,
+                        cityValue: locationController.text.trim().isEmpty
+                            ? null
+                            : locationController.text.trim(),
+                        sortByValue: null,
+                        sortOrderValue: null,
+                        distanceValue: selectedDistance,
+                      );
+                      if (!isExactCategory) {
+                        browseController.setSearchQuery(query);
+                      }
                       Get.back();
-                      // Pass data back or apply filters
                     },
                     buttonText: "Apply",
                     backgroundColor: kPrimaryColor,

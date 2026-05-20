@@ -23,6 +23,11 @@ class AddItemController extends GetxController {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController tagsController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  final TextEditingController provinceController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
+  final TextEditingController latController = TextEditingController();
+  final TextEditingController lngController = TextEditingController();
 
   final List<String> rentalTabs = const <String>[
     'Delivery only',
@@ -93,9 +98,9 @@ class AddItemController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    titleController.text = 'Nike Jordan 6';
-    priceController.text = '45.00';
-    descriptionController.text = 'Lorem ipsum dolor ist amet';
+    titleController.text = '';
+    priceController.text = '';
+    descriptionController.text = '';
   }
 
   void onFieldChanged(String _) => update();
@@ -166,6 +171,19 @@ class AddItemController extends GetxController {
       'subCategory': null,
       'tags': _parseTags(tagsController.text),
       'photos': List<File>.of(selectedPhotos),
+      'location': <String, dynamic>{
+        'city': cityController.text.trim(),
+        'province': provinceController.text.trim(),
+        'country': countryController.text.trim().isEmpty
+            ? 'Canada'
+            : countryController.text.trim(),
+        if (latController.text.trim().isNotEmpty &&
+            lngController.text.trim().isNotEmpty)
+          'coordinates': <String, dynamic>{
+            'lat': double.tryParse(latController.text.trim()),
+            'lng': double.tryParse(lngController.text.trim()),
+          },
+      },
     };
   }
 
@@ -210,6 +228,7 @@ class AddItemController extends GetxController {
 
     final category = _mapCategory(rawCategory);
     final condition = _mapCondition(rawCondition);
+    final photosToUpload = _extractDraftPhotos(draft) ?? selectedPhotos;
 
     if (title.isEmpty) {
       Get.snackbar('Validation', 'Title is required.');
@@ -231,11 +250,14 @@ class AddItemController extends GetxController {
       Get.snackbar('Validation', 'Condition is required.');
       return false;
     }
+    if (photosToUpload.isEmpty) {
+      Get.snackbar('Validation', 'Please upload at least one photo.');
+      return false;
+    }
 
     final location = await _resolveLocationFromDraftOrProfile(draft);
-    if ((location.city ?? '').trim().isEmpty ||
-        (location.province ?? '').trim().isEmpty) {
-      Get.snackbar('Validation', 'Location city and province are required.');
+    if ((location.city ?? '').trim().isEmpty) {
+      Get.snackbar('Validation', 'Location city is required.');
       return false;
     }
 
@@ -256,7 +278,6 @@ class AddItemController extends GetxController {
         ),
       );
 
-      final photosToUpload = _extractDraftPhotos(draft) ?? selectedPhotos;
       if (photosToUpload.isNotEmpty) {
         await _itemApiService.uploadItemPhotos(createdItem.id, photosToUpload);
       }
@@ -277,43 +298,47 @@ class AddItemController extends GetxController {
   Future<ItemLocationModel> _resolveLocationFromDraftOrProfile(
     Map<String, dynamic> draft,
   ) async {
+    String? draftCity;
+    String? draftProvince;
+    String? draftCountry;
+    CoordinatesModel? draftCoordinates;
+
     final draftLocation = draft['location'];
-    if (draftLocation is Map<String, dynamic>) {
-      final city = _normalized(draftLocation['city']?.toString());
-      final province = _normalized(draftLocation['province']?.toString());
-      final country =
+    if (draftLocation is Map) {
+      draftCity = _normalized(draftLocation['city']?.toString());
+      draftProvince = _normalized(draftLocation['province']?.toString());
+      draftCountry =
           _normalized(draftLocation['country']?.toString()) ?? 'Canada';
 
       final coordinatesRaw = draftLocation['coordinates'];
-      CoordinatesModel? coordinates;
-      if (coordinatesRaw is Map<String, dynamic>) {
-        coordinates = CoordinatesModel(
+      if (coordinatesRaw is Map) {
+        draftCoordinates = CoordinatesModel(
           lat: _asPositiveDoubleOrZero(coordinatesRaw['lat']),
           lng: _asPositiveDoubleOrZero(coordinatesRaw['lng']),
         );
       }
-
-      return ItemLocationModel(
-        city: city,
-        province: province,
-        country: country,
-        coordinates: coordinates,
-      );
     }
 
     final profileResult = await _profileService.getProfile();
     final profileLocation = profileResult.profile?.location;
 
+    final city = draftCity ?? _normalized(profileLocation?.city);
+    final province = draftProvince ?? _normalized(profileLocation?.province);
+    final country =
+        draftCountry ?? _normalized(profileLocation?.country) ?? 'Canada';
+
     return ItemLocationModel(
-      city: _normalized(profileLocation?.city),
-      province: _normalized(profileLocation?.province),
-      country: _normalized(profileLocation?.country) ?? 'Canada',
-      coordinates: profileLocation?.coordinates == null
-          ? null
-          : CoordinatesModel(
-              lat: profileLocation!.coordinates!.lat,
-              lng: profileLocation.coordinates!.lng,
-            ),
+      city: city,
+      province: province,
+      country: country,
+      coordinates:
+          draftCoordinates ??
+          (profileLocation?.coordinates == null
+              ? null
+              : CoordinatesModel(
+                  lat: profileLocation!.coordinates!.lat,
+                  lng: profileLocation.coordinates!.lng,
+                )),
     );
   }
 
@@ -338,11 +363,6 @@ class AddItemController extends GetxController {
   String? _mapCategory(String value) {
     final normalized = value.trim().toLowerCase();
     final map = <String, String>{
-      'footwear': 'other',
-      'mens outfit': 'other',
-      'womens outfit': 'other',
-      'children outfit': 'other',
-      'jacket': 'other',
       'tools': 'tools',
       'electronics': 'electronics',
       'cameras': 'cameras',
@@ -475,6 +495,11 @@ class AddItemController extends GetxController {
     priceController.dispose();
     descriptionController.dispose();
     tagsController.dispose();
+    cityController.dispose();
+    provinceController.dispose();
+    countryController.dispose();
+    latController.dispose();
+    lngController.dispose();
     super.onClose();
   }
 }
