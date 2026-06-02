@@ -479,12 +479,14 @@ class _AddNewItemScreenState extends State<AddNewItemScreen> {
                     if (!controller.validateBeforeContinue()) return;
                     final draft = controller.buildDraft();
                     final rentalType = controller.selectedRentalType;
+                    // Include rentalType in the draft
+                    final enrichedDraft = {...draft, 'rentalType': rentalType};
                     if (rentalType == 'pickup') {
                       Get.to(
                         () => const PickupAvailabilityScreen(),
                         arguments: {
                           'rentalType': rentalType,
-                          'itemDraft': draft,
+                          'itemDraft': enrichedDraft,
                         },
                       );
                     } else {
@@ -492,7 +494,7 @@ class _AddNewItemScreenState extends State<AddNewItemScreen> {
                         () => const DeliveryFeeScreen(),
                         arguments: {
                           'rentalType': rentalType,
-                          'itemDraft': draft,
+                          'itemDraft': enrichedDraft,
                         },
                       );
                     }

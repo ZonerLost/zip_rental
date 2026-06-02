@@ -58,32 +58,29 @@ class MyListingsController extends GetxController {
     }
   }
 
-  Future<void> toggleAvailability(String itemId, bool shouldBeAvailable) async {
+  Future<void> togglePause(String itemId) async {
     final index = listings.indexWhere((item) => item.id == itemId);
-    if (index < 0) {
-      return;
-    }
+    if (index < 0) return;
 
     final original = listings[index];
-    listings[index] = original.copyWith(
-      availability: ItemAvailabilityModel(
-        isAvailable: shouldBeAvailable,
-        blockedDates: original.availability?.blockedDates ?? const <String>[],
-      ),
-    );
+    final currentlyPaused = original.isPaused ?? false;
+    // Optimistic update
+    listings[index] = original.copyWith(isPaused: !currentlyPaused);
     update();
 
     try {
-      final updated = await _itemApiService.updateAvailability(
-        itemId,
-        isAvailable: shouldBeAvailable,
-      );
-      listings[index] = updated;
+      final result = currentlyPaused
+          ? await _itemApiService.resumeListing(itemId)
+          : await _itemApiService.pauseListing(itemId);
+      listings[index] = original.copyWith(isPaused: result.isPaused);
       update();
     } catch (e) {
       listings[index] = original;
       update();
-      Get.snackbar('Availability Update Failed', _readMessage(e));
+      Get.snackbar(
+        currentlyPaused ? 'Resume Failed' : 'Pause Failed',
+        _readMessage(e),
+      );
     }
   }
 

@@ -32,8 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(LoginController());
     return GetBuilder<LoginController>(
-      init: LoginController(),
       builder: (controller) {
         return GestureDetector(
           onTap: () {

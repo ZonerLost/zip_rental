@@ -91,6 +91,19 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
       }
     }
 
+    // Pre-fill availability dates
+    final avail = itemDraft?['availability'];
+    if (avail is Map) {
+      controller.availableFromController.text = (avail['availableFrom'] ?? '').toString();
+      controller.availableToController.text = (avail['availableTo'] ?? '').toString();
+    }
+
+    // Pre-fill weekly/monthly/deposit/quantity
+    controller.weeklyRateController.text = (itemDraft?['weeklyRate'] ?? '').toString();
+    controller.monthlyRateController.text = (itemDraft?['monthlyRate'] ?? '').toString();
+    controller.depositController.text = (itemDraft?['depositAmount'] ?? '').toString();
+    controller.quantityController.text = (itemDraft?['quantity'] ?? '1').toString();
+
     Get.bottomSheet(
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -120,9 +133,9 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   ),
                 ),
                 const Gap(16),
-                const MyText(text: 'Edit Address', size: 20, weight: FontWeight.w600, color: Colors.black),
+                const MyText(text: 'Edit Details', size: 20, weight: FontWeight.w600, color: Colors.black),
                 const Gap(4),
-                MyText(text: 'Enter the pickup location for your item.', size: 14, color: Colors.grey[600]),
+                MyText(text: 'Update location, pricing, and availability.', size: 14, color: Colors.grey[600]),
                 const Gap(16),
                 Divider(color: kDividerColor),
                 const Gap(12),
@@ -149,6 +162,64 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                 MyTextField(
                   controller: controller.countryController,
                   hint: 'Canada',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                ),
+                const MyText(text: 'Weekly Rate', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.weeklyRateController,
+                  hint: 'e.g. 140',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const MyText(text: 'Monthly Rate', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.monthlyRateController,
+                  hint: 'e.g. 450',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const MyText(text: 'Deposit Amount', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.depositController,
+                  hint: 'e.g. 100',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const MyText(text: 'Quantity', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.quantityController,
+                  hint: '1',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                  keyboardType: TextInputType.number,
+                ),
+                const MyText(text: 'Available From (YYYY-MM-DD)', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.availableFromController,
+                  hint: 'e.g. 2026-06-01',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                ),
+                const MyText(text: 'Available To (YYYY-MM-DD)', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.availableToController,
+                  hint: 'e.g. 2026-09-30',
                   hintColor: kBlack.withOpacity(0.4),
                   radius: 12,
                   backgroundColor: Colors.white,
@@ -185,7 +256,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                 const Gap(8),
                 MyButton(
                   onTap: () {
-                    // Merge updated location back into draft
+                    // Merge updated fields back into draft
                     final updatedLocation = <String, dynamic>{
                       'city': controller.cityController.text.trim(),
                       'province': controller.provinceController.text.trim(),
@@ -198,17 +269,29 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     if (lat != null && lng != null) {
                       updatedLocation['coordinates'] = {'lat': lat, 'lng': lng};
                     }
+
+                    final updatedAvailability = <String, dynamic>{
+                      'availableFrom': controller.availableFromController.text.trim(),
+                      'availableTo': controller.availableToController.text.trim(),
+                    };
+
                     setState(() {
                       itemDraft = {
                         ...?itemDraft,
                         'location': updatedLocation,
+                        'weeklyRate': controller.weeklyRateController.text.trim(),
+                        'monthlyRate': controller.monthlyRateController.text.trim(),
+                        'depositAmount': controller.depositController.text.trim(),
+                        'quantity': controller.quantityController.text.trim(),
+                        'availability': updatedAvailability,
+                        'tags': controller.tagsController.text.trim(),
                       };
                     });
                     Get.back();
                     // Trigger rebuild of summary
                     if (mounted) this.setState(() {});
                   },
-                  buttonText: 'Save Address',
+                  buttonText: 'Save',
                   fontColor: Colors.white,
                   height: 56,
                   radius: 28,
@@ -235,7 +318,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
             children: [
               MyButton(
                 onTap: () async {
-                  // Merge latest location into draft before submitting
+                  // Merge latest fields into draft before submitting
                   final mergedDraft = {
                     ...?itemDraft,
                     'location': <String, dynamic>{
@@ -251,6 +334,16 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                           'lng': double.tryParse(addItemController.lngController.text.trim()),
                         },
                     },
+                    'weeklyRate': addItemController.weeklyRateController.text.trim(),
+                    'monthlyRate': addItemController.monthlyRateController.text.trim(),
+                    'depositAmount': addItemController.depositController.text.trim(),
+                    'quantity': addItemController.quantityController.text.trim(),
+                    if (addItemController.availableFromController.text.trim().isNotEmpty &&
+                        addItemController.availableToController.text.trim().isNotEmpty)
+                      'availability': {
+                        'availableFrom': addItemController.availableFromController.text.trim(),
+                        'availableTo': addItemController.availableToController.text.trim(),
+                      },
                   };
                   final didCreate = await addItemController.createItemFromDraft(mergedDraft);
                   if (!didCreate) return;

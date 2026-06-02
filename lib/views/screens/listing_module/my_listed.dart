@@ -67,12 +67,8 @@ class MyListedItemsScreen extends StatelessWidget {
                                       ),
                                     );
                                   },
-                                  onTogglePause: (isPaused) {
-                                    controller.toggleAvailability(
-                                      item.id,
-                                      !isPaused,
-                                    );
-                                  },
+                                  onTogglePause: () =>
+                                      controller.togglePause(item.id),
                                 );
                               },
                             ),
@@ -97,11 +93,11 @@ class _ListingCard extends StatelessWidget {
 
   final ItemModel item;
   final VoidCallback onOpen;
-  final ValueChanged<bool> onTogglePause;
+  final VoidCallback onTogglePause;
 
   @override
   Widget build(BuildContext context) {
-    final isPaused = !(item.availability?.isAvailable ?? true);
+    final isPaused = item.isPaused ?? false;
     final image = item.thumbnailUrl;
     final hasImage =
         image.startsWith('http://') || image.startsWith('https://');
@@ -179,14 +175,14 @@ class _ListingCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 MyText(
-                  text: 'Pause listing',
+                  text: isPaused ? 'Resume listing' : 'Pause listing',
                   size: 16,
                   weight: FontWeight.w500,
                   color: kPrimaryColor,
                 ),
                 Switch(
                   value: isPaused,
-                  onChanged: onTogglePause,
+                  onChanged: (_) => onTogglePause(),
                   activeColor: kPrimaryColor,
                   inactiveTrackColor: kWhite,
                   inactiveThumbColor: kBlack,

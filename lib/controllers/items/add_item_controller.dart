@@ -21,6 +21,12 @@ class AddItemController extends GetxController {
   final List<File> selectedPhotos = <File>[];
   final TextEditingController titleController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
+  final TextEditingController weeklyRateController = TextEditingController();
+  final TextEditingController monthlyRateController = TextEditingController();
+  final TextEditingController depositController = TextEditingController();
+  final TextEditingController quantityController = TextEditingController();
+  final TextEditingController minRentalDaysController = TextEditingController();
+  final TextEditingController maxRentalDaysController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController tagsController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -28,6 +34,11 @@ class AddItemController extends GetxController {
   final TextEditingController countryController = TextEditingController();
   final TextEditingController latController = TextEditingController();
   final TextEditingController lngController = TextEditingController();
+  final TextEditingController availableFromController = TextEditingController();
+  final TextEditingController availableToController = TextEditingController();
+
+  String selectedCurrency = 'CAD';
+  int? deliveryRadius; // km, null = no delivery
 
   final List<String> rentalTabs = const <String>[
     'Delivery only',
@@ -168,6 +179,13 @@ class AddItemController extends GetxController {
       'category': selectedCategory,
       'condition': selectedCondition,
       'dailyRate': priceController.text.trim(),
+      'weeklyRate': weeklyRateController.text.trim(),
+      'monthlyRate': monthlyRateController.text.trim(),
+      'depositAmount': depositController.text.trim(),
+      'quantity': quantityController.text.trim(),
+      'minRentalDays': minRentalDaysController.text.trim(),
+      'maxRentalDays': maxRentalDaysController.text.trim(),
+      'currency': selectedCurrency,
       'subCategory': null,
       'tags': _parseTags(tagsController.text),
       'photos': List<File>.of(selectedPhotos),
@@ -184,6 +202,12 @@ class AddItemController extends GetxController {
             'lng': double.tryParse(lngController.text.trim()),
           },
       },
+      if (availableFromController.text.trim().isNotEmpty &&
+          availableToController.text.trim().isNotEmpty)
+        'availability': <String, dynamic>{
+          'availableFrom': availableFromController.text.trim(),
+          'availableTo': availableToController.text.trim(),
+        },
     };
   }
 
@@ -265,6 +289,38 @@ class AddItemController extends GetxController {
     update();
 
     try {
+      final weeklyRate = _asPositiveDouble(draft['weeklyRate']);
+      final monthlyRate = _asPositiveDouble(draft['monthlyRate']);
+      final depositAmount = _asPositiveDouble(draft['depositAmount']);
+      final quantity = _asInt(draft['quantity']) ?? 1;
+      final minRentalDays = _asInt(draft['minRentalDays']) ?? 1;
+      final maxRentalDays = _asInt(draft['maxRentalDays']) ?? 30;
+      final currency = _normalized(draft['currency']?.toString()) ?? 'CAD';
+
+      // Build deliveryOptions from rentalType
+      final rentalType = _normalized(draft['rentalType']?.toString());
+      final hasDelivery = rentalType == 'delivery' || rentalType == 'both';
+      final hasPickup = rentalType == 'pickup' || rentalType == 'both';
+      final deliveryOptions = DeliveryOptionsModel(
+        pickup: hasPickup,
+        delivery: hasDelivery,
+        deliveryRadius: hasDelivery ? (deliveryRadius ?? 15) : null,
+      );
+
+      // Build availability range
+      ItemAvailabilityRangeModel? availabilityRange;
+      final availRaw = draft['availability'];
+      if (availRaw is Map) {
+        final from = _normalized(availRaw['availableFrom']?.toString());
+        final to = _normalized(availRaw['availableTo']?.toString());
+        if (from != null && to != null) {
+          availabilityRange = ItemAvailabilityRangeModel(
+            availableFrom: from,
+            availableTo: to,
+          );
+        }
+      }
+
       final createdItem = await _itemApiService.createItem(
         CreateItemRequest(
           title: title,
@@ -272,8 +328,17 @@ class AddItemController extends GetxController {
           category: category,
           subCategory: _normalized(draft['subCategory']?.toString()),
           dailyRate: dailyRate,
+          weeklyRate: weeklyRate,
+          monthlyRate: monthlyRate,
+          depositAmount: depositAmount,
+          quantity: quantity,
+          minRentalDays: minRentalDays,
+          maxRentalDays: maxRentalDays,
+          currency: currency,
           condition: condition,
           location: location,
+          deliveryOptions: deliveryOptions,
+          availability: availabilityRange,
           tags: tags,
         ),
       );
@@ -489,10 +554,23 @@ class AddItemController extends GetxController {
     return files;
   }
 
+  int? _asInt(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw.toString().trim());
+  }
+
   @override
   void onClose() {
     titleController.dispose();
     priceController.dispose();
+    weeklyRateController.dispose();
+    monthlyRateController.dispose();
+    depositController.dispose();
+    quantityController.dispose();
+    minRentalDaysController.dispose();
+    maxRentalDaysController.dispose();
     descriptionController.dispose();
     tagsController.dispose();
     cityController.dispose();
@@ -500,6 +578,8 @@ class AddItemController extends GetxController {
     countryController.dispose();
     latController.dispose();
     lngController.dispose();
+    availableFromController.dispose();
+    availableToController.dispose();
     super.onClose();
   }
 }

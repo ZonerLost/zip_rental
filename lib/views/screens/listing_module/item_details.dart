@@ -357,9 +357,9 @@ class _ListingItemDetailsScreenState extends State<ListingItemDetailsScreen> {
                       ),
                       const Gap(8),
                       Switch(
-                        value: item.availability?.isAvailable ?? true,
-                        onChanged: (value) async {
-                          await _controller.toggleAvailability(item.id, value);
+                        value: !(item.isPaused ?? false),
+                        onChanged: (_) async {
+                          await _controller.togglePause(item.id);
                           await _loadDetails();
                         },
                         activeColor: kPrimaryColor,

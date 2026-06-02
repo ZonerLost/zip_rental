@@ -99,21 +99,19 @@ class TokenRefreshService extends GetxService {
 
     final online = await _isOnline();
     if (!online) {
-      // Offline — schedule a short retry without touching the stored token.
       _timer = Timer(_retryInterval, _onTimerFired);
       return;
     }
 
-    final newAccessToken = await _client.refresh(refreshToken);
-    if (newAccessToken != null && newAccessToken.isNotEmpty) {
-      // Keep the same refresh token; only the access token changes.
+    final result = await _client.refresh(refreshToken);
+    if (result != null) {
       await _store.saveTokens(
-        accessToken: newAccessToken,
-        refreshToken: refreshToken,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       );
     }
-    // On network failure the stored token is untouched; the 401-retry in
-    // AuthService/_ProfileService will handle it for individual requests.
+    // On failure the stored token is untouched; per-request 401-retry in
+    // AuthService handles individual calls.
   }
 
   Future<bool> _isOnline() async {
@@ -139,6 +137,14 @@ class TokenRefreshService extends GetxService {
   }
 }
 
+/// Result from a token refresh — carries both tokens so the store
+/// can be updated atomically even when the server rotates the refresh token.
+class _RefreshResult {
+  const _RefreshResult({required this.accessToken, required this.refreshToken});
+  final String accessToken;
+  final String refreshToken;
+}
+
 /// Minimal HTTP client for the refresh endpoint only.
 /// Kept separate to avoid a circular dependency with AuthService.
 class _RefreshClient {
@@ -150,7 +156,7 @@ class _RefreshClient {
   final String _baseUrl;
   final GetConnect _http = GetConnect(timeout: const Duration(seconds: 15));
 
-  Future<String?> refresh(String refreshToken) async {
+  Future<_RefreshResult?> refresh(String refreshToken) async {
     try {
       final response = await _http.post(
         '$_baseUrl/auth/refresh-token',
@@ -162,11 +168,21 @@ class _RefreshClient {
       );
       final body = response.body;
       if (body is Map) {
-        return (body['accessToken'] ??
+        final accessToken = (body['accessToken'] ??
                 body['access_token'] ??
                 body['data']?['accessToken'] ??
                 body['data']?['access_token'])
             ?.toString();
+        if (accessToken == null || accessToken.isEmpty) return null;
+        final newRefresh = (body['refreshToken'] ??
+                body['refresh_token'] ??
+                body['data']?['refreshToken'] ??
+                body['data']?['refresh_token'])
+            ?.toString();
+        return _RefreshResult(
+          accessToken: accessToken,
+          refreshToken: newRefresh?.isNotEmpty == true ? newRefresh! : refreshToken,
+        );
       }
       return null;
     } catch (_) {

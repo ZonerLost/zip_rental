@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/config/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:zip_peer/services/auth/auth_session_store.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/token_refresh_service.dart';
 
 void main() async {
@@ -15,9 +16,14 @@ void main() async {
 Future<void> _maybeStartTokenRefresh() async {
   final store = AuthSessionStore();
   final refreshToken = await store.getRefreshToken();
-  if (refreshToken != null && refreshToken.isNotEmpty) {
-    unawaited(TokenRefreshService.start());
-  }
+  if (refreshToken == null || refreshToken.isEmpty) return;
+
+  // Silently refresh the access token if it's expired or near-expiry
+  // before the app renders any screen — prevents a 401 on the first request.
+  final authService = AuthService();
+  await authService.ensureAccessToken();
+
+  unawaited(TokenRefreshService.start());
 }
 
 class MyApp extends StatelessWidget {

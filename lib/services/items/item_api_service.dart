@@ -151,6 +151,55 @@ class ItemApiService {
     return true;
   }
 
+  Future<ItemModel> pauseListing(String id) async {
+    final response = await _request(
+      method: _HttpMethod.put,
+      path: '/items/${Uri.encodeComponent(id)}/pause',
+      requiresAuth: true,
+    );
+
+    final success = _resolveSuccess(response);
+    if (!success) {
+      throw Exception(_resolveMessage(response, false));
+    }
+    // Patch the isPaused flag from the response data
+    final map = _asMap(response.body);
+    final dataRaw = _getByPath(map, 'data');
+    final dataMap = dataRaw is Map ? _stringKeyMap(dataRaw) : <String, dynamic>{};
+    final isPaused = dataMap['isPaused'] as bool? ?? true;
+    return _parsePausedItem(response, isPaused: isPaused);
+  }
+
+  Future<ItemModel> resumeListing(String id) async {
+    final response = await _request(
+      method: _HttpMethod.put,
+      path: '/items/${Uri.encodeComponent(id)}/resume',
+      requiresAuth: true,
+    );
+
+    final success = _resolveSuccess(response);
+    if (!success) {
+      throw Exception(_resolveMessage(response, false));
+    }
+    final map = _asMap(response.body);
+    final dataRaw = _getByPath(map, 'data');
+    final dataMap = dataRaw is Map ? _stringKeyMap(dataRaw) : <String, dynamic>{};
+    final isPaused = dataMap['isPaused'] as bool? ?? false;
+    return _parsePausedItem(response, isPaused: isPaused);
+  }
+
+  /// The pause/resume endpoints only return `{ _id, isPaused }` inside `data`.
+  /// We use the id to look up the full item and just patch the isPaused flag.
+  ItemModel _parsePausedItem(Response<dynamic> response, {required bool isPaused}) {
+    final map = _asMap(response.body);
+    final dataRaw = _getByPath(map, 'data');
+    final dataMap = dataRaw is Map ? _stringKeyMap(dataRaw) : <String, dynamic>{};
+    final id = dataMap['_id']?.toString().trim().isNotEmpty == true
+        ? dataMap['_id'].toString().trim()
+        : dataMap['id']?.toString().trim() ?? '';
+    return ItemModel(id: id, isPaused: isPaused);
+  }
+
   Future<List<String>> uploadItemPhotos(String id, List<File> photos) async {
     final files = photos
         .map(

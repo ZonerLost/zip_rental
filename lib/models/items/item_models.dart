@@ -145,6 +145,7 @@ class ItemModel {
     this.totalReviews,
     this.totalRentals,
     this.isActive,
+    this.isPaused,
     this.tags = const [],
     this.createdAt,
     this.updatedAt,
@@ -168,6 +169,7 @@ class ItemModel {
   final int? totalReviews;
   final int? totalRentals;
   final bool? isActive;
+  final bool? isPaused;
   final List<String> tags;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -216,6 +218,7 @@ class ItemModel {
       totalReviews: _asInt(json['totalReviews']),
       totalRentals: _asInt(json['totalRentals']),
       isActive: _asBool(json['isActive']),
+      isPaused: _asBool(json['isPaused']),
       tags: _toStringList(json['tags']),
       createdAt: _asDateTime(json['createdAt']),
       updatedAt: _asDateTime(json['updatedAt']),
@@ -246,6 +249,7 @@ class ItemModel {
     int? totalReviews,
     int? totalRentals,
     bool? isActive,
+    bool? isPaused,
     List<String>? tags,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -269,6 +273,7 @@ class ItemModel {
       totalReviews: totalReviews ?? this.totalReviews,
       totalRentals: totalRentals ?? this.totalRentals,
       isActive: isActive ?? this.isActive,
+      isPaused: isPaused ?? this.isPaused,
       tags: tags ?? this.tags,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -337,6 +342,39 @@ class PaginatedItemsResponse {
   final Map<String, dynamic>? raw;
 }
 
+class DeliveryOptionsModel {
+  const DeliveryOptionsModel({
+    this.pickup = false,
+    this.delivery = false,
+    this.deliveryRadius,
+  });
+
+  final bool pickup;
+  final bool delivery;
+  final int? deliveryRadius;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'pickup': pickup,
+        'delivery': delivery,
+        if (deliveryRadius != null) 'deliveryRadius': deliveryRadius,
+      };
+}
+
+class ItemAvailabilityRangeModel {
+  const ItemAvailabilityRangeModel({
+    required this.availableFrom,
+    required this.availableTo,
+  });
+
+  final String availableFrom; // ISO date string e.g. "2026-06-01"
+  final String availableTo;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'availableFrom': availableFrom,
+        'availableTo': availableTo,
+      };
+}
+
 class CreateItemRequest {
   const CreateItemRequest({
     required this.title,
@@ -344,8 +382,17 @@ class CreateItemRequest {
     required this.category,
     this.subCategory,
     required this.dailyRate,
+    this.weeklyRate,
+    this.monthlyRate,
+    this.depositAmount,
+    this.minRentalDays = 1,
+    this.maxRentalDays = 30,
+    this.quantity = 1,
+    this.currency = 'CAD',
     required this.condition,
     required this.location,
+    this.deliveryOptions,
+    this.availability,
     this.tags = const [],
   });
 
@@ -354,8 +401,17 @@ class CreateItemRequest {
   final String category;
   final String? subCategory;
   final double dailyRate;
+  final double? weeklyRate;
+  final double? monthlyRate;
+  final double? depositAmount;
+  final int minRentalDays;
+  final int maxRentalDays;
+  final int quantity;
+  final String currency;
   final String condition;
   final ItemLocationModel location;
+  final DeliveryOptionsModel? deliveryOptions;
+  final ItemAvailabilityRangeModel? availability;
   final List<String> tags;
 
   Map<String, dynamic> toJson() {
@@ -366,8 +422,17 @@ class CreateItemRequest {
       if ((subCategory ?? '').trim().isNotEmpty)
         'subCategory': subCategory!.trim(),
       'dailyRate': dailyRate,
+      if (weeklyRate != null) 'weeklyRate': weeklyRate,
+      if (monthlyRate != null) 'monthlyRate': monthlyRate,
+      if (depositAmount != null) 'depositAmount': depositAmount,
+      'minRentalDays': minRentalDays,
+      'maxRentalDays': maxRentalDays,
+      'quantity': quantity,
+      'currency': currency,
       'condition': condition.trim(),
       'location': location.toJson(),
+      if (deliveryOptions != null) 'deliveryOptions': deliveryOptions!.toJson(),
+      if (availability != null) 'availability': availability!.toJson(),
       if (tags.isNotEmpty) 'tags': tags,
     };
   }
