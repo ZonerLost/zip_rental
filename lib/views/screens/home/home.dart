@@ -29,12 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return GetBuilder<BrowseItemsController>(
       init: BrowseItemsController(),
       builder: (controller) {
-        final items = controller.items;
-        final firstSectionItems = items.take(10).toList(growable: false);
-        final secondSectionItems = items.reversed
-            .take(10)
-            .toList(growable: false);
-
         return Scaffold(
           body: AnimatedListView(
             controller: controller.scrollController,
@@ -121,47 +115,45 @@ class _HomeScreenState extends State<HomeScreen> {
               const Gap(10),
               const HeaderRow2(),
               const Gap(20),
-              if (controller.isLoadingInitial)
+              if (controller.isFeedLoading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else ...[
-                _buildHorizontalSection(
-                  title: 'Recently added near you',
-                  items: firstSectionItems,
-                ),
-                const Gap(20),
-                _buildHorizontalSection(
-                  title: 'Popular near you',
-                  items: secondSectionItems,
-                ),
-                const Gap(20),
-                _buildHorizontalSection(
-                  title: 'Recently Viewed',
-                  items: firstSectionItems,
-                ),
-                const Gap(20),
-                _buildHorizontalSection(
-                  title: 'Popular',
-                  items: secondSectionItems,
-                ),
-              ],
-              if (controller.errorMessage != null)
+              else if (controller.feedError != null &&
+                  controller.nearMe.isEmpty &&
+                  controller.popular.isEmpty &&
+                  controller.recent.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   child: MyText(
-                    text: controller.errorMessage!,
+                    text: controller.feedError!,
                     size: 13,
                     color: Colors.red,
                     textAlign: TextAlign.center,
                   ),
-                ),
-              if (controller.isLoadingMore)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
+                )
+              else ...[
+                if (controller.nearMe.isNotEmpty) ...[
+                  _buildHorizontalSection(
+                    title: 'Near Me',
+                    items: controller.nearMe,
+                  ),
+                  const Gap(20),
+                ],
+                if (controller.popular.isNotEmpty) ...[
+                  _buildHorizontalSection(
+                    title: 'Popular',
+                    items: controller.popular,
+                  ),
+                  const Gap(20),
+                ],
+                if (controller.recent.isNotEmpty)
+                  _buildHorizontalSection(
+                    title: 'Recently Added',
+                    items: controller.recent,
+                  ),
+              ],
               const Gap(100),
             ],
           ),

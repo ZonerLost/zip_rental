@@ -281,6 +281,22 @@ class ItemModel {
   }
 }
 
+class FeedResponse {
+  const FeedResponse({
+    required this.success,
+    required this.message,
+    this.nearMe = const [],
+    this.popular = const [],
+    this.recent = const [],
+  });
+
+  final bool success;
+  final String message;
+  final List<ItemModel> nearMe;
+  final List<ItemModel> popular;
+  final List<ItemModel> recent;
+}
+
 class PaginationModel {
   const PaginationModel({
     this.page = 1,

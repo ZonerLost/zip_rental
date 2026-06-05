@@ -18,8 +18,6 @@ Future<void> _maybeStartTokenRefresh() async {
   final refreshToken = await store.getRefreshToken();
   if (refreshToken == null || refreshToken.isEmpty) return;
 
-  // Silently refresh the access token if it's expired or near-expiry
-  // before the app renders any screen — prevents a 401 on the first request.
   final authService = AuthService();
   await authService.ensureAccessToken();
 

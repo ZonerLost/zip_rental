@@ -14,6 +14,17 @@ class BrowseItemsController extends GetxController {
 
   final List<ItemModel> items = <ItemModel>[];
 
+  // Feed sections
+  List<ItemModel> nearMe = const [];
+  List<ItemModel> popular = const [];
+  List<ItemModel> recent = const [];
+  bool isFeedLoading = false;
+  String? feedError;
+
+  // User coordinates for feed
+  double? userLat;
+  double? userLng;
+
   bool isLoadingInitial = false;
   bool isLoadingMore = false;
   bool isRefreshing = false;
@@ -40,6 +51,29 @@ class BrowseItemsController extends GetxController {
     super.onInit();
     scrollController.addListener(_onScroll);
     loadItems(reset: true);
+    loadFeed();
+  }
+
+  Future<void> loadFeed() async {
+    isFeedLoading = true;
+    feedError = null;
+    update();
+
+    final result = await _itemApiService.getFeed(
+      lat: userLat,
+      lng: userLng,
+    );
+
+    isFeedLoading = false;
+    if (result.success) {
+      nearMe = result.nearMe;
+      popular = result.popular;
+      recent = result.recent;
+      feedError = null;
+    } else {
+      feedError = result.message;
+    }
+    update();
   }
 
   Future<void> loadItems({bool reset = false}) async {

@@ -30,6 +30,52 @@ class ItemApiService {
     return uri != null && uri.hasScheme && uri.host.isNotEmpty;
   }
 
+  Future<FeedResponse> getFeed({
+    double? lat,
+    double? lng,
+    double radius = 20,
+    int limit = 10,
+  }) async {
+    final response = await _request(
+      method: _HttpMethod.get,
+      path: '/items/feed',
+      requiresAuth: false,
+      query: <String, dynamic>{
+        if (lat != null) 'lat': lat.toString(),
+        if (lng != null) 'lng': lng.toString(),
+        'radius': radius.toString(),
+        'limit': limit.clamp(1, 20).toString(),
+      },
+    );
+
+    final success = _resolveSuccess(response);
+    final message = _resolveMessage(response, success);
+    if (!success) {
+      return FeedResponse(success: false, message: message);
+    }
+
+    final map = _asMap(response.body);
+    final data = _getByPath(map, 'data');
+    final dataMap = data is Map ? _stringKeyMap(data) : <String, dynamic>{};
+
+    return FeedResponse(
+      success: true,
+      message: message,
+      nearMe: _parseItemList(dataMap['nearMe']),
+      popular: _parseItemList(dataMap['popular']),
+      recent: _parseItemList(dataMap['recent']),
+    );
+  }
+
+  List<ItemModel> _parseItemList(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => ItemModel.fromJson(_stringKeyMap(e)))
+        .where((item) => item.id.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
   Future<PaginatedItemsResponse> browseItems({
     int page = 1,
     int limit = 10,
