@@ -89,7 +89,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                       Expanded(
                         child: MyButton(
                           onTap: () {
-                            Get.to(() => const CheckoutScreen2());
+                            if (item == null) {
+                              return;
+                            }
+                            Get.to(() => CheckoutScreen2(item: item));
                           },
                           buttonText: 'Book Now',
                           height: 56,
