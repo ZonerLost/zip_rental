@@ -40,29 +40,41 @@ class AddItemController extends GetxController {
   String selectedCurrency = 'CAD';
   int? deliveryRadius; // km, null = no delivery
 
+  // Delivery pricing fields
+  double? deliveryFlatFee;
+  List<DeliveryPricingTier> deliveryPricingTiers = <DeliveryPricingTier>[];
+
+  // Set after successful item creation, used by createItemWithScheduleAndBoost
+  String? _lastCreatedItemId;
+
   final List<String> rentalTabs = const <String>[
     'Delivery only',
     'Pickup only',
     'Enable Both',
   ];
-  final List<String> uiCategories = const <String>[
-    'Footwear',
-    'Mens Outfit',
-    'Womens Outfit',
-    'Children Outfit',
-    'Jacket',
-    'Tools',
+
+  // API-loaded lists (fallback to defaults while loading)
+  List<String> uiCategories = const <String>[
     'Electronics',
-    'Cameras',
-    'Sports',
-    'Outdoor',
+    'Sports & Outdoors',
+    'Tools & Equipment',
+    'Vehicles',
+    'Clothing & Accessories',
+    'Home & Garden',
+    'Musical Instruments',
+    'Camera & Photo',
+    'Books & Media',
+    'Other',
   ];
-  final List<String> uiConditions = const <String>[
-    'used, good condition',
-    'new',
-    'like new',
-    'used, fair condition',
+  List<String> uiConditions = const <String>[
+    'New',
+    'Like New',
+    'Good',
+    'Fair',
+    'Poor',
   ];
+  bool formConfigLoaded = false;
+
   final List<String> uiPriceTypes = const <String>[
     'Per Day',
     'Per Week',
@@ -71,10 +83,44 @@ class AddItemController extends GetxController {
 
   int? selectedRentalIndex;
   bool showRentalSelectionError = false;
-  String selectedCategory = 'Footwear';
-  String selectedCondition = 'used, good condition';
+  String selectedCategory = 'Electronics';
+  String selectedCondition = 'New';
   String selectedPriceType = 'Per Day';
   bool isSubmitting = false;
+
+  // Maps API enum values → human-readable dropdown labels
+  static const Map<String, String> _categoryEnumToLabel = <String, String>{
+    'tools': 'Tools & Equipment',
+    'power_tools': 'Power Tools',
+    'electronics': 'Electronics',
+    'cameras': 'Camera & Photo',
+    'audio': 'Audio',
+    'sports': 'Sports & Outdoors',
+    'outdoor': 'Outdoor',
+    'cycling': 'Cycling',
+    'kitchen': 'Kitchen',
+    'furniture': 'Furniture',
+    'garden': 'Home & Garden',
+    'cleaning': 'Cleaning',
+    'baby': 'Baby',
+    'party': 'Party',
+    'vehicles': 'Vehicles',
+    'camping': 'Camping',
+    'winter_sports': 'Winter Sports',
+    'water_sports': 'Water Sports',
+    'music': 'Musical Instruments',
+    'clothing': 'Clothing & Accessories',
+    'books_media': 'Books & Media',
+    'other': 'Other',
+  };
+
+  static const Map<String, String> _conditionEnumToLabel = <String, String>{
+    'new': 'New',
+    'like_new': 'Like New',
+    'good': 'Good',
+    'fair': 'Fair',
+    'poor': 'Poor',
+  };
 
   static const List<String> allowedCategories = <String>[
     'tools',
@@ -96,6 +142,8 @@ class AddItemController extends GetxController {
     'sports',
     'outdoor',
     'power_tools',
+    'clothing',
+    'books_media',
     'other',
   ];
 
@@ -104,6 +152,7 @@ class AddItemController extends GetxController {
     'like_new',
     'good',
     'fair',
+    'poor',
   ];
 
   @override
@@ -112,6 +161,41 @@ class AddItemController extends GetxController {
     titleController.text = '';
     priceController.text = '';
     descriptionController.text = '';
+    _loadFormConfig();
+  }
+
+  Future<void> _loadFormConfig() async {
+    try {
+      final config = await _itemApiService.getFormConfig();
+
+      if (config.categories.isNotEmpty) {
+        final labels = config.categories
+            .map((c) => _categoryEnumToLabel[c.trim().toLowerCase()] ?? c)
+            .where((c) => c.isNotEmpty)
+            .toSet() // deduplicate in case multiple enums share a display label
+            .toList();
+        if (labels.isNotEmpty) uiCategories = labels;
+      }
+
+      if (config.conditions.isNotEmpty) {
+        final labels = config.conditions
+            .map((c) => _conditionEnumToLabel[c.trim().toLowerCase()] ?? c)
+            .where((c) => c.isNotEmpty)
+            .toList();
+        if (labels.isNotEmpty) uiConditions = labels;
+      }
+
+      if (!uiCategories.contains(selectedCategory)) {
+        selectedCategory = uiCategories.first;
+      }
+      if (!uiConditions.contains(selectedCondition)) {
+        selectedCondition = uiConditions.first;
+      }
+      formConfigLoaded = true;
+      update();
+    } catch (_) {
+      // Keep hardcoded fallbacks
+    }
   }
 
   void onFieldChanged(String _) => update();
@@ -173,14 +257,38 @@ class AddItemController extends GetxController {
   }
 
   Map<String, dynamic> buildDraft() {
+    final rawPrice = priceController.text.trim();
+    final parsedPrice = double.tryParse(rawPrice);
+
+    // Route primary price to the correct rate field and always derive dailyRate.
+    String dailyRate;
+    String weeklyRate = weeklyRateController.text.trim();
+    String monthlyRate = monthlyRateController.text.trim();
+
+    switch (selectedPriceType) {
+      case 'Per Week':
+        weeklyRate = rawPrice;
+        dailyRate = parsedPrice != null
+            ? (parsedPrice / 7).toStringAsFixed(2)
+            : '';
+      case 'Per Month':
+        monthlyRate = rawPrice;
+        dailyRate = parsedPrice != null
+            ? (parsedPrice / 30).toStringAsFixed(2)
+            : '';
+      default:
+        dailyRate = rawPrice;
+    }
+
     return <String, dynamic>{
       'title': titleController.text.trim(),
       'description': descriptionController.text.trim(),
       'category': selectedCategory,
       'condition': selectedCondition,
-      'dailyRate': priceController.text.trim(),
-      'weeklyRate': weeklyRateController.text.trim(),
-      'monthlyRate': monthlyRateController.text.trim(),
+      'priceType': selectedPriceType,
+      'dailyRate': dailyRate,
+      'weeklyRate': weeklyRate,
+      'monthlyRate': monthlyRate,
       'depositAmount': depositController.text.trim(),
       'quantity': quantityController.text.trim(),
       'minRentalDays': minRentalDaysController.text.trim(),
@@ -284,6 +392,10 @@ class AddItemController extends GetxController {
       Get.snackbar('Validation', 'Location city is required.');
       return false;
     }
+    if ((location.province ?? '').trim().isEmpty) {
+      Get.snackbar('Validation', 'Province is required.');
+      return false;
+    }
 
     isSubmitting = true;
     update();
@@ -321,6 +433,13 @@ class AddItemController extends GetxController {
         }
       }
 
+      final rawBookingType = _normalized(draft['bookingType']?.toString());
+      final rawDeliveryFee = _asPositiveDouble(draft['deliveryFee']);
+      final rawTiers = draft['deliveryPricingTiers'];
+      final tiers = rawTiers is List<DeliveryPricingTier>
+          ? rawTiers
+          : deliveryPricingTiers;
+
       final createdItem = await _itemApiService.createItem(
         CreateItemRequest(
           title: title,
@@ -336,12 +455,17 @@ class AddItemController extends GetxController {
           maxRentalDays: maxRentalDays,
           currency: currency,
           condition: condition,
+          bookingType: rawBookingType,
           location: location,
           deliveryOptions: deliveryOptions,
+          deliveryFee: rawDeliveryFee ?? deliveryFlatFee,
+          deliveryPricing: tiers,
           availability: availabilityRange,
           tags: tags,
         ),
       );
+
+      _lastCreatedItemId = createdItem.id;
 
       if (photosToUpload.isNotEmpty) {
         await _itemApiService.uploadItemPhotos(createdItem.id, photosToUpload);
@@ -358,6 +482,53 @@ class AddItemController extends GetxController {
       Get.snackbar('Create Item Failed', _readMessage(e));
       return false;
     }
+  }
+
+  /// Creates item, then calls pickup/delivery schedule and boost APIs in sequence.
+  Future<bool> createItemWithScheduleAndBoost(
+    Map<String, dynamic> draft, {
+    WeeklyScheduleModel? pickupSchedule,
+    WeeklyScheduleModel? deliverySchedule,
+    bool boosted = false,
+  }) async {
+    final didCreate = await createItemFromDraft(draft);
+    if (!didCreate) return false;
+
+    // We need the created item's ID — store it in the controller after creation.
+    // The ID is captured in _lastCreatedItemId after createItemFromDraft succeeds.
+    final itemId = _lastCreatedItemId;
+    if (itemId == null || itemId.isEmpty) return true;
+
+    // Save pickup schedule
+    if (pickupSchedule != null) {
+      try {
+        await _itemApiService.updatePickupSchedule(itemId, pickupSchedule);
+      } catch (_) {
+        // Non-fatal — item was created successfully
+      }
+    }
+
+    // Save delivery schedule
+    if (deliverySchedule != null) {
+      try {
+        await _itemApiService.updateDeliverySchedule(itemId, deliverySchedule);
+      } catch (_) {}
+    }
+
+    // Apply boost
+    if (boosted) {
+      try {
+        final boostResult = await _itemApiService.boostItem(itemId);
+        if (!boostResult.success && boostResult.noCredits) {
+          Get.snackbar(
+            'Boost',
+            'No boost credits available. Purchase a boost from the app to continue.',
+          );
+        }
+      } catch (_) {}
+    }
+
+    return true;
   }
 
   Future<ItemLocationModel> _resolveLocationFromDraftOrProfile(
@@ -429,10 +600,13 @@ class AddItemController extends GetxController {
     final normalized = value.trim().toLowerCase();
     final map = <String, String>{
       'tools': 'tools',
+      'tools & equipment': 'tools',
       'electronics': 'electronics',
       'cameras': 'cameras',
+      'camera & photo': 'cameras',
       'audio': 'audio',
       'sports': 'sports',
+      'sports & outdoors': 'sports',
       'outdoor': 'outdoor',
       'power tools': 'power_tools',
       'power_tools': 'power_tools',
@@ -440,6 +614,7 @@ class AddItemController extends GetxController {
       'kitchen': 'kitchen',
       'furniture': 'furniture',
       'garden': 'garden',
+      'home & garden': 'garden',
       'cleaning': 'cleaning',
       'baby': 'baby',
       'party': 'party',
@@ -450,6 +625,11 @@ class AddItemController extends GetxController {
       'water sports': 'water_sports',
       'water_sports': 'water_sports',
       'music': 'music',
+      'musical instruments': 'music',
+      'clothing': 'clothing',
+      'clothing & accessories': 'clothing',
+      'books_media': 'books_media',
+      'books & media': 'books_media',
       'other': 'other',
     };
 
@@ -470,6 +650,8 @@ class AddItemController extends GetxController {
       'good': 'good',
       'used, fair condition': 'fair',
       'fair': 'fair',
+      'poor': 'poor',
+      'used, poor condition': 'poor',
     };
 
     final mapped = map[normalized] ?? normalized;
@@ -500,18 +682,12 @@ class AddItemController extends GetxController {
   }
 
   double? _asPositiveDouble(dynamic raw) {
-    if (raw == null) {
-      return null;
-    }
-    if (raw is num) {
-      return raw.toDouble();
-    }
-
-    final normalized = raw.toString().replaceAll(RegExp(r'[^0-9.]'), '').trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-    return double.tryParse(normalized);
+    if (raw == null) return null;
+    final value = raw is num ? raw.toDouble() : double.tryParse(
+      raw.toString().replaceAll(RegExp(r'[^0-9.]'), '').trim(),
+    );
+    if (value == null || value <= 0) return null;
+    return value;
   }
 
   double? _asPositiveDoubleOrZero(dynamic raw) {

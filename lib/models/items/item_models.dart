@@ -1,3 +1,139 @@
+class DeliveryPricingTier {
+  const DeliveryPricingTier({required this.maxKm, required this.price});
+
+  final int maxKm;
+  final double price;
+
+  factory DeliveryPricingTier.fromJson(Map<String, dynamic> json) {
+    return DeliveryPricingTier(
+      maxKm: _asInt(json['maxKm']) ?? 0,
+      price: _asDouble(json['price']) ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'maxKm': maxKm, 'price': price};
+}
+
+class DayScheduleModel {
+  const DayScheduleModel({
+    required this.enabled,
+    this.startTime,
+    this.endTime,
+  });
+
+  final bool enabled;
+  final String? startTime;
+  final String? endTime;
+
+  Map<String, dynamic> toJson() {
+    if (!enabled) return {'enabled': false};
+    return {
+      'enabled': true,
+      if (startTime != null) 'startTime': startTime,
+      if (endTime != null) 'endTime': endTime,
+    };
+  }
+}
+
+class WeeklyScheduleModel {
+  const WeeklyScheduleModel({
+    required this.recurringDays,
+    this.scheduleType = 'recurring',
+  });
+
+  final Map<String, DayScheduleModel> recurringDays;
+  final String scheduleType;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'scheduleType': scheduleType,
+      'recurringDays': recurringDays.map((k, v) => MapEntry(k, v.toJson())),
+    };
+  }
+}
+
+class FormConfigModel {
+  const FormConfigModel({
+    this.categories = const [],
+    this.conditions = const [],
+    this.bookingTypes = const [],
+  });
+
+  final List<String> categories;
+  final List<String> conditions;
+  final List<String> bookingTypes;
+
+  factory FormConfigModel.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    final map = data is Map
+        ? data.map((k, v) => MapEntry(k.toString(), v))
+        : json;
+    return FormConfigModel(
+      categories: _toConfigStringList(map['categories']),
+      conditions: _toConfigStringList(map['conditions']),
+      bookingTypes: _toStringList(map['bookingTypes']),
+    );
+  }
+}
+
+class BoostConfigModel {
+  const BoostConfigModel({
+    this.price = 9.99,
+    this.currency = 'CAD',
+    this.durationDays = 7,
+  });
+
+  final double price;
+  final String currency;
+  final int durationDays;
+
+  factory BoostConfigModel.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    final map = data is Map
+        ? data.map((k, v) => MapEntry(k.toString(), v))
+        : json;
+    return BoostConfigModel(
+      price: _asDouble(map['price']) ?? 9.99,
+      currency: _asString(map['currency']) ?? 'CAD',
+      durationDays: _asInt(map['durationDays']) ?? 7,
+    );
+  }
+}
+
+class BoostResult {
+  const BoostResult({
+    required this.success,
+    required this.message,
+    this.isBoosted,
+    this.boostedAt,
+    this.boostExpiresAt,
+    this.noCredits = false,
+  });
+
+  final bool success;
+  final String message;
+  final bool? isBoosted;
+  final DateTime? boostedAt;
+  final DateTime? boostExpiresAt;
+  final bool noCredits;
+}
+
+class LanguageModel {
+  const LanguageModel({required this.code, required this.label, required this.nativeLabel});
+
+  final String code;
+  final String label;
+  final String nativeLabel;
+
+  factory LanguageModel.fromJson(Map<String, dynamic> json) {
+    return LanguageModel(
+      code: _asString(json['code']) ?? '',
+      label: _asString(json['label']) ?? '',
+      nativeLabel: _asString(json['nativeLabel']) ?? '',
+    );
+  }
+}
+
 class CoordinatesModel {
   const CoordinatesModel({this.lat, this.lng});
 
@@ -140,7 +276,13 @@ class ItemModel {
     this.dailyRate,
     this.currency,
     this.condition,
+    this.bookingType,
+    this.deliveryFee,
+    this.deliveryPricing = const [],
     this.isFeatured,
+    this.isBoosted,
+    this.boostedAt,
+    this.boostExpiresAt,
     this.averageRating,
     this.totalReviews,
     this.totalRentals,
@@ -164,7 +306,13 @@ class ItemModel {
   final double? dailyRate;
   final String? currency;
   final String? condition;
+  final String? bookingType;
+  final double? deliveryFee;
+  final List<DeliveryPricingTier> deliveryPricing;
   final bool? isFeatured;
+  final bool? isBoosted;
+  final DateTime? boostedAt;
+  final DateTime? boostExpiresAt;
   final double? averageRating;
   final int? totalReviews;
   final int? totalRentals;
@@ -213,7 +361,13 @@ class ItemModel {
       dailyRate: _asDouble(json['dailyRate']),
       currency: _asString(json['currency']),
       condition: _asString(json['condition']),
+      bookingType: _asString(json['bookingType']),
+      deliveryFee: _asDouble(json['deliveryFee']),
+      deliveryPricing: _parseDeliveryPricing(json['deliveryPricing']),
       isFeatured: _asBool(json['isFeatured']),
+      isBoosted: _asBool(json['isBoosted']),
+      boostedAt: _asDateTime(json['boostedAt']),
+      boostExpiresAt: _asDateTime(json['boostExpiresAt']),
       averageRating: _asDouble(json['averageRating']),
       totalReviews: _asInt(json['totalReviews']),
       totalRentals: _asInt(json['totalRentals']),
@@ -244,7 +398,13 @@ class ItemModel {
     double? dailyRate,
     String? currency,
     String? condition,
+    String? bookingType,
+    double? deliveryFee,
+    List<DeliveryPricingTier>? deliveryPricing,
     bool? isFeatured,
+    bool? isBoosted,
+    DateTime? boostedAt,
+    DateTime? boostExpiresAt,
     double? averageRating,
     int? totalReviews,
     int? totalRentals,
@@ -268,7 +428,13 @@ class ItemModel {
       dailyRate: dailyRate ?? this.dailyRate,
       currency: currency ?? this.currency,
       condition: condition ?? this.condition,
+      bookingType: bookingType ?? this.bookingType,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      deliveryPricing: deliveryPricing ?? this.deliveryPricing,
       isFeatured: isFeatured ?? this.isFeatured,
+      isBoosted: isBoosted ?? this.isBoosted,
+      boostedAt: boostedAt ?? this.boostedAt,
+      boostExpiresAt: boostExpiresAt ?? this.boostExpiresAt,
       averageRating: averageRating ?? this.averageRating,
       totalReviews: totalReviews ?? this.totalReviews,
       totalRentals: totalRentals ?? this.totalRentals,
@@ -406,8 +572,11 @@ class CreateItemRequest {
     this.quantity = 1,
     this.currency = 'CAD',
     required this.condition,
+    this.bookingType,
     required this.location,
     this.deliveryOptions,
+    this.deliveryFee,
+    this.deliveryPricing = const [],
     this.availability,
     this.tags = const [],
   });
@@ -425,8 +594,11 @@ class CreateItemRequest {
   final int quantity;
   final String currency;
   final String condition;
+  final String? bookingType;
   final ItemLocationModel location;
   final DeliveryOptionsModel? deliveryOptions;
+  final double? deliveryFee;
+  final List<DeliveryPricingTier> deliveryPricing;
   final ItemAvailabilityRangeModel? availability;
   final List<String> tags;
 
@@ -446,8 +618,12 @@ class CreateItemRequest {
       'quantity': quantity,
       'currency': currency,
       'condition': condition.trim(),
+      if ((bookingType ?? '').trim().isNotEmpty) 'bookingType': bookingType!.trim(),
       'location': location.toJson(),
       if (deliveryOptions != null) 'deliveryOptions': deliveryOptions!.toJson(),
+      if (deliveryFee != null) 'deliveryFee': deliveryFee,
+      if (deliveryPricing.isNotEmpty)
+        'deliveryPricing': deliveryPricing.map((t) => t.toJson()).toList(),
       if (availability != null) 'availability': availability!.toJson(),
       if (tags.isNotEmpty) 'tags': tags,
     };
@@ -460,6 +636,9 @@ class UpdateItemRequest {
     this.description,
     this.dailyRate,
     this.condition,
+    this.bookingType,
+    this.deliveryFee,
+    this.deliveryPricing,
     this.tags,
   });
 
@@ -467,6 +646,9 @@ class UpdateItemRequest {
   final String? description;
   final double? dailyRate;
   final String? condition;
+  final String? bookingType;
+  final double? deliveryFee;
+  final List<DeliveryPricingTier>? deliveryPricing;
   final List<String>? tags;
 
   Map<String, dynamic> toJson() {
@@ -477,9 +659,22 @@ class UpdateItemRequest {
       if (dailyRate != null) 'dailyRate': dailyRate,
       if (condition != null && condition!.trim().isNotEmpty)
         'condition': condition!.trim(),
+      if (bookingType != null && bookingType!.trim().isNotEmpty)
+        'bookingType': bookingType!.trim(),
+      if (deliveryFee != null) 'deliveryFee': deliveryFee,
+      if (deliveryPricing != null && deliveryPricing!.isNotEmpty)
+        'deliveryPricing': deliveryPricing!.map((t) => t.toJson()).toList(),
       if (tags != null) 'tags': tags,
     };
   }
+}
+
+List<DeliveryPricingTier> _parseDeliveryPricing(dynamic value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Map>()
+      .map((e) => DeliveryPricingTier.fromJson(e.map((k, v) => MapEntry(k.toString(), v))))
+      .toList(growable: false);
 }
 
 double? _asDouble(dynamic value) {
@@ -551,4 +746,21 @@ List<String> _toStringList(dynamic value) {
       .map((element) => _asString(element))
       .whereType<String>()
       .toList(growable: false);
+}
+
+// Used for form-config categories/conditions: extracts 'label' when the API
+// returns objects like {label: 'Electronics', value: 'electronics'}, falls
+// back to 'value', then plain string conversion.
+List<String> _toConfigStringList(dynamic value) {
+  if (value is! List) return const <String>[];
+  return value.map<String?>((element) {
+    if (element is Map) {
+      final label = element['label']?.toString().trim();
+      if (label != null && label.isNotEmpty) return label;
+      final v = element['value']?.toString().trim();
+      if (v != null && v.isNotEmpty) return v;
+      return null;
+    }
+    return _asString(element);
+  }).whereType<String>().where((s) => s.isNotEmpty).toList(growable: false);
 }

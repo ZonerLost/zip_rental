@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/models/items/item_models.dart';
 import 'package:zip_peer/views/screens/add_item_module/bosst.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
@@ -84,7 +85,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
     super.initState();
     if (Get.arguments != null) {
       scheduleType = Get.arguments['scheduleType'];
-      bookingType = Get.arguments['bookingType'];
+      bookingType = Get.arguments['bookingType'] ?? 'manual';
       rentalType = Get.arguments['rentalType'];
       if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
@@ -153,6 +154,31 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
     });
   }
 
+  WeeklyScheduleModel _buildSchedule() {
+    String _fmt(TimeOfDay t) =>
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+    final days = <String, DayScheduleModel>{};
+    for (final entry in dayAvailability.entries) {
+      final dayKey = entry.key.toLowerCase();
+      final enabled = entry.value;
+      if (!enabled) {
+        days[dayKey] = const DayScheduleModel(enabled: false);
+      } else {
+        final times = dayTimes[entry.key]!;
+        days[dayKey] = DayScheduleModel(
+          enabled: true,
+          startTime: _fmt(times['from']!),
+          endTime: _fmt(times['to']!),
+        );
+      }
+    }
+    return WeeklyScheduleModel(
+      recurringDays: days,
+      scheduleType: scheduleType ?? 'recurring',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,14 +189,18 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
           children: [
             MyButton(
               onTap: () {
-                // Navigate to Boost screen with all arguments
+                final schedule = _buildSchedule();
                 Get.to(
-                  () => BoostScreen(),
+                  () => const BoostScreen(),
                   arguments: {
                     'bookingType': bookingType,
                     'rentalType': rentalType,
                     'scheduleType': scheduleType,
-                    'itemDraft': itemDraft,
+                    'pickupSchedule': schedule,
+                    'itemDraft': {
+                      ...?itemDraft,
+                      'bookingType': bookingType,
+                    },
                   },
                 );
               },

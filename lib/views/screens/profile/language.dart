@@ -50,9 +50,9 @@ class LanguageScreen extends StatelessWidget {
                     separatorBuilder: (_, __) => const Gap(12),
                     itemBuilder: (_, i) {
                       final lang = controller.languages[i];
-                      final isSelected = controller.selected == lang['code'];
+                      final isSelected = controller.selected == lang.code;
                       return Bounce(
-                        onTap: () => controller.select(lang['code'].toString()),
+                        onTap: () => controller.select(lang.code),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             vertical: 10,
@@ -64,18 +64,23 @@ class LanguageScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              MyText(
-                                text: lang['flag'].toString(),
-                                size: 32,
-                                color: kBlack,
-                                weight: FontWeight.w500,
-                              ),
-                              const Gap(16),
-                              MyText(
-                                text: lang['name'].toString(),
-                                size: 16,
-                                color: kBlack,
-                                weight: FontWeight.w500,
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  MyText(
+                                    text: lang.nativeLabel,
+                                    size: 16,
+                                    color: kBlack,
+                                    weight: FontWeight.w500,
+                                  ),
+                                  if (lang.nativeLabel != lang.label)
+                                    MyText(
+                                      text: lang.label,
+                                      size: 12,
+                                      color: kSubText,
+                                      weight: FontWeight.w400,
+                                    ),
+                                ],
                               ),
                               const Spacer(),
                               if (isSelected)
@@ -97,8 +102,11 @@ class LanguageScreen extends StatelessWidget {
                 const Gap(30),
                 MyButton(
                   height: 60,
-                  buttonText: 'Confirm',
-                  onTap: () => Get.back(),
+                  buttonText: controller.isSaving ? 'Saving...' : 'Confirm',
+                  onTap: () async {
+                    final ok = await controller.saveLanguage();
+                    if (ok) Get.back();
+                  },
                   backgroundColor: kPrimaryColor,
                   fontColor: kWhite,
                   radius: 30,

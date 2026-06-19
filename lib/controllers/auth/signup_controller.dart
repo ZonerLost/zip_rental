@@ -6,19 +6,27 @@ import 'package:zip_peer/services/auth/google_auth_service.dart';
 import 'package:zip_peer/services/auth/auth_validators.dart';
 import 'package:zip_peer/models/auth/auth_models.dart';
 import 'package:zip_peer/services/notifications/notifications_service.dart';
+import 'package:zip_peer/services/profile/profile_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/screens/auth/otp.dart';
+import 'package:zip_peer/views/screens/auth/phone_otp.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
+import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
 
 class SignupController extends GetxController {
-  SignupController({AuthService? authService, GoogleAuthService? googleAuth})
-    : _authService = authService ?? AuthService(),
-      _googleAuthService = googleAuth ?? GoogleAuthService(),
-      _notificationsService = NotificationsService();
+  SignupController({
+    AuthService? authService,
+    GoogleAuthService? googleAuth,
+    ProfileService? profileService,
+  })  : _authService = authService ?? AuthService(),
+        _googleAuthService = googleAuth ?? GoogleAuthService(),
+        _notificationsService = NotificationsService(),
+        _profileService = profileService ?? ProfileService();
 
   final AuthService _authService;
   final GoogleAuthService _googleAuthService;
   final NotificationsService _notificationsService;
+  final ProfileService _profileService;
 
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
@@ -43,7 +51,8 @@ class SignupController extends GetxController {
       firstNameController.text.trim().isNotEmpty &&
       lastNameController.text.trim().isNotEmpty &&
       identifierController.text.trim().isNotEmpty &&
-      passwordController.text.trim().isNotEmpty &&
+      (selectedTabIndex == 1 ||
+          passwordController.text.trim().isNotEmpty) &&
       !isSubmitting;
 
   void selectTab(int index) {
@@ -63,15 +72,41 @@ class SignupController extends GetxController {
     update();
   }
 
+  Future<String> _effectiveLanguage() async {
+    final stored = await _authService.getLanguagePreference();
+    if (stored != null && stored.isNotEmpty) return stored;
+    return Get.deviceLocale?.languageCode ?? 'en';
+  }
+
   Future<void> submit() async {
     if (!isButtonActive) return;
+
     if (selectedTabIndex == 1) {
-      Get.snackbar(
-        'Unsupported',
-        'Phone signup is not available. Use email signup.',
+      final phone = identifierController.text.trim();
+      isSubmitting = true;
+      update();
+      final result = await _authService.sendPhoneOtp(
+        PhoneSendOtpRequest(phone: phone),
       );
+      isSubmitting = false;
+      update();
+      if (result.success) {
+        await _authService.savePendingPhone(phone);
+        Get.to(
+          () => const PhoneOtpScreen(),
+          arguments: <String, dynamic>{
+            'phone': phone,
+            'isSignupFlow': true,
+            'firstName': firstNameController.text.trim(),
+            'lastName': lastNameController.text.trim(),
+          },
+        );
+      } else {
+        Get.snackbar('Send OTP Failed', result.message);
+      }
       return;
     }
+
     final email = identifierController.text.trim();
     final password = passwordController.text.trim();
 
@@ -90,13 +125,14 @@ class SignupController extends GetxController {
     isSubmitting = true;
     update();
 
+    final language = await _effectiveLanguage();
     final result = await _authService.register(
       RegisterRequest(
         email: email,
         password: password,
         firstName: firstNameController.text.trim(),
         lastName: lastNameController.text.trim(),
-        language: 'en',
+        language: language,
       ),
     );
 
@@ -121,8 +157,9 @@ class SignupController extends GetxController {
         return;
       }
 
+      final language = await _effectiveLanguage();
       final result = await _authService.googleAuth(
-        GoogleAuthRequest(idToken: idToken, language: 'en'),
+        GoogleAuthRequest(idToken: idToken, language: language),
       );
 
       isSubmitting = false;
@@ -130,7 +167,17 @@ class SignupController extends GetxController {
 
       if (result.success) {
         await _notificationsService.syncSavedFcmTokenOnLaunch();
-        Get.offAll(() => BottomNavBar());
+        final profileResult = await _profileService.getProfile();
+        final profile = profileResult.profile;
+        final isComplete =
+            profile != null &&
+            (profile.phone ?? '').trim().isNotEmpty &&
+            (profile.location?.city ?? '').trim().isNotEmpty;
+        if (isComplete) {
+          Get.offAll(() => const BottomNavBar());
+        } else {
+          Get.offAll(() => CompleteYourProfileScreen());
+        }
         return;
       }
       Get.snackbar('Google Auth Failed', result.message);

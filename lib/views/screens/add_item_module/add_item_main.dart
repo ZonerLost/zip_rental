@@ -419,6 +419,90 @@ class _AddNewItemScreenState extends State<AddNewItemScreen> {
                 ),
                 const Gap(20),
 
+                // Min / Max Rental Duration
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: kWhite,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText(
+                              text: 'Min Days',
+                              size: 14,
+                              color: kSubText,
+                              weight: FontWeight.w500,
+                            ),
+                            const Gap(8),
+                            MyTextField(
+                              controller: controller.minRentalDaysController,
+                              hint: '1',
+                              hintColor: kBlack.withOpacity(0.4),
+                              radius: 12,
+                              backgroundColor: kbackground,
+                              marginBottom: 0,
+                              keyboardType: TextInputType.number,
+                              onChanged: controller.onFieldChanged,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Gap(12),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: kWhite,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText(
+                              text: 'Max Days',
+                              size: 14,
+                              color: kSubText,
+                              weight: FontWeight.w500,
+                            ),
+                            const Gap(8),
+                            MyTextField(
+                              controller: controller.maxRentalDaysController,
+                              hint: '30',
+                              hintColor: kBlack.withOpacity(0.4),
+                              radius: 12,
+                              backgroundColor: kbackground,
+                              marginBottom: 0,
+                              keyboardType: TextInputType.number,
+                              onChanged: controller.onFieldChanged,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(20),
+
                 if (controller.showRentalSelectionError)
                   Center(
                     child: MyText(

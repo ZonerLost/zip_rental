@@ -10,7 +10,6 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/screens/auth/reset_password.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/home/item_detail/check_out_2.dart';
@@ -89,7 +88,9 @@ void showAccountCreatedBottomSheet() {
               MyButton(
                 onTap: () {
                   Get.back();
-                  Get.offAll(() => LoginScreen());
+                  Get.until(
+                    (route) => route.settings.name == '/LoginScreen',
+                  );
                 },
                 buttonText: "Done",
                 fontColor: Colors.white,

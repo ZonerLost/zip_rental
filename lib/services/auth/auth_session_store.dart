@@ -4,7 +4,9 @@ class AuthSessionStore {
   static const _accessTokenKey = 'auth_access_token';
   static const _refreshTokenKey = 'auth_refresh_token';
   static const _pendingEmailKey = 'auth_pending_email';
+  static const _pendingPhoneKey = 'auth_pending_phone';
   static const _tokenExpiryKey = 'auth_token_expiry_ms';
+  static const _languageKey = 'user_language_preference';
 
   Future<void> saveTokens({
     required String accessToken,
@@ -80,5 +82,30 @@ class AuthSessionStore {
   Future<void> clearPendingEmail() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_pendingEmailKey);
+  }
+
+  Future<void> savePendingPhone(String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingPhoneKey, phone);
+  }
+
+  Future<String?> getPendingPhone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_pendingPhoneKey);
+  }
+
+  Future<void> clearPendingPhone() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingPhoneKey);
+  }
+
+  Future<void> saveLanguagePreference(String languageCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, languageCode);
+  }
+
+  Future<String?> getLanguagePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_languageKey);
   }
 }

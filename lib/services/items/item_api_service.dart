@@ -265,6 +265,103 @@ class ItemApiService extends ApiServiceBase {
     return true;
   }
 
+  Future<FormConfigModel> getFormConfig() async {
+    final response = await request(
+      method: ApiHttpMethod.get,
+      path: '/items/form-config',
+      requiresAuth: true,
+    );
+    final success = resolveSuccess(response);
+    if (!success) throw Exception(resolveMessage(response, false));
+    return FormConfigModel.fromJson(asMap(response.body));
+  }
+
+  Future<List<LanguageModel>> getLanguages() async {
+    final response = await request(
+      method: ApiHttpMethod.get,
+      path: '/languages',
+      requiresAuth: false,
+    );
+    final success = resolveSuccess(response);
+    if (!success) throw Exception(resolveMessage(response, false));
+    final map = asMap(response.body);
+    final raw = getByPath(map, 'data');
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => LanguageModel.fromJson(stringKeyMap(e)))
+        .toList(growable: false);
+  }
+
+  Future<bool> updatePickupSchedule(String id, WeeklyScheduleModel schedule) async {
+    final response = await request(
+      method: ApiHttpMethod.put,
+      path: '/items/${Uri.encodeComponent(id)}/pickup-schedule',
+      requiresAuth: true,
+      body: schedule.toJson(),
+    );
+    final success = resolveSuccess(response);
+    if (!success) throw Exception(resolveMessage(response, false));
+    return true;
+  }
+
+  Future<bool> updateDeliverySchedule(String id, WeeklyScheduleModel schedule) async {
+    final response = await request(
+      method: ApiHttpMethod.put,
+      path: '/items/${Uri.encodeComponent(id)}/delivery-schedule',
+      requiresAuth: true,
+      body: schedule.toJson(),
+    );
+    final success = resolveSuccess(response);
+    if (!success) throw Exception(resolveMessage(response, false));
+    return true;
+  }
+
+  Future<BoostConfigModel> getBoostConfig() async {
+    final response = await request(
+      method: ApiHttpMethod.get,
+      path: '/items/boost-config',
+      requiresAuth: false,
+    );
+    final success = resolveSuccess(response);
+    if (!success) throw Exception(resolveMessage(response, false));
+    return BoostConfigModel.fromJson(asMap(response.body));
+  }
+
+  Future<BoostResult> boostItem(String id) async {
+    final response = await request(
+      method: ApiHttpMethod.post,
+      path: '/items/${Uri.encodeComponent(id)}/boost',
+      requiresAuth: true,
+    );
+    final statusCode = response.statusCode ?? 0;
+    final map = asMap(response.body);
+    final message = resolveMessage(response, statusCode >= 200 && statusCode < 300);
+
+    if (statusCode == 402) {
+      return BoostResult(success: false, message: message, noCredits: true);
+    }
+
+    final success = resolveSuccess(response);
+    if (!success) return BoostResult(success: false, message: message);
+
+    final data = getByPath(map, 'data') ?? map;
+    final dataMap = data is Map ? stringKeyMap(data) : map;
+    return BoostResult(
+      success: true,
+      message: message,
+      isBoosted: dataMap['isBoosted'] as bool? ?? true,
+      boostedAt: _asDateTimeLocal(dataMap['boostedAt']),
+      boostExpiresAt: _asDateTimeLocal(dataMap['boostExpiresAt']),
+    );
+  }
+
+  DateTime? _asDateTimeLocal(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
+  }
+
   Future<ItemModel> updateAvailability(
     String id, {
     bool? isAvailable,

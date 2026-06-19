@@ -4,6 +4,8 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/models/items/item_models.dart';
+import 'package:zip_peer/services/items/item_api_service.dart';
 import 'package:zip_peer/views/screens/add_item_module/add_items_summary.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -20,7 +22,14 @@ class _BoostScreenState extends State<BoostScreen> {
   String? bookingType;
   String? rentalType;
   String? scheduleType;
+  WeeklyScheduleModel? pickupSchedule;
   Map<String, dynamic>? itemDraft;
+
+  double boostPrice = 9.99;
+  int boostDays = 7;
+  bool _loadingConfig = true;
+
+  final ItemApiService _itemApiService = ItemApiService();
 
   @override
   void initState() {
@@ -29,10 +38,43 @@ class _BoostScreenState extends State<BoostScreen> {
       bookingType = Get.arguments['bookingType'];
       rentalType = Get.arguments['rentalType'];
       scheduleType = Get.arguments['scheduleType'];
+      if (Get.arguments['pickupSchedule'] is WeeklyScheduleModel) {
+        pickupSchedule = Get.arguments['pickupSchedule'] as WeeklyScheduleModel;
+      }
       if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
     }
+    _loadBoostConfig();
+  }
+
+  Future<void> _loadBoostConfig() async {
+    try {
+      final config = await _itemApiService.getBoostConfig();
+      if (mounted) {
+        setState(() {
+          boostPrice = config.price;
+          boostDays = config.durationDays;
+          _loadingConfig = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingConfig = false);
+    }
+  }
+
+  void _goToSummary({required bool boosted}) {
+    Get.to(
+      () => const AddItemsSummaryScreen(),
+      arguments: {
+        'bookingType': bookingType,
+        'rentalType': rentalType,
+        'scheduleType': scheduleType,
+        'pickupSchedule': pickupSchedule,
+        'boosted': boosted,
+        'itemDraft': itemDraft,
+      },
+    );
   }
 
   @override
@@ -42,43 +84,22 @@ class _BoostScreenState extends State<BoostScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             MyButton(
-              onTap: () {
-                Get.to(
-                  () => const AddItemsSummaryScreen(),
-                  arguments: {
-                    'bookingType': bookingType,
-                    'rentalType': rentalType,
-                    'scheduleType': scheduleType,
-                    'boosted': true,
-                    'itemDraft': itemDraft,
-                  },
-                );
-              },
-              buttonText: "Boost Ad",
+              onTap: () => _goToSummary(boosted: true),
+              buttonText: _loadingConfig
+                  ? 'Boost Ad'
+                  : 'Boost Ad — \$$boostPrice CAD / $boostDays days',
               fontColor: Colors.white,
               height: 56,
               radius: 28,
               hasgrad: false,
-              fontSize: 17,
+              fontSize: 16,
             ),
-            Gap(20),
+            const Gap(20),
             MyButton(
-              onTap: () {
-                Get.to(
-                  () => const AddItemsSummaryScreen(),
-                  arguments: {
-                    'bookingType': bookingType,
-                    'rentalType': rentalType,
-                    'scheduleType': scheduleType,
-                    'boosted': false,
-                    'itemDraft': itemDraft,
-                  },
-                );
-              },
-              buttonText: "Skip this step",
+              onTap: () => _goToSummary(boosted: false),
+              buttonText: 'Skip this step',
               fontColor: kPrimaryColor,
               backgroundColor: kWhite,
               height: 56,
@@ -86,17 +107,16 @@ class _BoostScreenState extends State<BoostScreen> {
               hasgrad: false,
               fontSize: 17,
             ),
-            Gap(20),
+            const Gap(20),
           ],
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Gap(50),
-            // Top Bar
+            const Gap(50),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -105,23 +125,20 @@ class _BoostScreenState extends State<BoostScreen> {
                   child: Row(
                     children: [
                       CommonImageView(imagePath: Assets.imagesBack, height: 40),
-                      Gap(8),
-                      MyText(
-                        text: "Boost Ad",
+                      const Gap(8),
+                      const MyText(
+                        text: 'Boost Ad',
                         size: 18,
                         weight: FontWeight.w600,
                       ),
                     ],
                   ),
                 ),
-                MyText(text: "Step 4/5", size: 14, color: kSubText),
+                const MyText(text: 'Step 4/5', size: 14, color: kSubText),
               ],
             ),
-            Gap(20),
-            Spacer(),
+            const Spacer(),
             Column(
-              spacing: 10,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -132,14 +149,18 @@ class _BoostScreenState extends State<BoostScreen> {
                     ),
                   ],
                 ),
-                MyText(
-                  text: "Boost your ad for \$9.99",
-                  size: 18,
-                  weight: FontWeight.w600,
-                ),
+                const Gap(10),
+                _loadingConfig
+                    ? const CircularProgressIndicator()
+                    : MyText(
+                        text: 'Boost your ad for \$$boostPrice CAD',
+                        size: 18,
+                        weight: FontWeight.w600,
+                      ),
+                const Gap(10),
                 MyText(
                   text:
-                      "Get more views and better results by promoting your listing.",
+                      'Get more views and better results by promoting your listing for $boostDays days.',
                   size: 14,
                   color: kSubText,
                   textAlign: TextAlign.center,
@@ -147,7 +168,7 @@ class _BoostScreenState extends State<BoostScreen> {
                 ),
               ],
             ),
-            Spacer(),
+            const Spacer(),
           ],
         ),
       ),

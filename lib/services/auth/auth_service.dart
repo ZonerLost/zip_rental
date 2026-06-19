@@ -96,6 +96,39 @@ class AuthService {
     return result;
   }
 
+  Future<AuthResult> sendPhoneOtp(PhoneSendOtpRequest request) {
+    return _post('/auth/phone/send-otp', request.toJson());
+  }
+
+  Future<PhoneAuthResult> verifyPhoneOtp(PhoneVerifyOtpRequest request) async {
+    final result = await _post('/auth/phone/verify-otp', request.toJson());
+    final data = result.data ?? {};
+    final isNewUser = data['isNewUser'] == true;
+
+    if (result.success &&
+        result.tokens != null &&
+        result.tokens!.accessToken.isNotEmpty) {
+      await _sessionStore.saveTokens(
+        accessToken: result.tokens!.accessToken,
+        refreshToken: result.tokens!.refreshToken,
+      );
+      await _sessionStore.clearPendingEmail();
+      unawaited(TokenRefreshService.start());
+    }
+
+    return PhoneAuthResult(
+      success: result.success,
+      message: result.message,
+      tokens: result.tokens,
+      isNewUser: isNewUser,
+      data: result.data,
+    );
+  }
+
+  Future<AuthResult> resendPhoneOtp(PhoneResendOtpRequest request) {
+    return _post('/auth/phone/resend-otp', request.toJson());
+  }
+
   Future<AuthResult> forgotPassword(ForgotPasswordRequest request) {
     return _post('/auth/forgot-password', request.toJson()).then((
       result,
@@ -227,6 +260,19 @@ class AuthService {
 
   Future<void> savePendingEmail(String email) =>
       _sessionStore.savePendingEmail(email);
+
+  Future<void> savePendingPhone(String phone) =>
+      _sessionStore.savePendingPhone(phone);
+
+  Future<String?> getPendingPhone() => _sessionStore.getPendingPhone();
+
+  Future<void> clearPendingPhone() => _sessionStore.clearPendingPhone();
+
+  Future<void> saveLanguagePreference(String code) =>
+      _sessionStore.saveLanguagePreference(code);
+
+  Future<String?> getLanguagePreference() =>
+      _sessionStore.getLanguagePreference();
 
   Future<String?> getAccessToken() => _sessionStore.getAccessToken();
 

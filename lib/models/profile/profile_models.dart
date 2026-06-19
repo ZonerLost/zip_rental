@@ -65,6 +65,7 @@ class UpdateProfileRequest {
     this.firstName,
     this.lastName,
     this.phone,
+    this.email,
     this.language,
     this.location,
   });
@@ -72,6 +73,7 @@ class UpdateProfileRequest {
   final String? firstName;
   final String? lastName;
   final String? phone;
+  final String? email;
   final String? language;
   final ProfileLocation? location;
 
@@ -82,6 +84,7 @@ class UpdateProfileRequest {
       if (lastName != null && lastName!.trim().isNotEmpty)
         'lastName': lastName!.trim(),
       if (phone != null && phone!.trim().isNotEmpty) 'phone': phone!.trim(),
+      if (email != null && email!.trim().isNotEmpty) 'email': email!.trim(),
       if (language != null && language!.trim().isNotEmpty)
         'language': language!.trim(),
       if (location != null && location!.toJson().isNotEmpty)
@@ -102,6 +105,7 @@ class UserProfile {
     this.location,
     this.role,
     this.isEmailVerified,
+    this.isPhoneVerified,
     this.isIdentityVerified,
     this.updatedAt,
   });
@@ -116,6 +120,7 @@ class UserProfile {
   final ProfileLocation? location;
   final String? role;
   final bool? isEmailVerified;
+  final bool? isPhoneVerified;
   final bool? isIdentityVerified;
   final DateTime? updatedAt;
 
@@ -157,6 +162,7 @@ class UserProfile {
           : null,
       role: json['role']?.toString(),
       isEmailVerified: _asBool(json['isEmailVerified']),
+      isPhoneVerified: _asBool(json['isPhoneVerified']),
       isIdentityVerified: _asBool(json['isIdentityVerified']),
       updatedAt: _asDateTime(json['updatedAt']),
     );
@@ -229,4 +235,104 @@ String? _firstString(Map<String, dynamic> map, List<String> keys) {
     return normalized;
   }
   return null;
+}
+
+class AddressModel {
+  const AddressModel({
+    required this.id,
+    this.label,
+    this.addressLine,
+    this.city,
+    this.province,
+    this.country,
+    this.postalCode,
+    this.isDefault = false,
+    this.coordinates,
+  });
+
+  final String id;
+  final String? label;
+  final String? addressLine;
+  final String? city;
+  final String? province;
+  final String? country;
+  final String? postalCode;
+  final bool isDefault;
+  final ProfileCoordinates? coordinates;
+
+  String get displayAddress {
+    final parts = <String>[
+      if ((addressLine ?? '').isNotEmpty) addressLine!,
+      if ((city ?? '').isNotEmpty) city!,
+      if ((province ?? '').isNotEmpty) province!,
+      if ((country ?? '').isNotEmpty) country!,
+      if ((postalCode ?? '').isNotEmpty) postalCode!,
+    ];
+    return parts.join(', ');
+  }
+
+  factory AddressModel.fromJson(Map<String, dynamic> json) {
+    final rawCoords = json['coordinates'];
+    final coordsMap = rawCoords is Map
+        ? rawCoords.map((k, v) => MapEntry(k.toString(), v))
+        : null;
+    return AddressModel(
+      id: _firstString(json, const ['_id', 'id']) ?? '',
+      label: json['label']?.toString(),
+      addressLine: json['addressLine']?.toString(),
+      city: json['city']?.toString(),
+      province: json['province']?.toString(),
+      country: json['country']?.toString(),
+      postalCode: json['postalCode']?.toString(),
+      isDefault: _asBool(json['isDefault']) ?? false,
+      coordinates: coordsMap != null ? ProfileCoordinates.fromJson(coordsMap) : null,
+    );
+  }
+}
+
+class AddAddressRequest {
+  const AddAddressRequest({
+    required this.label,
+    required this.addressLine,
+    required this.city,
+    required this.province,
+    required this.country,
+    required this.postalCode,
+    this.coordinates,
+  });
+
+  final String label;
+  final String addressLine;
+  final String city;
+  final String province;
+  final String country;
+  final String postalCode;
+  final ProfileCoordinates? coordinates;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'label': label.trim(),
+      'addressLine': addressLine.trim(),
+      'city': city.trim(),
+      'province': province.trim(),
+      'country': country.trim(),
+      'postalCode': postalCode.trim(),
+      if (coordinates != null && coordinates!.toJson().isNotEmpty)
+        'coordinates': coordinates!.toJson(),
+    };
+  }
+}
+
+class AddressResult {
+  const AddressResult({
+    required this.success,
+    required this.message,
+    this.addresses = const [],
+    this.address,
+  });
+
+  final bool success;
+  final String message;
+  final List<AddressModel> addresses;
+  final AddressModel? address;
 }

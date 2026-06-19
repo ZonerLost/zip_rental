@@ -9,6 +9,7 @@ import 'package:zip_peer/services/notifications/notifications_service.dart';
 import 'package:zip_peer/services/profile/profile_service.dart';
 import 'package:zip_peer/views/screens/auth/forgot_password.dart';
 import 'package:zip_peer/views/screens/auth/otp.dart';
+import 'package:zip_peer/views/screens/auth/phone_otp.dart';
 import 'package:zip_peer/views/screens/auth/signup.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/profile_creation/complete_profile.dart';
@@ -45,7 +46,8 @@ class LoginController extends GetxController {
       : identifierController.text.trim().length >= 7;
   bool get isButtonActive =>
       identifierController.text.trim().isNotEmpty &&
-      passwordController.text.trim().isNotEmpty &&
+      (selectedTabIndex == 1 ||
+          passwordController.text.trim().isNotEmpty) &&
       !isSubmitting;
 
   void selectTab(int index) {
@@ -60,13 +62,31 @@ class LoginController extends GetxController {
 
   Future<void> submit() async {
     if (!isButtonActive) return;
+
     if (selectedTabIndex == 1) {
-      Get.snackbar(
-        'Unsupported',
-        'Phone login is not available. Use email login.',
+      final phone = identifierController.text.trim();
+      isSubmitting = true;
+      update();
+      final result = await _authService.sendPhoneOtp(
+        PhoneSendOtpRequest(phone: phone),
       );
+      isSubmitting = false;
+      update();
+      if (result.success) {
+        await _authService.savePendingPhone(phone);
+        Get.to(
+          () => const PhoneOtpScreen(),
+          arguments: <String, dynamic>{
+            'phone': phone,
+            'isSignupFlow': false,
+          },
+        );
+      } else {
+        Get.snackbar('Send OTP Failed', result.message);
+      }
       return;
     }
+
     final email = identifierController.text.trim();
     if (!AuthValidators.isValidEmail(email)) {
       Get.snackbar('Invalid Email', 'Please enter a valid email address.');
@@ -127,6 +147,12 @@ class LoginController extends GetxController {
     }
   }
 
+  Future<String> _effectiveLanguage() async {
+    final stored = await _authService.getLanguagePreference();
+    if (stored != null && stored.isNotEmpty) return stored;
+    return Get.deviceLocale?.languageCode ?? 'en';
+  }
+
   Future<void> continueWithGoogle() async {
     isSubmitting = true;
     update();
@@ -138,8 +164,9 @@ class LoginController extends GetxController {
         return;
       }
 
+      final language = await _effectiveLanguage();
       final result = await _authService.googleAuth(
-        GoogleAuthRequest(idToken: idToken, language: 'en'),
+        GoogleAuthRequest(idToken: idToken, language: language),
       );
 
       isSubmitting = false;

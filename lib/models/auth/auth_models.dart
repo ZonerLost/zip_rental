@@ -157,6 +157,59 @@ class LogoutRequest {
   }
 }
 
+class PhoneSendOtpRequest {
+  const PhoneSendOtpRequest({required this.phone});
+
+  final String phone;
+
+  Map<String, dynamic> toJson() => {'phone': phone};
+}
+
+class PhoneVerifyOtpRequest {
+  const PhoneVerifyOtpRequest({
+    required this.phone,
+    required this.otp,
+    this.firstName,
+    this.lastName,
+  });
+
+  final String phone;
+  final String otp;
+  final String? firstName;
+  final String? lastName;
+
+  Map<String, dynamic> toJson() => {
+        'phone': phone,
+        'otp': otp,
+        if ((firstName ?? '').trim().isNotEmpty) 'firstName': firstName!.trim(),
+        if ((lastName ?? '').trim().isNotEmpty) 'lastName': lastName!.trim(),
+      };
+}
+
+class PhoneResendOtpRequest {
+  const PhoneResendOtpRequest({required this.phone});
+
+  final String phone;
+
+  Map<String, dynamic> toJson() => {'phone': phone};
+}
+
+class PhoneAuthResult {
+  const PhoneAuthResult({
+    required this.success,
+    required this.message,
+    this.tokens,
+    this.isNewUser = false,
+    this.data,
+  });
+
+  final bool success;
+  final String message;
+  final AuthTokens? tokens;
+  final bool isNewUser;
+  final Map<String, dynamic>? data;
+}
+
 class AuthTokens {
   const AuthTokens({required this.accessToken, required this.refreshToken});
 

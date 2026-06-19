@@ -4,8 +4,9 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/constants/app_sizes.dart';
+import 'package:zip_peer/controllers/profile/address_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/subscriptions/address_methord.dart';
+import 'package:zip_peer/models/profile/profile_models.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_dropdown.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -20,30 +21,74 @@ class AddAddressScreen extends StatefulWidget {
 }
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
-  final TextEditingController titleController = TextEditingController(
-    text: 'Home Address',
-  );
-  final TextEditingController streetController = TextEditingController(
-    text: 'St 4, Wilson road',
-  );
-  final TextEditingController zipCodeController = TextEditingController(
-    text: '101223',
-  );
-  final TextEditingController completeAddressController = TextEditingController(
-    text: 'St 4, Wilson road, house 34, Brooklyn , USA',
-  );
+  final _labelController = TextEditingController();
+  final _addressLineController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _provinceController = TextEditingController();
+  final _postalCodeController = TextEditingController();
 
-  final FocusNode titleFocus = FocusNode();
-  final FocusNode streetFocus = FocusNode();
-  final FocusNode zipCodeFocus = FocusNode();
-  final FocusNode completeAddressFocus = FocusNode();
+  String _selectedCountry = 'Canada';
+  final List<String> _countries = ['Canada', 'United States of America', 'United Kingdom'];
 
-  String selectedCountry = 'United States of America';
-  final List<String> countries = [
-    'United States of America',
-    'Canada',
-    'United Kingdom',
-  ];
+  bool _showError = false;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    _addressLineController.dispose();
+    _cityController.dispose();
+    _provinceController.dispose();
+    _postalCodeController.dispose();
+    super.dispose();
+  }
+
+  bool _validate() {
+    final ok = _labelController.text.trim().isNotEmpty &&
+        _addressLineController.text.trim().isNotEmpty &&
+        _cityController.text.trim().isNotEmpty &&
+        _postalCodeController.text.trim().isNotEmpty;
+    if (!ok) setState(() => _showError = true);
+    return ok;
+  }
+
+  Future<void> _submit() async {
+    if (!_validate()) return;
+
+    setState(() => _isSaving = true);
+
+    final request = AddAddressRequest(
+      label: _labelController.text.trim(),
+      addressLine: _addressLineController.text.trim(),
+      city: _cityController.text.trim(),
+      province: _provinceController.text.trim(),
+      country: _selectedCountry,
+      postalCode: _postalCodeController.text.trim(),
+    );
+
+    AddressController? controller;
+    try {
+      controller = Get.find<AddressController>();
+    } catch (_) {
+      controller = null;
+    }
+
+    bool success;
+    if (controller != null) {
+      success = await controller.addAddress(request);
+    } else {
+      // AddressController not in scope — create a temporary one just for the call
+      final temp = AddressController();
+      success = await temp.addAddress(request);
+    }
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (success) {
+      Get.back(result: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,127 +99,117 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Gap(20),
-              // Back Button
+              const Gap(20),
               Row(
                 children: [
                   Bounce(
                     onTap: () => Get.back(),
-                    child: CommonImageView(
-                      imagePath: Assets.imagesBack,
-                      height: 50,
-                    ),
+                    child: CommonImageView(imagePath: Assets.imagesBack, height: 50),
                   ),
-                  Gap(8),
-                  // Title
-                  MyText(
-                    text: "Add new address",
-                    size: 16,
-                    weight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
+                  const Gap(8),
+                  const MyText(text: 'Add new address', size: 16, weight: FontWeight.w700),
                 ],
               ),
-
-              Gap(24),
-
+              const Gap(24),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Address Title
                       MyTextField(
-                        label: "Address Title",
+                        label: 'Address Label *',
                         labelColor: kSubText,
                         labelSize: 12,
                         labelWeight: FontWeight.w500,
-                        hint: "Address Title",
+                        hint: 'e.g. Home, Office',
                         hintColor: kBlack,
-                        controller: titleController,
+                        controller: _labelController,
                         alwaysShowLabel: true,
-                        focusNode: titleFocus,
                         radius: 12,
+                        onChanged: (_) => setState(() => _showError = false),
                       ),
-
-                      // Street
                       MyTextField(
-                        label: "Street ",
+                        label: 'Street Address *',
                         labelColor: kSubText,
                         labelSize: 12,
                         labelWeight: FontWeight.w500,
-                        hint: "Street",
+                        hint: 'e.g. 123 Main St',
                         hintColor: kBlack,
-                        controller: streetController,
+                        controller: _addressLineController,
                         alwaysShowLabel: true,
-                        focusNode: streetFocus,
+                        radius: 12,
+                        onChanged: (_) => setState(() => _showError = false),
+                      ),
+                      MyTextField(
+                        label: 'City *',
+                        labelColor: kSubText,
+                        labelSize: 12,
+                        labelWeight: FontWeight.w500,
+                        hint: 'e.g. Toronto',
+                        hintColor: kBlack,
+                        controller: _cityController,
+                        alwaysShowLabel: true,
+                        radius: 12,
+                        onChanged: (_) => setState(() => _showError = false),
+                      ),
+                      MyTextField(
+                        label: 'Province / State',
+                        labelColor: kSubText,
+                        labelSize: 12,
+                        labelWeight: FontWeight.w500,
+                        hint: 'e.g. ON',
+                        hintColor: kBlack,
+                        controller: _provinceController,
+                        alwaysShowLabel: true,
                         radius: 12,
                       ),
-
-                      // Country Dropdown
-                      MyText(
-                        text: 'Country',
-                        size: 14,
-                        color: kBlack,
-                        paddingBottom: 8,
-                      ),
+                      const MyText(text: 'Country', size: 12, color: kSubText, paddingBottom: 8),
                       CustomDropDown(
                         hint: 'Select Country',
-                        items: countries,
-                        selectedValue: selectedCountry,
-                        onChanged: (value) {
-                          setState(() => selectedCountry = value);
-                        },
+                        items: _countries,
+                        selectedValue: _selectedCountry,
+                        onChanged: (value) => setState(() => _selectedCountry = value),
                         bgColor: Colors.white,
-                        labelText: "",
+                        labelText: '',
                       ),
-                      // Zip Code
+                      const Gap(16),
                       MyTextField(
-                        label: "Zip Code ",
+                        label: 'Postal / Zip Code *',
                         labelColor: kSubText,
                         labelSize: 12,
                         labelWeight: FontWeight.w500,
-                        hint: "Zip Code",
+                        hint: 'e.g. M5V 1A1',
                         hintColor: kBlack,
-                        controller: zipCodeController,
+                        controller: _postalCodeController,
                         alwaysShowLabel: true,
-                        focusNode: zipCodeFocus,
                         radius: 12,
+                        onChanged: (_) => setState(() => _showError = false),
                       ),
-
-                      // Complete Address
-                      MyTextField(
-                        label: "Complete Address",
-                        labelColor: kSubText,
-                        labelSize: 12,
-                        labelWeight: FontWeight.w500,
-                        hint: "Complete Address",
-                        hintColor: kBlack,
-                        controller: completeAddressController,
-                        alwaysShowLabel: true,
-                        focusNode: completeAddressFocus,
-                        radius: 12,
-                        maxLines: 4,
-                      ),
-                      Gap(32),
+                      if (_showError) ...[
+                        const Gap(8),
+                        const Row(
+                          children: [
+                            Icon(Icons.error_outline, color: kredColor, size: 16),
+                            Gap(6),
+                            MyText(text: 'Please fill in all required fields.', size: 13, color: kredColor),
+                          ],
+                        ),
+                      ],
+                      const Gap(32),
                     ],
                   ),
                 ),
               ),
-
-              // Add Button
               MyButton(
-                onTap: () {
-                  Get.back();
-                },
-                buttonText: "Add",
+                onTap: () { if (!_isSaving) _submit(); },
+                buttonText: _isSaving ? 'Saving...' : 'Add Address',
                 fontColor: Colors.white,
                 height: 56,
                 radius: 28,
                 hasgrad: false,
                 fontSize: 17,
               ),
-              Gap(20),
+              const Gap(20),
             ],
           ),
         ),

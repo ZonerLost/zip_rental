@@ -24,6 +24,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final FocusNode passwordFocus = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    Get.put(LoginController());
+  }
+
+  @override
   void dispose() {
     identifierFocus.dispose();
     passwordFocus.dispose();
@@ -32,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(LoginController());
     return GetBuilder<LoginController>(
       builder: (controller) {
         return GestureDetector(

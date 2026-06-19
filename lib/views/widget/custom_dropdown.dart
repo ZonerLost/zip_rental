@@ -70,7 +70,11 @@ class CustomDropDown extends StatelessWidget {
                           ),
                         )
                         .toList(),
-                    value: selectedValue == hint ? null : selectedValue,
+                    value: (selectedValue == hint ||
+                            items == null ||
+                            !items!.contains(selectedValue))
+                        ? null
+                        : selectedValue,
                     hint: MyText(
                       text: hint,
                       size: 12,
@@ -242,7 +246,11 @@ class CustomDropDown2 extends StatelessWidget {
                         ),
                       )
                       .toList(),
-                  value: selectedValue == hint ? null : selectedValue,
+                  value: (selectedValue == hint ||
+                          items == null ||
+                          !items!.contains(selectedValue))
+                      ? null
+                      : selectedValue,
                   hint: MyText(
                     text: hint,
                     size: 12,

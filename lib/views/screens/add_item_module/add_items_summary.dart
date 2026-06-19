@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/add_item_module/add_item_main.dart';
+import 'package:zip_peer/models/items/item_models.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
@@ -28,6 +28,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
   String? rentalType;
   String? scheduleType;
   bool boosted = false;
+  WeeklyScheduleModel? pickupSchedule;
   Map<String, dynamic>? itemDraft;
 
   @override
@@ -38,6 +39,10 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
       rentalType = Get.arguments['rentalType'];
       scheduleType = Get.arguments['scheduleType'];
       boosted = Get.arguments['boosted'] ?? false;
+      if (Get.arguments['pickupSchedule'] is WeeklyScheduleModel) {
+        pickupSchedule =
+            Get.arguments['pickupSchedule'] as WeeklyScheduleModel;
+      }
       if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
@@ -77,48 +82,46 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
     return parts.isEmpty ? 'Not set' : parts.join(', ');
   }
 
-  void _showEditAddressSheet(AddItemController controller) {
-    // Pre-fill from draft
-    final loc = itemDraft?['location'];
-    if (loc is Map) {
-      controller.cityController.text = (loc['city'] ?? '').toString();
-      controller.provinceController.text = (loc['province'] ?? '').toString();
-      controller.countryController.text = (loc['country'] ?? 'Canada').toString();
-      final coords = loc['coordinates'];
-      if (coords is Map) {
-        controller.latController.text = (coords['lat'] ?? '').toString();
-        controller.lngController.text = (coords['lng'] ?? '').toString();
-      }
-    }
-
-    // Pre-fill availability dates
+  // ── Product info edit sheet ──────────────────────────────────────────────
+  void _showEditProductSheet(AddItemController controller) {
+    // Pre-fill text controllers from draft
+    controller.titleController.text = (itemDraft?['title'] ?? '').toString();
+    controller.descriptionController.text = (itemDraft?['description'] ?? '').toString();
+    controller.quantityController.text = (itemDraft?['quantity'] ?? '1').toString();
+    controller.minRentalDaysController.text = (itemDraft?['minRentalDays'] ?? '1').toString();
+    controller.maxRentalDaysController.text = (itemDraft?['maxRentalDays'] ?? '30').toString();
+    final tagsRaw = itemDraft?['tags'];
+    controller.tagsController.text = tagsRaw is List
+        ? tagsRaw.join(', ')
+        : (tagsRaw ?? '').toString();
     final avail = itemDraft?['availability'];
     if (avail is Map) {
       controller.availableFromController.text = (avail['availableFrom'] ?? '').toString();
       controller.availableToController.text = (avail['availableTo'] ?? '').toString();
     }
 
-    // Pre-fill weekly/monthly/deposit/quantity
-    controller.weeklyRateController.text = (itemDraft?['weeklyRate'] ?? '').toString();
-    controller.monthlyRateController.text = (itemDraft?['monthlyRate'] ?? '').toString();
-    controller.depositController.text = (itemDraft?['depositAmount'] ?? '').toString();
-    controller.quantityController.text = (itemDraft?['quantity'] ?? '1').toString();
+    // Price — read whichever rate matches the stored priceType
+    String localPriceType = (itemDraft?['priceType'] ?? 'Per Day').toString();
+    final priceKey = localPriceType == 'Per Week'
+        ? 'weeklyRate'
+        : localPriceType == 'Per Month'
+            ? 'monthlyRate'
+            : 'dailyRate';
+    controller.priceController.text = (itemDraft?[priceKey] ?? '').toString();
 
     Get.bottomSheet(
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       enableDrag: true,
       DoubleWhiteContainers(
-        height: MediaQuery.of(Get.context!).size.height * 0.85,
+        height: MediaQuery.of(Get.context!).size.height * 0.88,
         mainColor: kWhite3,
         topColor: kWhite,
         handleHeight: 14,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: StatefulBuilder(
-          builder: (ctx, setState) => SingleChildScrollView(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-            ),
+          builder: (ctx, setSheet) => SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,69 +136,94 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   ),
                 ),
                 const Gap(16),
-                const MyText(text: 'Edit Details', size: 20, weight: FontWeight.w600, color: Colors.black),
+                const MyText(text: 'Edit Product Info', size: 20, weight: FontWeight.w600, color: Colors.black),
                 const Gap(4),
-                MyText(text: 'Update location, pricing, and availability.', size: 14, color: Colors.grey[600]),
+                MyText(text: 'Update title, description, pricing, and more.', size: 14, color: Colors.grey[600]),
                 const Gap(16),
                 Divider(color: kDividerColor),
                 const Gap(12),
-                const MyText(text: 'City *', size: 14, weight: FontWeight.w500, color: Colors.black87),
+
+                // Title
+                const MyText(text: 'Title *', size: 14, weight: FontWeight.w500, color: Colors.black87),
                 const Gap(8),
                 MyTextField(
-                  controller: controller.cityController,
-                  hint: 'e.g. Montreal',
+                  controller: controller.titleController,
+                  hint: 'e.g. Nike Jordan 6',
                   hintColor: kBlack.withOpacity(0.4),
                   radius: 12,
                   backgroundColor: Colors.white,
                 ),
-                const MyText(text: 'Province', size: 14, weight: FontWeight.w500, color: Colors.black87),
+
+                // Description
+                const MyText(text: 'Description *', size: 14, weight: FontWeight.w500, color: Colors.black87),
                 const Gap(8),
                 MyTextField(
-                  controller: controller.provinceController,
-                  hint: 'e.g. QC',
+                  controller: controller.descriptionController,
+                  hint: 'Describe your item...',
                   hintColor: kBlack.withOpacity(0.4),
                   radius: 12,
                   backgroundColor: Colors.white,
+                  maxLines: 4,
                 ),
-                const MyText(text: 'Country *', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.countryController,
-                  hint: 'Canada',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
+
+                // Price + Per row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const MyText(text: 'Price *', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                          const Gap(8),
+                          MyTextField(
+                            controller: controller.priceController,
+                            hint: '0.00',
+                            hintColor: kBlack.withOpacity(0.4),
+                            radius: 12,
+                            backgroundColor: Colors.white,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(12),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const MyText(text: 'Per', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                          const Gap(8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: localPriceType,
+                                isExpanded: true,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                borderRadius: BorderRadius.circular(12),
+                                items: controller.uiPriceTypes
+                                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v != null) setSheet(() => localPriceType = v);
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const MyText(text: 'Weekly Rate', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.weeklyRateController,
-                  hint: 'e.g. 140',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const MyText(text: 'Monthly Rate', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.monthlyRateController,
-                  hint: 'e.g. 450',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const MyText(text: 'Deposit Amount', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.depositController,
-                  hint: 'e.g. 100',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
+
+                // Quantity
                 const MyText(text: 'Quantity', size: 14, weight: FontWeight.w500, color: Colors.black87),
                 const Gap(8),
                 MyTextField(
@@ -206,6 +234,41 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   backgroundColor: Colors.white,
                   keyboardType: TextInputType.number,
                 ),
+
+                // Min / Max Rental Days
+                const MyText(text: 'Min Rental Days', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.minRentalDaysController,
+                  hint: '1',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                  keyboardType: TextInputType.number,
+                ),
+                const MyText(text: 'Max Rental Days', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.maxRentalDaysController,
+                  hint: '30',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                  keyboardType: TextInputType.number,
+                ),
+
+                // Tags
+                const MyText(text: 'Tags (comma separated)', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.tagsController,
+                  hint: 'e.g. nike, shoes, sport',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                ),
+
+                // Availability
                 const MyText(text: 'Available From (YYYY-MM-DD)', size: 14, weight: FontWeight.w500, color: Colors.black87),
                 const Gap(8),
                 MyTextField(
@@ -224,11 +287,145 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   radius: 12,
                   backgroundColor: Colors.white,
                 ),
-                const MyText(text: 'Tags (comma separated)', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+
+                MyButton(
+                  onTap: () {
+                    final rawPrice = controller.priceController.text.trim();
+                    final parsedPrice = double.tryParse(rawPrice);
+                    final Map<String, dynamic> priceUpdates;
+                    if (localPriceType == 'Per Week') {
+                      priceUpdates = {
+                        'priceType': 'Per Week',
+                        'weeklyRate': rawPrice,
+                        'dailyRate': parsedPrice != null
+                            ? (parsedPrice / 7).toStringAsFixed(2)
+                            : '',
+                      };
+                    } else if (localPriceType == 'Per Month') {
+                      priceUpdates = {
+                        'priceType': 'Per Month',
+                        'monthlyRate': rawPrice,
+                        'dailyRate': parsedPrice != null
+                            ? (parsedPrice / 30).toStringAsFixed(2)
+                            : '',
+                      };
+                    } else {
+                      priceUpdates = {
+                        'priceType': 'Per Day',
+                        'dailyRate': rawPrice,
+                      };
+                    }
+
+                    final tagsText = controller.tagsController.text.trim();
+                    final tagsList = tagsText.isEmpty
+                        ? <String>[]
+                        : tagsText.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                    final fromText = controller.availableFromController.text.trim();
+                    final toText = controller.availableToController.text.trim();
+
+                    setState(() {
+                      itemDraft = {
+                        ...?itemDraft,
+                        ...priceUpdates,
+                        'title': controller.titleController.text.trim(),
+                        'description': controller.descriptionController.text.trim(),
+                        'quantity': controller.quantityController.text.trim(),
+                        'minRentalDays': controller.minRentalDaysController.text.trim(),
+                        'maxRentalDays': controller.maxRentalDaysController.text.trim(),
+                        'tags': tagsList,
+                        if (fromText.isNotEmpty && toText.isNotEmpty)
+                          'availability': {'availableFrom': fromText, 'availableTo': toText},
+                      };
+                    });
+                    Get.back();
+                  },
+                  buttonText: 'Save',
+                  fontColor: Colors.white,
+                  height: 56,
+                  radius: 28,
+                  hasgrad: false,
+                  fontSize: 17,
+                ),
+                const Gap(20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Address-only edit sheet ───────────────────────────────────────────────
+  void _showEditAddressSheet(AddItemController controller) {
+    final loc = itemDraft?['location'];
+    if (loc is Map) {
+      controller.cityController.text = (loc['city'] ?? '').toString();
+      controller.provinceController.text = (loc['province'] ?? '').toString();
+      controller.countryController.text = (loc['country'] ?? 'Canada').toString();
+      final coords = loc['coordinates'];
+      if (coords is Map) {
+        controller.latController.text = (coords['lat'] ?? '').toString();
+        controller.lngController.text = (coords['lng'] ?? '').toString();
+      }
+    }
+
+    Get.bottomSheet(
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      enableDrag: true,
+      DoubleWhiteContainers(
+        height: MediaQuery.of(Get.context!).size.height * 0.65,
+        mainColor: kWhite3,
+        topColor: kWhite,
+        handleHeight: 14,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: StatefulBuilder(
+          builder: (ctx, setSheet) => SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: Get.back,
+                  child: Row(
+                    children: [
+                      CommonImageView(imagePath: Assets.imagesBackSimple, height: 32),
+                      const Gap(8),
+                      const MyText(text: 'Back', size: 16, weight: FontWeight.w600, color: Colors.black),
+                    ],
+                  ),
+                ),
+                const Gap(16),
+                const MyText(text: 'Edit Address', size: 20, weight: FontWeight.w600, color: Colors.black),
+                const Gap(4),
+                MyText(text: 'Update your pickup / delivery location.', size: 14, color: Colors.grey[600]),
+                const Gap(16),
+                Divider(color: kDividerColor),
+                const Gap(12),
+                const MyText(text: 'City *', size: 14, weight: FontWeight.w500, color: Colors.black87),
                 const Gap(8),
                 MyTextField(
-                  controller: controller.tagsController,
-                  hint: 'e.g. nike, shoes, sport',
+                  controller: controller.cityController,
+                  hint: 'e.g. Montreal',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                ),
+                const MyText(text: 'Province *', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.provinceController,
+                  hint: 'e.g. QC',
+                  hintColor: kBlack.withOpacity(0.4),
+                  radius: 12,
+                  backgroundColor: Colors.white,
+                ),
+                const MyText(text: 'Country', size: 14, weight: FontWeight.w500, color: Colors.black87),
+                const Gap(8),
+                MyTextField(
+                  controller: controller.countryController,
+                  hint: 'Canada',
                   hintColor: kBlack.withOpacity(0.4),
                   radius: 12,
                   backgroundColor: Colors.white,
@@ -256,7 +453,6 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                 const Gap(8),
                 MyButton(
                   onTap: () {
-                    // Merge updated fields back into draft
                     final updatedLocation = <String, dynamic>{
                       'city': controller.cityController.text.trim(),
                       'province': controller.provinceController.text.trim(),
@@ -269,27 +465,10 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     if (lat != null && lng != null) {
                       updatedLocation['coordinates'] = {'lat': lat, 'lng': lng};
                     }
-
-                    final updatedAvailability = <String, dynamic>{
-                      'availableFrom': controller.availableFromController.text.trim(),
-                      'availableTo': controller.availableToController.text.trim(),
-                    };
-
                     setState(() {
-                      itemDraft = {
-                        ...?itemDraft,
-                        'location': updatedLocation,
-                        'weeklyRate': controller.weeklyRateController.text.trim(),
-                        'monthlyRate': controller.monthlyRateController.text.trim(),
-                        'depositAmount': controller.depositController.text.trim(),
-                        'quantity': controller.quantityController.text.trim(),
-                        'availability': updatedAvailability,
-                        'tags': controller.tagsController.text.trim(),
-                      };
+                      itemDraft = {...?itemDraft, 'location': updatedLocation};
                     });
                     Get.back();
-                    // Trigger rebuild of summary
-                    if (mounted) this.setState(() {});
                   },
                   buttonText: 'Save',
                   fontColor: Colors.white,
@@ -318,34 +497,21 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
             children: [
               MyButton(
                 onTap: () async {
-                  // Merge latest fields into draft before submitting
                   final mergedDraft = {
                     ...?itemDraft,
-                    'location': <String, dynamic>{
-                      'city': addItemController.cityController.text.trim(),
-                      'province': addItemController.provinceController.text.trim(),
-                      'country': addItemController.countryController.text.trim().isEmpty
-                          ? 'Canada'
-                          : addItemController.countryController.text.trim(),
-                      if (addItemController.latController.text.trim().isNotEmpty &&
-                          addItemController.lngController.text.trim().isNotEmpty)
-                        'coordinates': {
-                          'lat': double.tryParse(addItemController.latController.text.trim()),
-                          'lng': double.tryParse(addItemController.lngController.text.trim()),
-                        },
-                    },
-                    'weeklyRate': addItemController.weeklyRateController.text.trim(),
-                    'monthlyRate': addItemController.monthlyRateController.text.trim(),
-                    'depositAmount': addItemController.depositController.text.trim(),
-                    'quantity': addItemController.quantityController.text.trim(),
-                    if (addItemController.availableFromController.text.trim().isNotEmpty &&
-                        addItemController.availableToController.text.trim().isNotEmpty)
-                      'availability': {
-                        'availableFrom': addItemController.availableFromController.text.trim(),
-                        'availableTo': addItemController.availableToController.text.trim(),
-                      },
+                    'bookingType': bookingType ?? 'manual',
                   };
-                  final didCreate = await addItemController.createItemFromDraft(mergedDraft);
+                  // Delivery schedule uses same weekly windows when rentalType includes delivery
+                  final deliverySchedule = (rentalType == 'delivery' || rentalType == 'both')
+                      ? pickupSchedule
+                      : null;
+
+                  final didCreate = await addItemController.createItemWithScheduleAndBoost(
+                    mergedDraft,
+                    pickupSchedule: pickupSchedule,
+                    deliverySchedule: deliverySchedule,
+                    boosted: boosted,
+                  );
                   if (!didCreate) return;
                   if (!mounted) return;
                   Get.snackbar('Success', 'Item added successfully.');
@@ -399,7 +565,7 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     children: [
                       const MyText(text: 'Product Information', size: 14, weight: FontWeight.w500, color: kBlack),
                       Bounce(
-                        onTap: () => Get.to(() => const AddNewItemScreen()),
+                        onTap: () => _showEditProductSheet(addItemController),
                         child: Row(
                           spacing: 5,
                           children: [
@@ -440,25 +606,45 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   const Gap(12),
                   _SummaryRow(label: 'Rental Type', value: rentalTypeDisplay),
                   const Gap(12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const MyText(text: 'Price', size: 14, color: kSubText),
-                      Row(
-                        children: [
-                          MyText(
-                            text: 'CAD \$${(itemDraft?['dailyRate'] ?? '0.00')} ',
-                            size: 16,
-                            weight: FontWeight.w600,
-                          ),
-                          const MyText(text: '/ Day', size: 14, color: kSubText, weight: FontWeight.w500),
-                        ],
-                      ),
-                    ],
-                  ),
+                  Builder(builder: (_) {
+                    final priceType = (itemDraft?['priceType'] ?? 'Per Day').toString();
+                    final priceKey = priceType == 'Per Week'
+                        ? 'weeklyRate'
+                        : priceType == 'Per Month'
+                            ? 'monthlyRate'
+                            : 'dailyRate';
+                    final displayPrice = (itemDraft?[priceKey] ?? '0.00').toString();
+                    final periodLabel = priceType == 'Per Week'
+                        ? '/ Week'
+                        : priceType == 'Per Month'
+                            ? '/ Month'
+                            : '/ Day';
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const MyText(text: 'Price', size: 14, color: kSubText),
+                        Row(
+                          children: [
+                            MyText(
+                              text: 'CAD \$$displayPrice ',
+                              size: 16,
+                              weight: FontWeight.w600,
+                            ),
+                            MyText(text: periodLabel, size: 14, color: kSubText, weight: FontWeight.w500),
+                          ],
+                        ),
+                      ],
+                    );
+                  }),
                   if (rentalType == 'delivery' || rentalType == 'both') ...[
                     const Gap(12),
-                    _SummaryRow(label: 'Delivery Fees', value: '\$10.00'),
+                    Builder(builder: (_) {
+                      final fee = itemDraft?['deliveryFee'];
+                      final feeStr = fee != null
+                          ? 'CAD \$${(fee is num ? fee.toDouble() : double.tryParse(fee.toString()) ?? 0.0).toStringAsFixed(2)}'
+                          : 'Not set';
+                      return _SummaryRow(label: 'Delivery Fees', value: feeStr);
+                    }),
                   ],
                   const Gap(12),
                   _SummaryRow(
@@ -466,14 +652,25 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                     value: (itemDraft?['description'] ?? '—').toString(),
                     valueMaxLines: 3,
                   ),
-                  // Tags
-                  if ((itemDraft?['tags'] as List?)?.isNotEmpty == true) ...[
-                    const Gap(12),
-                    _SummaryRow(
-                      label: 'Tags',
-                      value: (itemDraft!['tags'] as List).join(', '),
-                    ),
-                  ],
+                  // Tags — safe for both String and List
+                  Builder(builder: (_) {
+                    final tagsRaw = itemDraft?['tags'];
+                    final List<String> tagsList;
+                    if (tagsRaw is List) {
+                      tagsList = tagsRaw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+                    } else if (tagsRaw is String && tagsRaw.trim().isNotEmpty) {
+                      tagsList = tagsRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                    } else {
+                      tagsList = const [];
+                    }
+                    if (tagsList.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      children: [
+                        const Gap(12),
+                        _SummaryRow(label: 'Tags', value: tagsList.join(', ')),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
