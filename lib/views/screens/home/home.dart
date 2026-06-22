@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/favourites/favourites_controller.dart';
 import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/items/item_models.dart';
+import 'package:zip_peer/views/screens/favourites/favourites_screen.dart';
 import 'package:zip_peer/views/screens/home/home_explore.dart';
 import 'package:zip_peer/views/screens/home/home_item.dart';
 import 'package:zip_peer/views/screens/home/home_widgets.dart';
@@ -24,6 +26,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Get.put(FavouritesController());
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<BrowseItemsController>(
@@ -57,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       Bounce(
+                        onTap: () => Get.to(() => const FavouritesScreen()),
                         child: CommonImageView(
                           imagePath: Assets.imagesHeartIcon,
                           height: 50,
@@ -115,50 +124,118 @@ class _HomeScreenState extends State<HomeScreen> {
               const Gap(10),
               const HeaderRow2(),
               const Gap(20),
-              if (controller.isFeedLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (controller.feedError != null &&
-                  controller.nearMe.isEmpty &&
-                  controller.popular.isEmpty &&
-                  controller.recent.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: MyText(
-                    text: controller.feedError!,
-                    size: 13,
-                    color: Colors.red,
-                    textAlign: TextAlign.center,
-                  ),
-                )
+              if (controller.search?.isNotEmpty == true ||
+                  controller.hasActiveFilters)
+                // ── Search / filter results ──────────────────────────────────
+                _buildSearchResults(controller)
               else ...[
-                if (controller.nearMe.isNotEmpty) ...[
-                  _buildHorizontalSection(
-                    title: 'Near Me',
-                    items: controller.nearMe,
-                  ),
-                  const Gap(20),
+                // ── Normal feed ──────────────────────────────────────────────
+                if (controller.isFeedLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (controller.feedError != null &&
+                    controller.nearMe.isEmpty &&
+                    controller.popular.isEmpty &&
+                    controller.recent.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: MyText(
+                      text: controller.feedError!,
+                      size: 13,
+                      color: Colors.red,
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else ...[
+                  if (controller.nearMe.isNotEmpty) ...[
+                    _buildHorizontalSection(
+                      title: 'Near Me',
+                      items: controller.nearMe,
+                    ),
+                    const Gap(20),
+                  ],
+                  if (controller.popular.isNotEmpty) ...[
+                    _buildHorizontalSection(
+                      title: 'Popular',
+                      items: controller.popular,
+                    ),
+                    const Gap(20),
+                  ],
+                  if (controller.recent.isNotEmpty)
+                    _buildHorizontalSection(
+                      title: 'Recently Added',
+                      items: controller.recent,
+                    ),
                 ],
-                if (controller.popular.isNotEmpty) ...[
-                  _buildHorizontalSection(
-                    title: 'Popular',
-                    items: controller.popular,
-                  ),
-                  const Gap(20),
-                ],
-                if (controller.recent.isNotEmpty)
-                  _buildHorizontalSection(
-                    title: 'Recently Added',
-                    items: controller.recent,
-                  ),
               ],
               const Gap(100),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSearchResults(BrowseItemsController controller) {
+    if (controller.isLoadingInitial) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (controller.errorMessage != null && controller.items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: MyText(
+          text: controller.errorMessage!,
+          size: 13,
+          color: Colors.red,
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    if (controller.items.isEmpty) {
+      final label = controller.search?.isNotEmpty == true
+          ? '"${controller.search}"'
+          : controller.category?.isNotEmpty == true
+              ? controller.category!
+              : 'these filters';
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: MyText(
+            text: 'No items found for $label',
+            size: 14,
+            color: kSubText,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    return Column(
+      children: controller.items.map((item) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Bounce(
+            onTap: () => Get.to(() => ItemDetailsScreen(itemId: item.id)),
+            child: SneakerCard(
+              itemId: item.id,
+              title: item.title ?? 'Untitled',
+              price:
+                  '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+              imageUrl: item.thumbnailUrl.isNotEmpty
+                  ? item.thumbnailUrl
+                  : Assets.imagesShoes1,
+              userName: item.ownerName,
+              avatarUrl: (item.owner?.profilePhoto ?? '').isNotEmpty
+                  ? item.owner!.profilePhoto!
+                  : Assets.imagesChatAvatar,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -206,6 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Get.to(() => ItemDetailsScreen(itemId: item.id));
                         },
                         child: SneakerCard(
+                          itemId: item.id,
                           title: item.title ?? 'Untitled',
                           price:
                               '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',

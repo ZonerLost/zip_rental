@@ -1291,22 +1291,28 @@ void showFiltersBottomSheet(BuildContext context) {
   final browseController = Get.find<BrowseItemsController>();
 
   final TextEditingController searchController = TextEditingController(
-    text: browseController.search ?? browseController.category ?? '',
+    text: browseController.category ?? '',
   );
-  final TextEditingController locationController = TextEditingController();
+  final TextEditingController locationController = TextEditingController(
+    text: browseController.city ?? '',
+  );
 
-  const List<String> categoryOptions = [
-    'Footwear',
-    'Mens Outfit',
-    'Womens Outfit',
-    'Children Outfit',
-    'Jacket',
-    'Electronics',
-    'Tools',
-    'Sports',
-    'Furniture',
-    'Other',
-  ];
+  // Use categories from already-loaded feed items; fall back to defaults if
+  // nothing is loaded yet.
+  final List<String> categoryOptions = browseController.feedCategories.isNotEmpty
+      ? browseController.feedCategories
+      : const [
+          'Footwear',
+          'Mens Outfit',
+          'Womens Outfit',
+          'Children Outfit',
+          'Jacket',
+          'Electronics',
+          'Tools',
+          'Sports',
+          'Furniture',
+          'Other',
+        ];
 
   double selectedDistance = browseController.distance ?? 2.5;
 
@@ -1359,75 +1365,84 @@ void showFiltersBottomSheet(BuildContext context) {
             Divider(color: kDividerColor),
             const Gap(8),
 
-            // Search + Category combo
-            const MyText(
-              text: "Search products",
-              size: 14,
-              weight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-            const Gap(8),
-            _CategoryField(
-              controller: searchController,
-              options: categoryOptions,
-            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Category
+                    const MyText(
+                      text: "Search products",
+                      size: 14,
+                      weight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    const Gap(8),
+                    _CategoryField(
+                      controller: searchController,
+                      options: categoryOptions,
+                    ),
 
-            // Location
-            const MyText(
-              text: "Location",
-              size: 14,
-              weight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-            const Gap(8),
-            MyTextField(
-              controller: locationController,
-              hint: "e.g. Brooklyn, New York",
-              hintColor: kBlack.withOpacity(0.4),
-              radius: 12,
-              backgroundColor: Colors.white,
-              suffix: CommonImageView(
-                imagePath: Assets.imagesDiscover,
-                height: 20,
+                    // Location
+                    const MyText(
+                      text: "Location",
+                      size: 14,
+                      weight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    const Gap(8),
+                    MyTextField(
+                      controller: locationController,
+                      hint: "e.g. Brooklyn, New York",
+                      hintColor: kBlack.withOpacity(0.4),
+                      radius: 12,
+                      backgroundColor: Colors.white,
+                      suffix: CommonImageView(
+                        imagePath: Assets.imagesDiscover,
+                        height: 20,
+                      ),
+                    ),
+
+                    // Distance
+                    const MyText(
+                      text: "Distance",
+                      size: 14,
+                      weight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    const Gap(12),
+                    Row(
+                      children: [
+                        _buildDistanceChip(
+                          "500 m",
+                          selectedDistance == 0.5,
+                          () => setState(() => selectedDistance = 0.5),
+                        ),
+                        const Gap(8),
+                        _buildDistanceChip(
+                          "2.5 km",
+                          selectedDistance == 2.5,
+                          () => setState(() => selectedDistance = 2.5),
+                        ),
+                        const Gap(8),
+                        _buildDistanceChip(
+                          "5 km",
+                          selectedDistance == 5.0,
+                          () => setState(() => selectedDistance = 5.0),
+                        ),
+                        const Gap(8),
+                        _buildDistanceChip(
+                          "10 km +",
+                          selectedDistance == 10.0,
+                          () => setState(() => selectedDistance = 10.0),
+                        ),
+                      ],
+                    ),
+                    const Gap(16),
+                  ],
+                ),
               ),
             ),
-
-            // Distance
-            const MyText(
-              text: "Distance",
-              size: 14,
-              weight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-            const Gap(12),
-            Row(
-              children: [
-                _buildDistanceChip(
-                  "500 m",
-                  selectedDistance == 0.5,
-                  () => setState(() => selectedDistance = 0.5),
-                ),
-                const Gap(8),
-                _buildDistanceChip(
-                  "2.5 km",
-                  selectedDistance == 2.5,
-                  () => setState(() => selectedDistance = 2.5),
-                ),
-                const Gap(8),
-                _buildDistanceChip(
-                  "5 km",
-                  selectedDistance == 5.0,
-                  () => setState(() => selectedDistance = 5.0),
-                ),
-                const Gap(8),
-                _buildDistanceChip(
-                  "10 km +",
-                  selectedDistance == 10.0,
-                  () => setState(() => selectedDistance = 10.0),
-                ),
-              ],
-            ),
-            const Spacer(),
             Row(
               children: [
                 Expanded(
@@ -1449,22 +1464,15 @@ void showFiltersBottomSheet(BuildContext context) {
                 Expanded(
                   child: MyButton(
                     onTap: () {
-                      final query = searchController.text.trim();
-                      final isExactCategory = categoryOptions.any(
-                        (o) => o.toLowerCase() == query.toLowerCase(),
-                      );
+                      final selectedCategory = searchController.text.trim();
+                      final locationText = locationController.text.trim();
                       browseController.applyFilters(
-                        categoryValue: isExactCategory ? query : null,
-                        cityValue: locationController.text.trim().isEmpty
+                        categoryValue: selectedCategory.isEmpty
                             ? null
-                            : locationController.text.trim(),
-                        sortByValue: null,
-                        sortOrderValue: null,
+                            : selectedCategory,
+                        cityValue: locationText.isEmpty ? null : locationText,
                         distanceValue: selectedDistance,
                       );
-                      if (!isExactCategory) {
-                        browseController.setSearchQuery(query);
-                      }
                       Get.back();
                     },
                     buttonText: "Apply",

@@ -179,6 +179,19 @@ class BrowseItemsController extends GetxController {
     loadItems(reset: true);
   }
 
+  /// Unique non-empty categories extracted from loaded feed items.
+  List<String> get feedCategories {
+    final all = [...nearMe, ...popular, ...recent];
+    final seen = <String>{};
+    return all
+        .map((i) => i.category ?? '')
+        .where((c) => c.isNotEmpty && seen.add(c))
+        .toList(growable: false);
+  }
+
+  bool get hasActiveFilters =>
+      (category?.isNotEmpty == true) || (city?.isNotEmpty == true);
+
   void clearFilters() {
     category = null;
     city = null;

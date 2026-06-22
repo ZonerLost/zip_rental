@@ -4,14 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
+import 'package:zip_peer/services/addresses/address_service.dart';
 import 'package:zip_peer/services/profile/profile_service.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 
 class ProfileCreationController extends GetxController {
-  ProfileCreationController({ProfileService? profileService})
-    : _profileService = profileService ?? ProfileService();
+  ProfileCreationController({
+    ProfileService? profileService,
+    AddressService? addressService,
+  })  : _profileService = profileService ?? ProfileService(),
+        _addressService = addressService ?? AddressService();
 
   final ProfileService _profileService;
+  final AddressService _addressService;
   final ImagePicker _imagePicker = ImagePicker();
   final PageController pageController = PageController();
 
@@ -293,7 +298,7 @@ class ProfileCreationController extends GetxController {
     isSubmitting = true;
     update();
 
-    final result = await _profileService.updateProfile(
+    final profileResult = await _profileService.updateProfile(
       UpdateProfileRequest(
         location: ProfileLocation(
           country: selectedCountry,
@@ -303,13 +308,29 @@ class ProfileCreationController extends GetxController {
       ),
     );
 
-    isSubmitting = false;
-    update();
-
-    if (!result.success) {
-      Get.snackbar('Address Update Failed', result.message);
+    if (!profileResult.success) {
+      isSubmitting = false;
+      update();
+      Get.snackbar('Address Update Failed', profileResult.message);
       return;
     }
+
+    // Also save to the address book so it appears in Profile > Addresses
+    await _addressService.addAddress(
+      AddAddressRequest(
+        label: addressTitleController.text.trim().isEmpty
+            ? 'Home Address'
+            : addressTitleController.text.trim(),
+        addressLine: fullAddress,
+        city: city,
+        province: selectedCountry,
+        country: selectedCountry,
+        postalCode: zipCodeController.text.trim(),
+      ),
+    );
+
+    isSubmitting = false;
+    update();
 
     Get.offAll(() => const BottomNavBar());
   }

@@ -274,9 +274,15 @@ class ItemModel {
     this.subCategory,
     this.photos = const [],
     this.dailyRate,
+    this.weeklyRate,
+    this.monthlyRate,
     this.currency,
     this.condition,
     this.bookingType,
+    this.rentalType,
+    this.minRentalDays,
+    this.maxRentalDays,
+    this.quantity,
     this.deliveryFee,
     this.deliveryPricing = const [],
     this.isFeatured,
@@ -304,9 +310,15 @@ class ItemModel {
   final String? subCategory;
   final List<String> photos;
   final double? dailyRate;
+  final double? weeklyRate;
+  final double? monthlyRate;
   final String? currency;
   final String? condition;
   final String? bookingType;
+  final String? rentalType;
+  final int? minRentalDays;
+  final int? maxRentalDays;
+  final int? quantity;
   final double? deliveryFee;
   final List<DeliveryPricingTier> deliveryPricing;
   final bool? isFeatured;
@@ -331,7 +343,9 @@ class ItemModel {
         ? ownerRaw
         : _asString(json['ownerId']) ??
             _asString(json['owner_id']) ??
-            _asString(json['owner']);
+            (ownerMap != null
+                ? _asString(ownerMap['_id']) ?? _asString(ownerMap['id'])
+                : null);
 
     final locationRaw = json['location'];
     final locationMap = locationRaw is Map
@@ -359,9 +373,15 @@ class ItemModel {
       subCategory: _asString(json['subCategory']),
       photos: _toStringList(json['photos']),
       dailyRate: _asDouble(json['dailyRate']),
+      weeklyRate: _asDouble(json['weeklyRate']),
+      monthlyRate: _asDouble(json['monthlyRate']),
       currency: _asString(json['currency']),
       condition: _asString(json['condition']),
       bookingType: _asString(json['bookingType']),
+      rentalType: _asString(json['rentalType']),
+      minRentalDays: _asInt(json['minRentalDays']),
+      maxRentalDays: _asInt(json['maxRentalDays']),
+      quantity: _asInt(json['quantity']),
       deliveryFee: _asDouble(json['deliveryFee']),
       deliveryPricing: _parseDeliveryPricing(json['deliveryPricing']),
       isFeatured: _asBool(json['isFeatured']),
@@ -396,9 +416,15 @@ class ItemModel {
     String? subCategory,
     List<String>? photos,
     double? dailyRate,
+    double? weeklyRate,
+    double? monthlyRate,
     String? currency,
     String? condition,
     String? bookingType,
+    String? rentalType,
+    int? minRentalDays,
+    int? maxRentalDays,
+    int? quantity,
     double? deliveryFee,
     List<DeliveryPricingTier>? deliveryPricing,
     bool? isFeatured,
@@ -426,9 +452,15 @@ class ItemModel {
       subCategory: subCategory ?? this.subCategory,
       photos: photos ?? this.photos,
       dailyRate: dailyRate ?? this.dailyRate,
+      weeklyRate: weeklyRate ?? this.weeklyRate,
+      monthlyRate: monthlyRate ?? this.monthlyRate,
       currency: currency ?? this.currency,
       condition: condition ?? this.condition,
       bookingType: bookingType ?? this.bookingType,
+      rentalType: rentalType ?? this.rentalType,
+      minRentalDays: minRentalDays ?? this.minRentalDays,
+      maxRentalDays: maxRentalDays ?? this.maxRentalDays,
+      quantity: quantity ?? this.quantity,
       deliveryFee: deliveryFee ?? this.deliveryFee,
       deliveryPricing: deliveryPricing ?? this.deliveryPricing,
       isFeatured: isFeatured ?? this.isFeatured,

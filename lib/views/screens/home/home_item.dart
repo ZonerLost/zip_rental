@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/favourites/favourites_controller.dart';
 import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/items/item_models.dart';
@@ -154,9 +155,27 @@ class _SneakerGridCard extends StatelessWidget {
               Positioned(
                 top: 5,
                 right: 10,
-                child: CommonImageView(
-                  imagePath: Assets.imagesHeartEmpty,
-                  height: 30,
+                child: GetBuilder<FavouritesController>(
+                  builder: (favCtrl) {
+                    final isFav = favCtrl.isFavourite(item.id);
+                    return Bounce(
+                      onTap: () => favCtrl.toggle(FavItem(
+                        id: item.id,
+                        title: item.title ?? '',
+                        price:
+                            '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                        imageUrl: item.thumbnailUrl,
+                        ownerName: item.ownerName,
+                        ownerPhoto: item.owner?.profilePhoto ?? '',
+                      )),
+                      child: CommonImageView(
+                        imagePath: isFav
+                            ? Assets.imagesHeartFilled
+                            : Assets.imagesHeartEmpty,
+                        height: 30,
+                      ),
+                    );
+                  },
                 ),
               ),
               Positioned(

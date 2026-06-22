@@ -66,7 +66,7 @@ class _DeliveryFeeScreenState extends State<DeliveryFeeScreen> {
   bool _validate() {
     final flat = _flatFeeController.text.trim();
     final parsedFlat = double.tryParse(flat);
-    if (flat.isEmpty || parsedFlat == null || parsedFlat <= 0) {
+    if (flat.isEmpty || parsedFlat == null || parsedFlat < 0) {
       setState(() => _showError = true);
       return false;
     }

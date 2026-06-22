@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/favourites/favourites_controller.dart';
 import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
@@ -52,8 +53,6 @@ class HeaderRow2 extends StatelessWidget {
         final categoryLabel =
             controller.category?.isNotEmpty == true
                 ? controller.category!
-                : controller.search?.isNotEmpty == true
-                ? controller.search!
                 : 'All';
 
         final locationLabel =
@@ -187,6 +186,7 @@ class SneakerCard extends StatelessWidget {
   final String imageUrl;
   final String userName;
   final String avatarUrl;
+  final String? itemId;
 
   const SneakerCard({
     super.key,
@@ -195,6 +195,7 @@ class SneakerCard extends StatelessWidget {
     required this.imageUrl,
     required this.userName,
     required this.avatarUrl,
+    this.itemId,
   });
 
   @override
@@ -237,14 +238,41 @@ class SneakerCard extends StatelessWidget {
                 ),
 
                 // Heart icon
-                Positioned(
-                  top: 5,
-                  right: 10,
-                  child: CommonImageView(
-                    imagePath: Assets.imagesHeartEmpty,
-                    height: 30,
+                if (itemId != null)
+                  Positioned(
+                    top: 5,
+                    right: 10,
+                    child: GetBuilder<FavouritesController>(
+                      builder: (favCtrl) {
+                        final isFav = favCtrl.isFavourite(itemId!);
+                        return Bounce(
+                          onTap: () => favCtrl.toggle(FavItem(
+                            id: itemId!,
+                            title: title,
+                            price: price,
+                            imageUrl: imageUrl,
+                            ownerName: userName,
+                            ownerPhoto: avatarUrl,
+                          )),
+                          child: CommonImageView(
+                            imagePath: isFav
+                                ? Assets.imagesHeartFilled
+                                : Assets.imagesHeartEmpty,
+                            height: 30,
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                else
+                  Positioned(
+                    top: 5,
+                    right: 10,
+                    child: CommonImageView(
+                      imagePath: Assets.imagesHeartEmpty,
+                      height: 30,
+                    ),
                   ),
-                ),
 
                 Positioned(
                   bottom: 10,

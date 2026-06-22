@@ -8,6 +8,8 @@ import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/items/item_models.dart';
+import 'package:zip_peer/models/profile/profile_models.dart';
+import 'package:zip_peer/services/addresses/address_service.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
@@ -358,129 +360,29 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
 
   // ── Address-only edit sheet ───────────────────────────────────────────────
   void _showEditAddressSheet(AddItemController controller) {
-    final loc = itemDraft?['location'];
-    if (loc is Map) {
-      controller.cityController.text = (loc['city'] ?? '').toString();
-      controller.provinceController.text = (loc['province'] ?? '').toString();
-      controller.countryController.text = (loc['country'] ?? 'Canada').toString();
-      final coords = loc['coordinates'];
-      if (coords is Map) {
-        controller.latController.text = (coords['lat'] ?? '').toString();
-        controller.lngController.text = (coords['lng'] ?? '').toString();
-      }
-    }
-
     Get.bottomSheet(
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       enableDrag: true,
       DoubleWhiteContainers(
-        height: MediaQuery.of(Get.context!).size.height * 0.65,
+        height: MediaQuery.of(Get.context!).size.height * 0.85,
         mainColor: kWhite3,
         topColor: kWhite,
         handleHeight: 14,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: StatefulBuilder(
-          builder: (ctx, setSheet) => SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  onTap: Get.back,
-                  child: Row(
-                    children: [
-                      CommonImageView(imagePath: Assets.imagesBackSimple, height: 32),
-                      const Gap(8),
-                      const MyText(text: 'Back', size: 16, weight: FontWeight.w600, color: Colors.black),
-                    ],
-                  ),
-                ),
-                const Gap(16),
-                const MyText(text: 'Edit Address', size: 20, weight: FontWeight.w600, color: Colors.black),
-                const Gap(4),
-                MyText(text: 'Update your pickup / delivery location.', size: 14, color: Colors.grey[600]),
-                const Gap(16),
-                Divider(color: kDividerColor),
-                const Gap(12),
-                const MyText(text: 'City *', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.cityController,
-                  hint: 'e.g. Montreal',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                ),
-                const MyText(text: 'Province *', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.provinceController,
-                  hint: 'e.g. QC',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                ),
-                const MyText(text: 'Country', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.countryController,
-                  hint: 'Canada',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                ),
-                const MyText(text: 'Latitude (optional)', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.latController,
-                  hint: 'e.g. 45.5017',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                ),
-                const MyText(text: 'Longitude (optional)', size: 14, weight: FontWeight.w500, color: Colors.black87),
-                const Gap(8),
-                MyTextField(
-                  controller: controller.lngController,
-                  hint: 'e.g. -73.5673',
-                  hintColor: kBlack.withOpacity(0.4),
-                  radius: 12,
-                  backgroundColor: Colors.white,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                ),
-                const Gap(8),
-                MyButton(
-                  onTap: () {
-                    final updatedLocation = <String, dynamic>{
-                      'city': controller.cityController.text.trim(),
-                      'province': controller.provinceController.text.trim(),
-                      'country': controller.countryController.text.trim().isEmpty
-                          ? 'Canada'
-                          : controller.countryController.text.trim(),
-                    };
-                    final lat = double.tryParse(controller.latController.text.trim());
-                    final lng = double.tryParse(controller.lngController.text.trim());
-                    if (lat != null && lng != null) {
-                      updatedLocation['coordinates'] = {'lat': lat, 'lng': lng};
-                    }
-                    setState(() {
-                      itemDraft = {...?itemDraft, 'location': updatedLocation};
-                    });
-                    Get.back();
-                  },
-                  buttonText: 'Save',
-                  fontColor: Colors.white,
-                  height: 56,
-                  radius: 28,
-                  hasgrad: false,
-                  fontSize: 17,
-                ),
-                const Gap(20),
-              ],
-            ),
-          ),
+        child: _AddressPickerSheet(
+          initialLocation: itemDraft?['location'],
+          cityController: controller.cityController,
+          provinceController: controller.provinceController,
+          countryController: controller.countryController,
+          latController: controller.latController,
+          lngController: controller.lngController,
+          onSave: (updatedLocation) {
+            setState(() {
+              itemDraft = {...?itemDraft, 'location': updatedLocation};
+            });
+            Get.back();
+          },
         ),
       ),
     );
@@ -774,6 +676,353 @@ class _SummaryRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AddressPickerSheet extends StatefulWidget {
+  const _AddressPickerSheet({
+    required this.onSave,
+    required this.cityController,
+    required this.provinceController,
+    required this.countryController,
+    required this.latController,
+    required this.lngController,
+    this.initialLocation,
+  });
+
+  final Map<String, dynamic>? initialLocation;
+  final TextEditingController cityController;
+  final TextEditingController provinceController;
+  final TextEditingController countryController;
+  final TextEditingController latController;
+  final TextEditingController lngController;
+  final void Function(Map<String, dynamic>) onSave;
+
+  @override
+  State<_AddressPickerSheet> createState() => _AddressPickerSheetState();
+}
+
+class _AddressPickerSheetState extends State<_AddressPickerSheet> {
+  final _addressService = AddressService();
+  List<AddressModel> _addresses = [];
+  bool _loading = true;
+  int? _selectedIndex;
+  bool _showManualForm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final loc = widget.initialLocation;
+    if (loc != null) {
+      widget.cityController.text = (loc['city'] ?? '').toString();
+      widget.provinceController.text = (loc['province'] ?? '').toString();
+      widget.countryController.text = (loc['country'] ?? 'Canada').toString();
+      final coords = loc['coordinates'];
+      if (coords is Map<String, dynamic>) {
+        widget.latController.text = (coords['lat'] ?? '').toString();
+        widget.lngController.text = (coords['lng'] ?? '').toString();
+      }
+    }
+    _loadAddresses();
+  }
+
+  Future<void> _loadAddresses() async {
+    final result = await _addressService.getAddresses();
+    if (!mounted) return;
+    setState(() {
+      _addresses = result.addresses;
+      _loading = false;
+      if (_addresses.isEmpty) _showManualForm = true;
+    });
+  }
+
+  void _save() {
+    if (_selectedIndex != null) {
+      final addr = _addresses[_selectedIndex!];
+      final location = <String, dynamic>{
+        'city': addr.city ?? '',
+        'province': addr.province ?? '',
+        'country': (addr.country?.isNotEmpty == true) ? addr.country! : 'Canada',
+      };
+      if (addr.coordinates?.lat != null && addr.coordinates?.lng != null) {
+        location['coordinates'] = {
+          'lat': addr.coordinates!.lat,
+          'lng': addr.coordinates!.lng,
+        };
+      }
+      widget.onSave(location);
+      return;
+    }
+    final countryText = widget.countryController.text.trim();
+    final location = <String, dynamic>{
+      'city': widget.cityController.text.trim(),
+      'province': widget.provinceController.text.trim(),
+      'country': countryText.isEmpty ? 'Canada' : countryText,
+    };
+    final lat = double.tryParse(widget.latController.text.trim());
+    final lng = double.tryParse(widget.lngController.text.trim());
+    if (lat != null && lng != null) {
+      location['coordinates'] = {'lat': lat, 'lng': lng};
+    }
+    widget.onSave(location);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: Get.back,
+            child: Row(
+              children: [
+                CommonImageView(imagePath: Assets.imagesBackSimple, height: 32),
+                const Gap(8),
+                const MyText(
+                  text: 'Back',
+                  size: 16,
+                  weight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ],
+            ),
+          ),
+          const Gap(16),
+          const MyText(
+            text: 'Edit Address',
+            size: 20,
+            weight: FontWeight.w600,
+            color: Colors.black,
+          ),
+          const Gap(4),
+          MyText(
+            text: 'Select a saved address or enter a new one.',
+            size: 14,
+            color: Colors.grey[600],
+          ),
+          const Gap(16),
+          Divider(color: kDividerColor),
+          const Gap(12),
+
+          if (_loading)
+            const Center(child: CircularProgressIndicator())
+          else ...[
+            if (_addresses.isNotEmpty) ...[
+              const MyText(
+                text: 'Saved Addresses',
+                size: 14,
+                weight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              const Gap(10),
+              ..._addresses.asMap().entries.map((entry) {
+                final i = entry.key;
+                final addr = entry.value;
+                final isSelected = _selectedIndex == i;
+                final parts = [
+                  if (addr.label?.isNotEmpty == true) addr.label!,
+                  if (addr.addressLine?.isNotEmpty == true) addr.addressLine!,
+                  if (addr.city?.isNotEmpty == true) addr.city!,
+                  if (addr.province?.isNotEmpty == true) addr.province!,
+                  if (addr.country?.isNotEmpty == true) addr.country!,
+                ];
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _selectedIndex = i;
+                    _showManualForm = false;
+                  }),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? kPrimaryColor.withOpacity(0.08)
+                          : kWhite,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected
+                            ? kPrimaryColor
+                            : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (addr.label?.isNotEmpty == true)
+                                MyText(
+                                  text: addr.label!,
+                                  size: 13,
+                                  weight: FontWeight.w600,
+                                  color: kBlack,
+                                ),
+                              MyText(
+                                text: parts.join(', '),
+                                size: 12,
+                                color: kSubText,
+                                maxLines: 2,
+                                textOverflow: TextOverflow.ellipsis,
+                              ),
+                              if (addr.isDefault) ...[
+                                const Gap(2),
+                                MyText(
+                                  text: 'Default',
+                                  size: 11,
+                                  color: kPrimaryColor,
+                                  weight: FontWeight.w500,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(
+                            Icons.check_circle,
+                            color: kPrimaryColor,
+                            size: 20,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const Gap(4),
+              Divider(color: kDividerColor),
+              const Gap(8),
+            ],
+
+            // Toggle manual form
+            GestureDetector(
+              onTap: () => setState(() {
+                _showManualForm = !_showManualForm;
+                if (_showManualForm) _selectedIndex = null;
+              }),
+              child: Row(
+                children: [
+                  Icon(
+                    _showManualForm
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: kPrimaryColor,
+                    size: 20,
+                  ),
+                  const Gap(6),
+                  MyText(
+                    text: _showManualForm
+                        ? 'Hide manual address'
+                        : 'Enter a different address',
+                    size: 14,
+                    color: kPrimaryColor,
+                    weight: FontWeight.w500,
+                  ),
+                ],
+              ),
+            ),
+
+            if (_showManualForm) ...[
+              const Gap(14),
+              const MyText(
+                text: 'City *',
+                size: 14,
+                weight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              const Gap(8),
+              MyTextField(
+                controller: widget.cityController,
+                hint: 'e.g. Montreal',
+                hintColor: kBlack.withOpacity(0.4),
+                radius: 12,
+                backgroundColor: Colors.white,
+              ),
+              const MyText(
+                text: 'Province *',
+                size: 14,
+                weight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              const Gap(8),
+              MyTextField(
+                controller: widget.provinceController,
+                hint: 'e.g. QC',
+                hintColor: kBlack.withOpacity(0.4),
+                radius: 12,
+                backgroundColor: Colors.white,
+              ),
+              const MyText(
+                text: 'Country',
+                size: 14,
+                weight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              const Gap(8),
+              MyTextField(
+                controller: widget.countryController,
+                hint: 'Canada',
+                hintColor: kBlack.withOpacity(0.4),
+                radius: 12,
+                backgroundColor: Colors.white,
+              ),
+              const MyText(
+                text: 'Latitude (optional)',
+                size: 14,
+                weight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              const Gap(8),
+              MyTextField(
+                controller: widget.latController,
+                hint: 'e.g. 45.5017',
+                hintColor: kBlack.withOpacity(0.4),
+                radius: 12,
+                backgroundColor: Colors.white,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+              ),
+              const MyText(
+                text: 'Longitude (optional)',
+                size: 14,
+                weight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              const Gap(8),
+              MyTextField(
+                controller: widget.lngController,
+                hint: 'e.g. -73.5673',
+                hintColor: kBlack.withOpacity(0.4),
+                radius: 12,
+                backgroundColor: Colors.white,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+              ),
+            ],
+          ],
+
+          const Gap(16),
+          MyButton(
+            onTap: _save,
+            buttonText: 'Save',
+            fontColor: Colors.white,
+            height: 56,
+            radius: 28,
+            hasgrad: false,
+            fontSize: 17,
+          ),
+          const Gap(20),
+        ],
+      ),
     );
   }
 }
