@@ -10,7 +10,6 @@ class BrowseItemsController extends GetxController {
     : _itemApiService = itemApiService ?? ItemApiService();
 
   final ItemApiService _itemApiService;
-  final ScrollController scrollController = ScrollController();
 
   final List<ItemModel> items = <ItemModel>[];
 
@@ -49,7 +48,6 @@ class BrowseItemsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    scrollController.addListener(_onScroll);
     loadItems(reset: true);
     loadFeed();
   }
@@ -204,12 +202,12 @@ class BrowseItemsController extends GetxController {
     loadItems(reset: true);
   }
 
-  void _onScroll() {
-    if (!scrollController.hasClients) {
-      return;
-    }
-    final position = scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 240) {
+  /// Called by a screen's own [ScrollController] listener to trigger
+  /// pagination once the user nears the bottom of that screen's list.
+  /// Each screen must own its ScrollController — a single controller cannot
+  /// be attached to more than one scroll view at a time.
+  void maybeLoadMore(ScrollMetrics metrics) {
+    if (metrics.pixels >= metrics.maxScrollExtent - 240) {
       unawaited(loadItems());
     }
   }
@@ -222,8 +220,6 @@ class BrowseItemsController extends GetxController {
   @override
   void onClose() {
     _searchDebounce?.cancel();
-    scrollController.removeListener(_onScroll);
-    scrollController.dispose();
     super.onClose();
   }
 }

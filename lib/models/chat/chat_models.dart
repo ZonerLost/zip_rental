@@ -104,6 +104,7 @@ class ChatConversation {
     this.lastMessage,
     this.unreadCount = 0,
     required this.updatedAt,
+    this.isArchived = false,
   });
 
   final String id;
@@ -113,6 +114,25 @@ class ChatConversation {
   final ChatMessage? lastMessage;
   final int unreadCount;
   final DateTime updatedAt;
+  final bool isArchived;
+
+  ChatConversation copyWith({
+    int? unreadCount,
+    DateTime? updatedAt,
+    ChatMessage? lastMessage,
+    bool? isArchived,
+  }) {
+    return ChatConversation(
+      id: id,
+      participants: participants,
+      itemId: itemId,
+      itemTitle: itemTitle,
+      lastMessage: lastMessage ?? this.lastMessage,
+      unreadCount: unreadCount ?? this.unreadCount,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isArchived: isArchived ?? this.isArchived,
+    );
+  }
 
   /// Returns the participant that is NOT the current user.
   ChatParticipant? otherParticipant(String currentUserId) {
@@ -163,6 +183,7 @@ class ChatConversation {
           ? (m['unreadCount'] as num).toInt()
           : 0,
       updatedAt: ChatMessage._parseDate(m['updatedAt'] ?? m['createdAt']),
+      isArchived: m['isArchived'] == true,
     );
   }
 }

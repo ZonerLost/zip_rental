@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/chat/chat_controller.dart';
 import 'package:zip_peer/controllers/chat/chat_messages_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets_2.dart';
@@ -149,9 +150,9 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                               position: RelativeRect.fromLTRB(100, 120, 20, 0),
                               items: [
                                 PopupMenuItem(
-                                  value: 'clear',
+                                  value: 'archive',
                                   child: MyText(
-                                    text: 'Clear Chat',
+                                    text: 'Archive User',
                                     color: kBlack,
                                     size: 14,
                                     weight: FontWeight.w500,
@@ -177,6 +178,20 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                                 ),
                               ],
                             ).then((value) {
+                              if (value == 'archive') {
+                                ArchiveUserBottomSheet(
+                                  context,
+                                  onConfirm: () {
+                                    if (Get.isRegistered<ChatController>()) {
+                                      Get.find<ChatController>().setArchived(
+                                        widget.conversationId,
+                                        true,
+                                      );
+                                    }
+                                    Get.back();
+                                  },
+                                );
+                              }
                               if (value == 'block') BlockBottomSheet(context);
                               if (value == 'report') ReportUserBottomSheet(context);
                             });

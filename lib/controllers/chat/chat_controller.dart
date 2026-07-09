@@ -80,11 +80,7 @@ class ChatController extends GetxController {
     }
     final old = conversations[idx];
     final isFromMe = msg.senderId == currentUserId;
-    conversations[idx] = ChatConversation(
-      id: old.id,
-      participants: old.participants,
-      itemId: old.itemId,
-      itemTitle: old.itemTitle,
+    conversations[idx] = old.copyWith(
       lastMessage: msg,
       unreadCount: isFromMe ? old.unreadCount : old.unreadCount + 1,
       updatedAt: msg.createdAt,
@@ -143,16 +139,14 @@ class ChatController extends GetxController {
   void resetUnreadCount(String conversationId) {
     final idx = conversations.indexWhere((c) => c.id == conversationId);
     if (idx == -1) return;
-    final old = conversations[idx];
-    conversations[idx] = ChatConversation(
-      id: old.id,
-      participants: old.participants,
-      itemId: old.itemId,
-      itemTitle: old.itemTitle,
-      lastMessage: old.lastMessage,
-      unreadCount: 0,
-      updatedAt: old.updatedAt,
-    );
+    conversations[idx] = conversations[idx].copyWith(unreadCount: 0);
+    update();
+  }
+
+  void setArchived(String conversationId, bool archived) {
+    final idx = conversations.indexWhere((c) => c.id == conversationId);
+    if (idx == -1) return;
+    conversations[idx] = conversations[idx].copyWith(isArchived: archived);
     update();
   }
 

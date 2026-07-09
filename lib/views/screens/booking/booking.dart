@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/bookings/booking_controller.dart';
+import 'package:zip_peer/controllers/reviews/review_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/bookings/booking_models.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -26,6 +27,7 @@ class BookingsScreen extends StatefulWidget {
 class _BookingsScreenState extends State<BookingsScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   late final BookingController _controller;
+  late final ReviewController _reviewController;
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -38,9 +40,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
     _controller = Get.isRegistered<BookingController>()
         ? Get.find<BookingController>()
         : Get.put(BookingController());
+    _reviewController = Get.isRegistered<ReviewController>()
+        ? Get.find<ReviewController>()
+        : Get.put(ReviewController());
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadCurrentTab(refresh: true);
+      await _reviewController.fetchPendingReviews();
     });
   }
 
@@ -54,6 +60,15 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
     _controller.sentStatusFilter = status;
     await _controller.fetchSentBookings(refresh: refresh);
+  }
+
+  List<String> _pendingReviewTypesFor(String bookingId) {
+    for (final pending in _reviewController.pendingReviews) {
+      if (pending.bookingId == bookingId) {
+        return pending.pendingTypes;
+      }
+    }
+    return const <String>[];
   }
 
   String _statusForTab(int index) {
@@ -301,30 +316,70 @@ class _BookingsScreenState extends State<BookingsScreen> {
     }
 
     if (isOwnerView && status == BookingStatuses.completed) {
-      return Row(
+      final pendingTypes = _pendingReviewTypesFor(booking.id);
+      return Column(
         children: [
-          Expanded(
-            child: MyButton(
-              onTap: () => _pickAndUploadPhotos(
-                booking.id,
-                isPreRental: false,
+          Row(
+            children: [
+              Expanded(
+                child: MyButton(
+                  onTap: () => _pickAndUploadPhotos(
+                    booking.id,
+                    isPreRental: false,
+                  ),
+                  buttonText: 'Upload Post Photos',
+                  backgroundColor: kPrimaryColor.withOpacity(0.18),
+                  fontColor: kPrimaryColor,
+                  radius: 20,
+                ),
               ),
-              buttonText: 'Upload Post Photos',
-              backgroundColor: kPrimaryColor.withOpacity(0.18),
-              fontColor: kPrimaryColor,
+              const Gap(12),
+              Expanded(
+                child: MyButton(
+                  onTap: () => _openBookingDetails(booking),
+                  buttonText: 'View Details',
+                  backgroundColor: kSubText.withOpacity(0.15),
+                  fontColor: kSubText,
+                  radius: 20,
+                ),
+              ),
+            ],
+          ),
+          if (pendingTypes.isNotEmpty) ...[
+            const Gap(12),
+            MyButton(
+              onTap: () => _showLeaveReviewSheet(booking, pendingTypes),
+              buttonText: 'Leave a Review',
+              backgroundColor: kYellowColor.withOpacity(0.2),
+              fontColor: const Color(0xFFB8860B),
               radius: 20,
             ),
+          ],
+        ],
+      );
+    }
+
+    if (!isOwnerView && status == BookingStatuses.completed) {
+      final pendingTypes = _pendingReviewTypesFor(booking.id);
+      return Column(
+        children: [
+          MyButton(
+            onTap: () => _openBookingDetails(booking),
+            buttonText: 'View Details',
+            backgroundColor: kSubText.withOpacity(0.15),
+            fontColor: kSubText,
+            radius: 20,
           ),
-          const Gap(12),
-          Expanded(
-            child: MyButton(
-              onTap: () => _openBookingDetails(booking),
-              buttonText: 'View Details',
-              backgroundColor: kSubText.withOpacity(0.15),
-              fontColor: kSubText,
+          if (pendingTypes.isNotEmpty) ...[
+            const Gap(12),
+            MyButton(
+              onTap: () => _showLeaveReviewSheet(booking, pendingTypes),
+              buttonText: 'Leave a Review',
+              backgroundColor: kYellowColor.withOpacity(0.2),
+              fontColor: const Color(0xFFB8860B),
               radius: 20,
             ),
-          ),
+          ],
         ],
       );
     }
@@ -399,8 +454,84 @@ class _BookingsScreenState extends State<BookingsScreen> {
     );
 
     if (confirmed == true) {
-      await _controller.completeBooking(bookingId);
+      final success = await _controller.completeBooking(bookingId);
+      if (success) {
+        await _reviewController.fetchPendingReviews();
+      }
     }
+  }
+
+  static const Map<String, String> _reviewTypeLabels = {
+    'renter_to_owner': 'Rate the owner',
+    'renter_to_item': 'Rate the item',
+    'owner_to_renter': 'Rate the renter',
+  };
+
+  Future<void> _showLeaveReviewSheet(
+    BookingModel booking,
+    List<String> pendingTypes,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          margin: const EdgeInsets.only(top: 100),
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  MyText(
+                    text: 'Leave a Review',
+                    size: 20,
+                    weight: FontWeight.w700,
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const Gap(8),
+              MyText(
+                text: booking.itemTitle,
+                size: 14,
+                color: kSubText,
+              ),
+              const Gap(16),
+              for (final type in pendingTypes)
+                _ReviewTypeForm(
+                  key: ValueKey('${booking.id}_$type'),
+                  label: _reviewTypeLabels[type] ?? 'Rate',
+                  onSubmit: (rating, comment) async {
+                    final success = await _reviewController.submitReview(
+                      bookingId: booking.id,
+                      type: type,
+                      rating: rating,
+                      comment: comment,
+                    );
+                    if (success &&
+                        _pendingReviewTypesFor(booking.id).isEmpty &&
+                        context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                    return success;
+                  },
+                ),
+              const Gap(16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _pickAndUploadPhotos(
@@ -615,7 +746,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<BookingController>(
+    return GetBuilder<ReviewController>(
+      init: _reviewController,
+      builder: (_) => GetBuilder<BookingController>(
       init: _controller,
       builder: (controller) {
         final bookings = _activeBookings(controller);
@@ -980,6 +1113,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
           ),
         );
       },
+      ),
     );
   }
 
@@ -1071,6 +1205,99 @@ class _ErrorView extends StatelessWidget {
                 color: kPrimaryColor,
                 weight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewTypeForm extends StatefulWidget {
+  const _ReviewTypeForm({
+    super.key,
+    required this.label,
+    required this.onSubmit,
+  });
+
+  final String label;
+  final Future<bool> Function(int rating, String comment) onSubmit;
+
+  @override
+  State<_ReviewTypeForm> createState() => _ReviewTypeFormState();
+}
+
+class _ReviewTypeFormState extends State<_ReviewTypeForm> {
+  final TextEditingController _commentController = TextEditingController();
+  int _rating = 5;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_commentController.text.trim().length < 10) {
+      Get.snackbar('Review Comment', 'Please write at least 10 characters.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    await widget.onSubmit(_rating, _commentController.text.trim());
+    if (mounted) {
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kWhite3,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText(text: widget.label, size: 15, weight: FontWeight.w600),
+          const Gap(10),
+          Row(
+            children: List.generate(5, (index) {
+              final starIndex = index + 1;
+              return Bounce(
+                onTap: () => setState(() => _rating = starIndex),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    starIndex <= _rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 28,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const Gap(10),
+          TextField(
+            controller: _commentController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Share a few words about your experience',
+            ),
+          ),
+          const Gap(10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: MyButton(
+              onTap: _isSubmitting ? () {} : _submit,
+              buttonText: _isSubmitting ? 'Submitting...' : 'Submit',
+              backgroundColor: kPrimaryColor,
+              fontColor: kWhite,
+              radius: 20,
             ),
           ),
         ],

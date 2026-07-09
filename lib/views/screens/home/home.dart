@@ -26,20 +26,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+  late final BrowseItemsController _browseController;
+
   @override
   void initState() {
     super.initState();
     Get.put(FavouritesController());
+    _browseController = Get.isRegistered<BrowseItemsController>()
+        ? Get.find<BrowseItemsController>()
+        : Get.put(BrowseItemsController());
+    _scrollController.addListener(() {
+      if (_scrollController.hasClients) {
+        _browseController.maybeLoadMore(_scrollController.position);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<BrowseItemsController>(
-      init: BrowseItemsController(),
+      init: _browseController,
       builder: (controller) {
         return Scaffold(
           body: AnimatedListView(
-            controller: controller.scrollController,
+            controller: _scrollController,
             padding: const EdgeInsets.all(20),
             children: [
               const Gap(50),

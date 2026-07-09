@@ -84,7 +84,12 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
       init: _controller,
       builder: (controller) {
         final allConvs = controller.conversations;
-        final filtered = _filtered(allConvs);
+        final unarchivedConvs =
+            allConvs.where((c) => !c.isArchived).toList();
+        final tabConvs = _selectedTabIndex == 1
+            ? allConvs.where((c) => c.isArchived).toList()
+            : unarchivedConvs;
+        final filtered = _filtered(tabConvs);
         final currentUserId = controller.currentUserId ?? '';
 
         return Scaffold(
@@ -129,7 +134,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                   ),
 
                   // ───── Recent Chats (hidden when no conversations) ─────
-                  if (allConvs.isNotEmpty) ...[
+                  if (unarchivedConvs.isNotEmpty) ...[
                     const MyText(
                       text: 'Recent Chats',
                       size: 16,
@@ -144,9 +149,9 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                       child: ListView.builder(
                               padding: EdgeInsets.zero,
                               scrollDirection: Axis.horizontal,
-                              itemCount: allConvs.length,
+                              itemCount: unarchivedConvs.length,
                               itemBuilder: (context, index) {
-                                final conv = allConvs[index];
+                                final conv = unarchivedConvs[index];
                                 final other =
                                     conv.otherParticipant(currentUserId);
                                 final hasPhoto = (other?.profilePhoto ?? '')
@@ -292,9 +297,19 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                             : conv.lastMessage?.content ?? '';
                         final hasUnread = conv.unreadCount > 0;
 
-                        return Bounce(
-                          onTap: () => _openConversation(conv),
-                          child: Column(
+                        return GestureDetector(
+                          onLongPress: _selectedTabIndex == 1
+                              ? () {
+                                  _controller.setArchived(conv.id, false);
+                                  Get.snackbar(
+                                    'Unarchived',
+                                    '${other?.fullName ?? 'Chat'} moved back to All Chats',
+                                  );
+                                }
+                              : null,
+                          child: Bounce(
+                            onTap: () => _openConversation(conv),
+                            child: Column(
                             children: [
                               Row(
                                 children: [
@@ -386,6 +401,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                               ),
                               const Gap(12),
                             ],
+                          ),
                           ),
                         );
                       },

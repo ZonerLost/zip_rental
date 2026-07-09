@@ -3,213 +3,248 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/reviews/review_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/models/reviews/review_models.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
 class CommentsScreen extends StatefulWidget {
-  const CommentsScreen({super.key});
+  const CommentsScreen({super.key, required this.itemId, this.ownerId});
+
+  final String itemId;
+  final String? ownerId;
 
   @override
   State<CommentsScreen> createState() => _CommentsScreenState();
 }
 
 class _CommentsScreenState extends State<CommentsScreen> {
-  int _selectedTab = 0; // 0 = Item Comments, 1 = Owner Comments
+  int _selectedTab = 0; // 0 = Item Reviews, 1 = Owner Reviews
+  late final ReviewController _reviewController;
 
-  final List<Comment> _itemComments = [
-    Comment(
-      userName: "Melisa Thomas",
-      timeAgo: "2 days ago",
-      rating: 4.7,
-      commentText:
-          "Great item! Works perfectly and exactly as described. Would definitely rent again.",
-      avatarPath: Assets.imagesShoes2,
-    ),
-    Comment(
-      userName: "John Smith",
-      timeAgo: "5 days ago",
-      rating: 4.5,
-      commentText:
-          "Item was in good condition. Had a small issue but overall satisfied with the rental experience.",
-      avatarPath: Assets.imagesShoes2,
-    ),
-    Comment(
-      userName: "Sarah Johnson",
-      timeAgo: "1 week ago",
-      rating: 5.0,
-      commentText:
-          "Perfect! The item exceeded my expectations. Clean, well-maintained, and worked flawlessly throughout the rental period.",
-      avatarPath: Assets.imagesShoes2,
-    ),
-  ];
-
-  final List<Comment> _ownerComments = [
-    Comment(
-      userName: "Mike Wilson",
-      timeAgo: "3 days ago",
-      rating: 4.8,
-      commentText:
-          "Excellent owner! Very responsive and professional. Made the rental process smooth and easy.",
-      avatarPath: Assets.imagesShoes2,
-    ),
-    Comment(
-      userName: "Emily Brown",
-      timeAgo: "1 week ago",
-      rating: 4.9,
-      commentText:
-          "Great communication and very accommodating. Would definitely rent from this owner again!",
-      avatarPath: Assets.imagesShoes2,
-    ),
-    Comment(
-      userName: "David Lee",
-      timeAgo: "2 weeks ago",
-      rating: 5.0,
-      commentText:
-          "Outstanding owner! Quick to respond, flexible with pickup times, and the item was exactly as advertised. Highly recommended!",
-      avatarPath: Assets.imagesShoes2,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _reviewController = Get.isRegistered<ReviewController>()
+        ? Get.find<ReviewController>()
+        : Get.put(ReviewController());
+    _reviewController.fetchItemReviews(widget.itemId, refresh: true);
+    if ((widget.ownerId ?? '').isNotEmpty) {
+      _reviewController.fetchOwnerReviews(widget.ownerId!, refresh: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final currentComments = _selectedTab == 0 ? _itemComments : _ownerComments;
+    return GetBuilder<ReviewController>(
+      init: _reviewController,
+      builder: (controller) {
+        final isOwnerTab = _selectedTab == 1;
+        final hasOwner = (widget.ownerId ?? '').isNotEmpty;
+        final currentReviews = isOwnerTab
+            ? controller.ownerReviews
+            : controller.itemReviews;
+        final isLoading = isOwnerTab
+            ? controller.isOwnerReviewsLoading
+            : controller.isItemReviewsLoading;
+        final errorMessage = isOwnerTab
+            ? controller.ownerReviewsErrorMessage
+            : controller.itemReviewsErrorMessage;
 
-    return Scaffold(
-      body: AnimatedListView(
-        padding: EdgeInsets.all(20),
-        children: [
-          Gap(50),
-          // Top Bar
-          Row(
+        return Scaffold(
+          body: AnimatedListView(
+            padding: EdgeInsets.all(20),
             children: [
-              Bounce(
-                onTap: () => Get.back(),
-                child: CommonImageView(
-                  imagePath: Assets.imagesBack,
-                  height: 50,
+              Gap(50),
+              // Top Bar
+              Row(
+                children: [
+                  Bounce(
+                    onTap: () => Get.back(),
+                    child: CommonImageView(
+                      imagePath: Assets.imagesBack,
+                      height: 50,
+                    ),
+                  ),
+                  Gap(16),
+                  MyText(text: "Reviews", size: 20, weight: FontWeight.w600),
+                ],
+              ),
+              Gap(24),
+
+              // Tabs
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: kBlack.withOpacity(0.1), width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Bounce(
+                        onTap: () {
+                          setState(() {
+                            _selectedTab = 0;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: _selectedTab == 0
+                                    ? kPrimaryColor
+                                    : Colors.transparent,
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          child: Center(
+                            child: MyText(
+                              text: 'Item Reviews',
+                              size: 16,
+                              color: _selectedTab == 0 ? kBlack : kSubText,
+                              weight: _selectedTab == 0
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Bounce(
+                        onTap: hasOwner
+                            ? () {
+                                setState(() {
+                                  _selectedTab = 1;
+                                });
+                              }
+                            : null,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: _selectedTab == 1
+                                    ? kPrimaryColor
+                                    : Colors.transparent,
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          child: Center(
+                            child: MyText(
+                              text: 'Owner Reviews',
+                              size: 16,
+                              color: _selectedTab == 1
+                                  ? kBlack
+                                  : (hasOwner ? kSubText : kSubText.withOpacity(0.5)),
+                              weight: _selectedTab == 1
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Gap(16),
-              MyText(text: "Comments", size: 20, weight: FontWeight.w600),
+              Gap(24),
+
+              if (isLoading && currentReviews.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (errorMessage != null && currentReviews.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: MyText(
+                      text: errorMessage,
+                      size: 14,
+                      color: kSubText,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              else ...[
+                // Reviews count
+                MyText(
+                  text:
+                      '${currentReviews.length} ${isOwnerTab ? 'Owner' : 'Item'} Reviews',
+                  size: 16,
+                  color: kSubText,
+                  weight: FontWeight.w500,
+                ),
+                Gap(20),
+
+                if (currentReviews.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: MyText(
+                        text: 'No reviews yet.',
+                        size: 14,
+                        color: kSubText,
+                      ),
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    padding: EdgeInsets.all(0),
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: currentReviews.length,
+                    separatorBuilder: (context, index) => Gap(20),
+                    itemBuilder: (context, index) {
+                      return ReviewCard(review: currentReviews[index]);
+                    },
+                  ),
+              ],
+              Gap(20),
             ],
           ),
-          Gap(24),
-
-          // Tabs
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: kBlack.withOpacity(0.1), width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Bounce(
-                    onTap: () {
-                      setState(() {
-                        _selectedTab = 0;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: _selectedTab == 0
-                                ? kPrimaryColor
-                                : Colors.transparent,
-                            width: 3,
-                          ),
-                        ),
-                      ),
-                      child: Center(
-                        child: MyText(
-                          text: 'Item Comments',
-                          size: 16,
-                          color: _selectedTab == 0 ? kBlack : kSubText,
-                          weight: _selectedTab == 0
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Bounce(
-                    onTap: () {
-                      setState(() {
-                        _selectedTab = 1;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: _selectedTab == 1
-                                ? kPrimaryColor
-                                : Colors.transparent,
-                            width: 3,
-                          ),
-                        ),
-                      ),
-                      child: Center(
-                        child: MyText(
-                          text: 'Owner Comments',
-                          size: 16,
-                          color: _selectedTab == 1 ? kBlack : kSubText,
-                          weight: _selectedTab == 1
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Gap(24),
-
-          // Comments count
-          MyText(
-            text:
-                '${currentComments.length} ${_selectedTab == 0 ? 'Item' : 'Owner'} Comments',
-            size: 16,
-            color: kSubText,
-            weight: FontWeight.w500,
-          ),
-          Gap(20),
-
-          // Comments List
-          ListView.separated(
-            padding: EdgeInsets.all(0),
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: currentComments.length,
-            separatorBuilder: (context, index) => Gap(20),
-            itemBuilder: (context, index) {
-              return CommentCard(comment: currentComments[index]);
-            },
-          ),
-          Gap(20),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class CommentCard extends StatelessWidget {
-  final Comment comment;
+class ReviewCard extends StatelessWidget {
+  final ReviewModel review;
 
-  const CommentCard({super.key, required this.comment});
+  const ReviewCard({super.key, required this.review});
+
+  String get _timeAgo {
+    final createdAt = review.createdAt;
+    if (createdAt == null) {
+      return '';
+    }
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inDays >= 7) {
+      final weeks = (diff.inDays / 7).floor();
+      return '$weeks week${weeks == 1 ? '' : 's'} ago';
+    }
+    if (diff.inDays >= 1) {
+      return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+    }
+    if (diff.inHours >= 1) {
+      return '${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago';
+    }
+    return 'Just now';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final reviewerName = review.reviewer?.fullName ?? 'Zip Rental user';
+    final avatarPath = review.reviewer?.profilePhoto ?? Assets.imagesShoes2;
+
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -239,7 +274,7 @@ class CommentCard extends StatelessWidget {
                 ),
                 child: ClipOval(
                   child: CommonImageView(
-                    imagePath: comment.avatarPath,
+                    imagePath: avatarPath,
                     height: 50,
                     width: 50,
                     fit: BoxFit.cover,
@@ -253,12 +288,12 @@ class CommentCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     MyText(
-                      text: comment.userName,
+                      text: reviewerName,
                       size: 16,
                       weight: FontWeight.w600,
                     ),
                     Gap(4),
-                    MyText(text: comment.timeAgo, size: 14, color: kSubText),
+                    MyText(text: _timeAgo, size: 14, color: kSubText),
                   ],
                 ),
               ),
@@ -268,7 +303,7 @@ class CommentCard extends StatelessWidget {
                   CommonImageView(imagePath: Assets.imagesStar, height: 20),
                   Gap(4),
                   MyText(
-                    text: "${comment.rating}",
+                    text: "${review.rating ?? 0}",
                     size: 14,
                     weight: FontWeight.w600,
                   ),
@@ -280,25 +315,9 @@ class CommentCard extends StatelessWidget {
           Divider(color: kDividerColor),
           Gap(6),
           // Comment Text
-          MyText(text: comment.commentText, size: 14, color: kSubText),
+          MyText(text: review.comment ?? '', size: 14, color: kSubText),
         ],
       ),
     );
   }
-}
-
-class Comment {
-  final String userName;
-  final String timeAgo;
-  final double rating;
-  final String commentText;
-  final String avatarPath;
-
-  Comment({
-    required this.userName,
-    required this.timeAgo,
-    required this.rating,
-    required this.commentText,
-    required this.avatarPath,
-  });
 }

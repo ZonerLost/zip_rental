@@ -432,7 +432,12 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     ),
                     Bounce(
                       onTap: () {
-                        Get.to(() => const CommentsScreen());
+                        Get.to(
+                          () => CommentsScreen(
+                            itemId: item.id,
+                            ownerId: item.ownerId ?? item.owner?.id,
+                          ),
+                        );
                       },
                       child: CommonImageView(
                         imagePath: Assets.imagesCommentsNewIcon,

@@ -154,6 +154,65 @@ void BlockBottomSheet(BuildContext context) {
   );
 }
 
+void ArchiveUserBottomSheet(BuildContext context, {VoidCallback? onConfirm}) {
+  Get.bottomSheet(
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    enableDrag: true,
+    StatefulBuilder(
+      builder: (context, setState) {
+        return DoubleWhiteContainers(
+          height: 500,
+          mainColor: kWhite3,
+          topColor: kWhite,
+          handleHeight: 14,
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Gap(20),
+              CommonImageView(imagePath: Assets.imagesSucess, height: 150),
+              const Gap(42),
+              const MyText(
+                textAlign: TextAlign.center,
+                text: "Archive User",
+                size: 24,
+                weight: FontWeight.w700,
+                color: Colors.black,
+              ),
+              const Gap(10),
+              const MyText(
+                text: "Are you sure want to archive this chat?",
+                size: 16,
+                textAlign: TextAlign.center,
+
+                color: kSubText2,
+                weight: FontWeight.w400,
+              ),
+              const Gap(40),
+
+              MyButton(
+                onTap: () {
+                  Get.back();
+                  onConfirm?.call();
+                },
+                buttonText: "Yes, Archive",
+                fontColor: Colors.white,
+                height: 56,
+                radius: 28,
+                hasgrad: false,
+                fontSize: 17,
+              ),
+              const Gap(20),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
 void ReportUserBottomSheet(BuildContext context) {
   // Keep track of selected reason
   String? selectedReason;

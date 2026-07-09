@@ -6,8 +6,8 @@ class DeliveryPricingTier {
 
   factory DeliveryPricingTier.fromJson(Map<String, dynamic> json) {
     return DeliveryPricingTier(
-      maxKm: _asInt(json['maxKm']) ?? 0,
-      price: _asDouble(json['price']) ?? 0,
+      maxKm: _asInt(json['radius']) ?? _asInt(json['maxKm']) ?? 0,
+      price: _asDouble(json['fee']) ?? _asDouble(json['price']) ?? 0,
     );
   }
 
@@ -17,21 +17,59 @@ class DeliveryPricingTier {
 class DayScheduleModel {
   const DayScheduleModel({
     required this.enabled,
+    this.allDay = false,
     this.startTime,
     this.endTime,
   });
 
   final bool enabled;
+  final bool allDay;
   final String? startTime;
   final String? endTime;
+
+  factory DayScheduleModel.fromJson(Map<String, dynamic> json) {
+    return DayScheduleModel(
+      enabled: _asBool(json['enabled']) ?? false,
+      allDay: _asBool(json['allDay']) ?? false,
+      startTime: _asString(json['startTime']),
+      endTime: _asString(json['endTime']),
+    );
+  }
 
   Map<String, dynamic> toJson() {
     if (!enabled) return {'enabled': false};
     return {
       'enabled': true,
+      if (allDay) 'allDay': allDay,
       if (startTime != null) 'startTime': startTime,
       if (endTime != null) 'endTime': endTime,
     };
+  }
+}
+
+class SpecificDateScheduleModel {
+  const SpecificDateScheduleModel({
+    required this.date,
+    required this.enabled,
+    this.allDay = false,
+    this.startTime,
+    this.endTime,
+  });
+
+  final DateTime? date;
+  final bool enabled;
+  final bool allDay;
+  final String? startTime;
+  final String? endTime;
+
+  factory SpecificDateScheduleModel.fromJson(Map<String, dynamic> json) {
+    return SpecificDateScheduleModel(
+      date: _asDateTime(json['date']),
+      enabled: _asBool(json['enabled']) ?? false,
+      allDay: _asBool(json['allDay']) ?? false,
+      startTime: _asString(json['startTime']),
+      endTime: _asString(json['endTime']),
+    );
   }
 }
 
@@ -39,16 +77,86 @@ class WeeklyScheduleModel {
   const WeeklyScheduleModel({
     required this.recurringDays,
     this.scheduleType = 'recurring',
+    this.specificDates = const <SpecificDateScheduleModel>[],
   });
 
   final Map<String, DayScheduleModel> recurringDays;
   final String scheduleType;
+  final List<SpecificDateScheduleModel> specificDates;
+
+  factory WeeklyScheduleModel.fromJson(Map<String, dynamic> json) {
+    final recurringRaw = json['recurringDays'];
+    final recurringMap = recurringRaw is Map
+        ? recurringRaw.map((key, value) => MapEntry(key.toString(), value))
+        : <String, dynamic>{};
+
+    final recurringDays = <String, DayScheduleModel>{};
+    recurringMap.forEach((day, value) {
+      if (value is Map) {
+        recurringDays[day.toLowerCase()] = DayScheduleModel.fromJson(
+          value.map((key, val) => MapEntry(key.toString(), val)),
+        );
+      }
+    });
+
+    final specificRaw = json['specificDates'];
+    final specificDates = specificRaw is List
+        ? specificRaw
+            .whereType<Map>()
+            .map((e) => SpecificDateScheduleModel.fromJson(
+                e.map((key, val) => MapEntry(key.toString(), val))))
+            .toList(growable: false)
+        : const <SpecificDateScheduleModel>[];
+
+    return WeeklyScheduleModel(
+      recurringDays: recurringDays,
+      scheduleType: _asString(json['scheduleType']) ?? 'recurring',
+      specificDates: specificDates,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
       'scheduleType': scheduleType,
       'recurringDays': recurringDays.map((k, v) => MapEntry(k, v.toJson())),
     };
+  }
+
+  /// Returns the configured pickup/delivery time window for [day], or null
+  /// if that day isn't made available by the owner. Checks a specific-date
+  /// override first, then falls back to the recurring weekday schedule.
+  DayScheduleModel? windowFor(DateTime day) {
+    final dateOnly = DateTime(day.year, day.month, day.day);
+    for (final override in specificDates) {
+      final overrideDate = override.date;
+      if (overrideDate != null &&
+          DateTime(overrideDate.year, overrideDate.month, overrideDate.day) ==
+              dateOnly) {
+        return override.enabled
+            ? DayScheduleModel(
+                enabled: true,
+                allDay: override.allDay,
+                startTime: override.startTime,
+                endTime: override.endTime,
+              )
+            : null;
+      }
+    }
+
+    const weekdayNames = <int, String>{
+      DateTime.monday: 'monday',
+      DateTime.tuesday: 'tuesday',
+      DateTime.wednesday: 'wednesday',
+      DateTime.thursday: 'thursday',
+      DateTime.friday: 'friday',
+      DateTime.saturday: 'saturday',
+      DateTime.sunday: 'sunday',
+    };
+    final schedule = recurringDays[weekdayNames[day.weekday]];
+    if (schedule == null || !schedule.enabled) {
+      return null;
+    }
+    return schedule;
   }
 }
 
@@ -241,15 +349,24 @@ class OwnerModel {
 }
 
 class ItemAvailabilityModel {
-  const ItemAvailabilityModel({this.isAvailable, this.blockedDates = const []});
+  const ItemAvailabilityModel({
+    this.isAvailable,
+    this.blockedDates = const [],
+    this.availableFrom,
+    this.availableTo,
+  });
 
   final bool? isAvailable;
   final List<String> blockedDates;
+  final DateTime? availableFrom;
+  final DateTime? availableTo;
 
   factory ItemAvailabilityModel.fromJson(Map<String, dynamic> json) {
     return ItemAvailabilityModel(
       isAvailable: _asBool(json['isAvailable']),
       blockedDates: _toStringList(json['blockedDates']),
+      availableFrom: _asDateTime(json['availableFrom']),
+      availableTo: _asDateTime(json['availableTo']),
     );
   }
 
@@ -257,6 +374,9 @@ class ItemAvailabilityModel {
     return <String, dynamic>{
       if (isAvailable != null) 'isAvailable': isAvailable,
       if (blockedDates.isNotEmpty) 'blockedDates': blockedDates,
+      if (availableFrom != null)
+        'availableFrom': availableFrom!.toIso8601String(),
+      if (availableTo != null) 'availableTo': availableTo!.toIso8601String(),
     };
   }
 }
@@ -285,6 +405,9 @@ class ItemModel {
     this.quantity,
     this.deliveryFee,
     this.deliveryPricing = const [],
+    this.deliveryOptions,
+    this.pickupSchedule,
+    this.deliverySchedule,
     this.isFeatured,
     this.isBoosted,
     this.boostedAt,
@@ -321,6 +444,9 @@ class ItemModel {
   final int? quantity;
   final double? deliveryFee;
   final List<DeliveryPricingTier> deliveryPricing;
+  final DeliveryOptionsModel? deliveryOptions;
+  final WeeklyScheduleModel? pickupSchedule;
+  final WeeklyScheduleModel? deliverySchedule;
   final bool? isFeatured;
   final bool? isBoosted;
   final DateTime? boostedAt;
@@ -357,6 +483,24 @@ class ItemModel {
         ? availabilityRaw.map((key, value) => MapEntry(key.toString(), value))
         : null;
 
+    final deliveryOptionsRaw = json['deliveryOptions'];
+    final deliveryOptionsMap = deliveryOptionsRaw is Map
+        ? deliveryOptionsRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+    final deliveryOptions = deliveryOptionsMap == null
+        ? null
+        : DeliveryOptionsModel.fromJson(deliveryOptionsMap);
+
+    final pickupScheduleRaw = json['pickupSchedule'];
+    final pickupScheduleMap = pickupScheduleRaw is Map
+        ? pickupScheduleRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+
+    final deliveryScheduleRaw = json['deliverySchedule'];
+    final deliveryScheduleMap = deliveryScheduleRaw is Map
+        ? deliveryScheduleRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
+
     return ItemModel(
       id: _asString(json['_id']) ?? _asString(json['id']) ?? '',
       ownerId: ownerId,
@@ -382,8 +526,17 @@ class ItemModel {
       minRentalDays: _asInt(json['minRentalDays']),
       maxRentalDays: _asInt(json['maxRentalDays']),
       quantity: _asInt(json['quantity']),
-      deliveryFee: _asDouble(json['deliveryFee']),
-      deliveryPricing: _parseDeliveryPricing(json['deliveryPricing']),
+      deliveryFee: _asDouble(json['deliveryFee']) ?? deliveryOptions?.deliveryFee,
+      deliveryPricing: _parseDeliveryPricing(json['deliveryPricing']).isNotEmpty
+          ? _parseDeliveryPricing(json['deliveryPricing'])
+          : (deliveryOptions?.deliveryPricing ?? const <DeliveryPricingTier>[]),
+      deliveryOptions: deliveryOptions,
+      pickupSchedule: pickupScheduleMap == null
+          ? null
+          : WeeklyScheduleModel.fromJson(pickupScheduleMap),
+      deliverySchedule: deliveryScheduleMap == null
+          ? null
+          : WeeklyScheduleModel.fromJson(deliveryScheduleMap),
       isFeatured: _asBool(json['isFeatured']),
       isBoosted: _asBool(json['isBoosted']),
       boostedAt: _asDateTime(json['boostedAt']),
@@ -561,11 +714,25 @@ class DeliveryOptionsModel {
     this.pickup = false,
     this.delivery = false,
     this.deliveryRadius,
+    this.deliveryFee,
+    this.deliveryPricing = const <DeliveryPricingTier>[],
   });
 
   final bool pickup;
   final bool delivery;
   final int? deliveryRadius;
+  final double? deliveryFee;
+  final List<DeliveryPricingTier> deliveryPricing;
+
+  factory DeliveryOptionsModel.fromJson(Map<String, dynamic> json) {
+    return DeliveryOptionsModel(
+      pickup: _asBool(json['pickup']) ?? false,
+      delivery: _asBool(json['delivery']) ?? false,
+      deliveryRadius: _asInt(json['deliveryRadius']),
+      deliveryFee: _asDouble(json['deliveryFee']),
+      deliveryPricing: _parseDeliveryPricing(json['deliveryPricing']),
+    );
+  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'pickup': pickup,

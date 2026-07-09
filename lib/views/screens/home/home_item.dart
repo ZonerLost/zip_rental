@@ -12,21 +12,46 @@ import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
-class HomeItemScreen extends StatelessWidget {
+class HomeItemScreen extends StatefulWidget {
   const HomeItemScreen({super.key});
+
+  @override
+  State<HomeItemScreen> createState() => _HomeItemScreenState();
+}
+
+class _HomeItemScreenState extends State<HomeItemScreen> {
+  final ScrollController _scrollController = ScrollController();
+  late final BrowseItemsController _browseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _browseController = Get.isRegistered<BrowseItemsController>()
+        ? Get.find<BrowseItemsController>()
+        : Get.put(BrowseItemsController());
+    _scrollController.addListener(() {
+      if (_scrollController.hasClients) {
+        _browseController.maybeLoadMore(_scrollController.position);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<BrowseItemsController>(
-      init: Get.isRegistered<BrowseItemsController>()
-          ? Get.find<BrowseItemsController>()
-          : Get.put(BrowseItemsController()),
+      init: _browseController,
       builder: (controller) {
         return Scaffold(
           body: RefreshIndicator(
             onRefresh: controller.refreshItems,
             child: AnimatedListView(
-              controller: controller.scrollController,
+              controller: _scrollController,
               padding: const EdgeInsets.all(20),
               children: [
                 const Gap(50),
