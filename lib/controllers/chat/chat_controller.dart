@@ -11,9 +11,9 @@ class ChatController extends GetxController {
     ChatService? chatService,
     AuthService? authService,
     ChatSocketService? socketService,
-  })  : _chatService = chatService ?? ChatService(),
-        _authService = authService ?? AuthService(),
-        _socket = socketService ?? ChatSocketService();
+  }) : _chatService = chatService ?? ChatService(),
+       _authService = authService ?? AuthService(),
+       _socket = socketService ?? ChatSocketService();
 
   final ChatService _chatService;
   final AuthService _authService;
@@ -64,15 +64,14 @@ class ChatController extends GetxController {
     });
 
     _newMsgSub = _socket.onNewMessage.listen(_handleSocketNewMessage);
-    _convUpdatedSub =
-        _socket.onConversationUpdated.listen(_handleConversationUpdated);
+    _convUpdatedSub = _socket.onConversationUpdated.listen(
+      _handleConversationUpdated,
+    );
   }
 
   void _handleSocketNewMessage(ChatMessage msg) {
     // Find the matching conversation and update its lastMessage + unreadCount
-    final idx = conversations.indexWhere(
-      (c) => c.id == msg.conversationId,
-    );
+    final idx = conversations.indexWhere((c) => c.id == msg.conversationId);
     if (idx == -1) {
       // Unknown conversation — reload the full list
       loadConversations();
@@ -118,10 +117,33 @@ class ChatController extends GetxController {
     required String otherUserId,
     required String message,
     String? itemId,
+    String? itemTitle,
   }) async {
+    await loadConversations();
+
+    final existingConversation = findConversationWithUser(otherUserId);
+    final encodedMessage = ChatMessage.encodeContentWithItemReference(
+      message,
+      itemId: itemId,
+      itemTitle: itemTitle,
+    );
+
+    if (existingConversation != null) {
+      final sendResult = await _chatService.sendMessage(
+        conversationId: existingConversation.id,
+        content: encodedMessage,
+      );
+      if (sendResult.success) {
+        await loadConversations();
+        return existingConversation.id;
+      }
+      Get.snackbar('Chat', sendResult.message);
+      return null;
+    }
+
     final result = await _chatService.startConversation(
       otherUserId: otherUserId,
-      message: message,
+      message: encodedMessage,
       itemId: itemId,
     );
     if (result.success) {
@@ -135,6 +157,18 @@ class ChatController extends GetxController {
   // ── Helpers ───────────────────────────────────────────────────────────────
   bool isTypingInConversation(String conversationId) =>
       _typingState[conversationId] == true;
+
+  ChatConversation? findConversationWithUser(String otherUserId) {
+    for (final conversation in conversations) {
+      final hasOtherUser = conversation.participants.any(
+        (participant) => participant.id == otherUserId,
+      );
+      if (hasOtherUser) {
+        return conversation;
+      }
+    }
+    return null;
+  }
 
   void resetUnreadCount(String conversationId) {
     final idx = conversations.indexWhere((c) => c.id == conversationId);

@@ -178,15 +178,17 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               builder: (favCtrl) {
                 final isFav = favCtrl.isFavourite(item.id);
                 return Bounce(
-                  onTap: () => favCtrl.toggle(FavItem(
-                    id: item.id,
-                    title: item.title ?? '',
-                    price:
-                        '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
-                    imageUrl: item.thumbnailUrl,
-                    ownerName: item.ownerName,
-                    ownerPhoto: item.owner?.profilePhoto ?? '',
-                  )),
+                  onTap: () => favCtrl.toggle(
+                    FavItem(
+                      id: item.id,
+                      title: item.title ?? '',
+                      price:
+                          '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                      imageUrl: item.thumbnailUrl,
+                      ownerName: item.ownerName,
+                      ownerPhoto: item.owner?.profilePhoto ?? '',
+                    ),
+                  ),
                   child: CommonImageView(
                     imagePath: isFav
                         ? Assets.imagesHeartFilled
@@ -501,22 +503,26 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 6,
-                      children: item.tags.map((tag) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: kPrimaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: MyText(
-                          text: '#$tag',
-                          size: 12,
-                          color: kPrimaryColor,
-                          weight: FontWeight.w500,
-                        ),
-                      )).toList(),
+                      children: item.tags
+                          .map(
+                            (tag) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: kPrimaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: MyText(
+                                text: '#$tag',
+                                size: 12,
+                                color: kPrimaryColor,
+                                weight: FontWeight.w500,
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                 ],
@@ -566,11 +572,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.block,
-                          size: 18,
-                          color: kSubText,
-                        ),
+                        const Icon(Icons.block, size: 18, color: kSubText),
                         const Gap(10),
                         Expanded(
                           child: Column(
@@ -583,8 +585,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                               ),
                               const Gap(4),
                               MyText(
-                                text: item.availability!.blockedDates
-                                    .join(', '),
+                                text: item.availability!.blockedDates.join(
+                                  ', ',
+                                ),
                                 size: 13,
                                 weight: FontWeight.w500,
                                 color: kBlack,
@@ -736,6 +739,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     otherUserId: ownerId,
                     message: text,
                     itemId: item.id,
+                    itemTitle: item.title,
                   );
                   if (convId == null) return;
                   Get.to(
@@ -743,6 +747,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                       conversationId: convId,
                       participantName: ownerName.isEmpty ? 'Owner' : ownerName,
                       participantPhoto: item.owner?.profilePhoto,
+                      activeItemId: item.id,
+                      activeItemTitle: item.title,
                     ),
                   );
                 },

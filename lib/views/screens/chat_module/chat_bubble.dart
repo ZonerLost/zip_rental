@@ -9,6 +9,8 @@ import 'package:zip_peer/views/widget/my_text_widget.dart';
 
 class ChatBubble extends StatelessWidget {
   final String message;
+  final String? itemId;
+  final String? itemTitle;
   final String time;
   final bool isMe;
   final bool showCheck; // Whether to show the orange double tick
@@ -16,6 +18,8 @@ class ChatBubble extends StatelessWidget {
   const ChatBubble({
     super.key,
     required this.message,
+    this.itemId,
+    this.itemTitle,
     required this.time,
     required this.isMe,
     this.showCheck = true,
@@ -47,12 +51,39 @@ class ChatBubble extends StatelessWidget {
                 ),
               ],
             ),
-            child: MyText(
-              text: message,
-              size: 15,
-              color: isMe ? kWhite : kBlack,
-              weight: FontWeight.w400,
-              textAlign: TextAlign.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if ((itemId ?? '').isNotEmpty || (itemTitle ?? '').isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? Colors.white.withOpacity(0.16)
+                          : kPrimaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: MyText(
+                      text: itemTitle?.isNotEmpty == true
+                          ? itemTitle!
+                          : 'Item reference',
+                      size: 12,
+                      color: isMe ? kWhite : kPrimaryColor,
+                      weight: FontWeight.w600,
+                    ),
+                  ),
+                MyText(
+                  text: message,
+                  size: 15,
+                  color: isMe ? kWhite : kBlack,
+                  weight: FontWeight.w400,
+                  textAlign: TextAlign.start,
+                ),
+              ],
             ),
           ),
           Gap(4),
@@ -69,10 +100,7 @@ class ChatBubble extends StatelessWidget {
               ),
               if (showCheck) ...[
                 Gap(4),
-                CommonImageView(
-                  imagePath: Assets.imagesDoubleTick,
-                  height: 20,
-                ),
+                CommonImageView(imagePath: Assets.imagesDoubleTick, height: 20),
               ],
             ],
           ),

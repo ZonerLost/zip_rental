@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/items/item_models.dart';
 import 'package:zip_peer/views/screens/add_item_module/bosst.dart';
@@ -91,6 +92,39 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
     }
+    scheduleType ??= itemDraft?['scheduleType'] as String?;
+    _restoreFromDraft();
+  }
+
+  // Pre-fills the weekly schedule if this step was already completed earlier
+  // in this session (e.g. the user went back to step 1 and is now continuing
+  // forward again through a freshly-built instance of this screen).
+  void _restoreFromDraft() {
+    final saved = itemDraft?['pickupDaySchedule'];
+    if (saved is! Map) return;
+
+    TimeOfDay? parseTime(dynamic raw) {
+      final parts = raw?.toString().split(':');
+      if (parts == null || parts.length != 2) return null;
+      final hour = int.tryParse(parts[0]);
+      final minute = int.tryParse(parts[1]);
+      if (hour == null || minute == null) return null;
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
+    saved.forEach((day, value) {
+      final dayKey = day.toString();
+      if (!dayAvailability.containsKey(dayKey) || value is! Map) return;
+
+      dayAvailability[dayKey] = value['enabled'] == true;
+      dayAllDayMode[dayKey] = value['allDay'] != false;
+
+      final from = parseTime(value['from']);
+      final to = parseTime(value['to']);
+      if (from != null && to != null) {
+        dayTimes[dayKey] = {'from': from, 'to': to};
+      }
+    });
   }
 
   String getWeekRangeText() {
@@ -154,10 +188,10 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
     });
   }
 
-  WeeklyScheduleModel _buildSchedule() {
-    String _fmt(TimeOfDay t) =>
-        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  String _fmtTime(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  WeeklyScheduleModel _buildSchedule() {
     final days = <String, DayScheduleModel>{};
     for (final entry in dayAvailability.entries) {
       final dayKey = entry.key.toLowerCase();
@@ -168,8 +202,8 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
         final times = dayTimes[entry.key]!;
         days[dayKey] = DayScheduleModel(
           enabled: true,
-          startTime: _fmt(times['from']!),
-          endTime: _fmt(times['to']!),
+          startTime: _fmtTime(times['from']!),
+          endTime: _fmtTime(times['to']!),
         );
       }
     }
@@ -177,6 +211,23 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
       recurringDays: days,
       scheduleType: scheduleType ?? 'recurring',
     );
+  }
+
+  // Raw, restorable form of the same schedule — used to pre-fill this
+  // screen's toggles/times if the user comes back through it again.
+  Map<String, dynamic> _buildRawDaySchedule() {
+    final raw = <String, dynamic>{};
+    for (final entry in dayAvailability.entries) {
+      final day = entry.key;
+      final times = dayTimes[day]!;
+      raw[day] = {
+        'enabled': entry.value,
+        'allDay': dayAllDayMode[day] ?? true,
+        'from': _fmtTime(times['from']!),
+        'to': _fmtTime(times['to']!),
+      };
+    }
+    return raw;
   }
 
   @override
@@ -190,6 +241,15 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
             MyButton(
               onTap: () {
                 final schedule = _buildSchedule();
+                final rawDaySchedule = _buildRawDaySchedule();
+
+                if (Get.isRegistered<AddItemController>()) {
+                  Get.find<AddItemController>().mergeExtraDraftFields({
+                    'bookingType': bookingType,
+                    'pickupDaySchedule': rawDaySchedule,
+                  });
+                }
+
                 Get.to(
                   () => const BoostScreen(),
                   arguments: {
@@ -200,6 +260,7 @@ class _PickupAvailabilityScreenState extends State<PickupAvailabilityScreen> {
                     'itemDraft': {
                       ...?itemDraft,
                       'bookingType': bookingType,
+                      'pickupDaySchedule': rawDaySchedule,
                     },
                   },
                 );

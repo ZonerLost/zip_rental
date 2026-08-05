@@ -19,11 +19,15 @@ class ChatMessagesScreen extends StatefulWidget {
     required this.conversationId,
     required this.participantName,
     this.participantPhoto,
+    this.activeItemId,
+    this.activeItemTitle,
   });
 
   final String conversationId;
   final String participantName;
   final String? participantPhoto;
+  final String? activeItemId;
+  final String? activeItemTitle;
 
   @override
   State<ChatMessagesScreen> createState() => _ChatMessagesScreenState();
@@ -37,7 +41,11 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
   void initState() {
     super.initState();
     _controller = Get.put(
-      ChatMessagesController(conversationId: widget.conversationId),
+      ChatMessagesController(
+        conversationId: widget.conversationId,
+        activeItemId: widget.activeItemId,
+        activeItemTitle: widget.activeItemTitle,
+      ),
       tag: widget.conversationId,
     );
   }
@@ -192,8 +200,12 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                                   },
                                 );
                               }
-                              if (value == 'block') BlockBottomSheet(context);
-                              if (value == 'report') ReportUserBottomSheet(context);
+                              if (value == 'block') {
+                                BlockBottomSheet(context);
+                              }
+                              if (value == 'report') {
+                                ReportUserBottomSheet(context);
+                              }
                             });
                           },
                           child: CommonImageView(
@@ -203,6 +215,55 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                         ),
                       ],
                     ),
+                    if ((widget.activeItemId ?? '').isNotEmpty ||
+                        (widget.activeItemTitle ?? '').isNotEmpty) ...[
+                      const Gap(12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 18,
+                              color: kPrimaryColor,
+                            ),
+                            const Gap(10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  MyText(
+                                    text:
+                                        widget.activeItemTitle?.isNotEmpty ==
+                                            true
+                                        ? widget.activeItemTitle!
+                                        : 'Item reference',
+                                    size: 14,
+                                    color: kBlack,
+                                    weight: FontWeight.w600,
+                                  ),
+                                  MyText(
+                                    text: 'Discussing this item',
+                                    size: 12,
+                                    color: kSubText2,
+                                    weight: FontWeight.w400,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -212,67 +273,70 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                 child: controller.isLoading && controller.messages.isEmpty
                     ? const Center(child: CircularProgressIndicator())
                     : controller.errorMessage != null &&
-                            controller.messages.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                MyText(
-                                  text: controller.errorMessage!,
-                                  size: 14,
-                                  color: kSubText,
-                                  textAlign: TextAlign.center,
-                                ),
-                                const Gap(12),
-                                Bounce(
-                                  onTap: controller.loadMessages,
-                                  child: MyText(
-                                    text: 'Retry',
-                                    size: 14,
-                                    color: kPrimaryColor,
-                                    weight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                          controller.messages.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MyText(
+                              text: controller.errorMessage!,
+                              size: 14,
+                              color: kSubText,
+                              textAlign: TextAlign.center,
                             ),
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            reverse: true,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            itemCount: controller.messages.length,
-                            itemBuilder: (context, index) {
-                              // reverse: true means index 0 is the last message
-                              final reversed = controller.messages.reversed
-                                  .toList();
-                              final msg = reversed[index];
-                              if (msg.isDeleted) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 6),
-                                  child: Center(
-                                    child: MyText(
-                                      text: 'Message deleted',
-                                      size: 12,
-                                      color: kSubText2,
-                                    ),
-                                  ),
-                                );
-                              }
-                              return GestureDetector(
-                                onLongPress: controller.isMe(msg.senderId)
-                                    ? () => _showDeleteDialog(msg.id)
-                                    : null,
-                                child: ChatBubble(
-                                  message: msg.content,
-                                  time: _formatTime(msg.createdAt),
-                                  isMe: controller.isMe(msg.senderId),
-                                  showCheck: controller.isMe(msg.senderId),
+                            const Gap(12),
+                            Bounce(
+                              onTap: controller.loadMessages,
+                              child: MyText(
+                                text: 'Retry',
+                                size: 14,
+                                color: kPrimaryColor,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        itemCount: controller.messages.length,
+                        itemBuilder: (context, index) {
+                          // reverse: true means index 0 is the last message
+                          final reversed = controller.messages.reversed
+                              .toList();
+                          final msg = reversed[index];
+                          if (msg.isDeleted) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Center(
+                                child: MyText(
+                                  text: 'Message deleted',
+                                  size: 12,
+                                  color: kSubText2,
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          }
+                          return GestureDetector(
+                            onLongPress: controller.isMe(msg.senderId)
+                                ? () => _showDeleteDialog(msg.id)
+                                : null,
+                            child: ChatBubble(
+                              message: msg.content,
+                              itemId: msg.itemId,
+                              itemTitle: msg.itemTitle,
+                              time: _formatTime(msg.createdAt),
+                              isMe: controller.isMe(msg.senderId),
+                              showCheck: controller.isMe(msg.senderId),
+                            ),
+                          );
+                        },
+                      ),
               ),
 
               // ── Input bar ─────────────────────────────────────────────────
@@ -281,7 +345,9 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 24, horizontal: 12),
+                      vertical: 24,
+                      horizontal: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: kWhite,
                       boxShadow: [

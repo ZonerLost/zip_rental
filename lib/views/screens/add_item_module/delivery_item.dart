@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/items/item_models.dart';
 import 'package:zip_peer/views/screens/add_item_module/delivery_availability.dart';
@@ -39,6 +40,39 @@ class _DeliveryFeeScreenState extends State<DeliveryFeeScreen> {
       if (Get.arguments['itemDraft'] is Map<String, dynamic>) {
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
+    }
+    _restoreFromDraft();
+  }
+
+  // Pre-fills the flat fee and tiers if this step was already completed
+  // earlier in this session (e.g. the user went back to step 1 and is now
+  // continuing forward again through a freshly-built instance of this screen).
+  void _restoreFromDraft() {
+    final draft = itemDraft;
+    if (draft == null) return;
+
+    final fee = draft['deliveryFee'];
+    if (fee != null) {
+      _flatFeeController.text = fee is num
+          ? fee.toStringAsFixed(2)
+          : fee.toString();
+    }
+
+    final savedTiers = draft['deliveryPricingTiers'];
+    if (savedTiers is List<DeliveryPricingTier> && savedTiers.isNotEmpty) {
+      for (final t in _tiers) {
+        t.dispose();
+      }
+      _tiers
+        ..clear()
+        ..addAll(
+          savedTiers.map((tier) {
+            final entry = _TierEntry();
+            entry.kmController.text = tier.maxKm.toString();
+            entry.priceController.text = tier.price.toString();
+            return entry;
+          }),
+        );
     }
   }
 
@@ -91,6 +125,13 @@ class _DeliveryFeeScreenState extends State<DeliveryFeeScreen> {
 
                 final flatFee = double.parse(_flatFeeController.text.trim());
                 final tiers = _buildTiers();
+
+                if (Get.isRegistered<AddItemController>()) {
+                  Get.find<AddItemController>().mergeExtraDraftFields({
+                    'deliveryFee': flatFee,
+                    'deliveryPricingTiers': tiers,
+                  });
+                }
 
                 Get.to(
                   () => const DeliveryAvailabilityScreen(),

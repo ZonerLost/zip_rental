@@ -154,7 +154,21 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   hintColor: kBlack.withOpacity(0.4),
                   radius: 12,
                   backgroundColor: Colors.white,
+                  onChanged: (_) => setSheet(() {}),
                 ),
+                const Gap(6),
+                MyText(
+                  text:
+                      'Minimum ${AddItemController.minTitleLength} characters '
+                      '(${controller.titleController.text.trim().length}/${AddItemController.minTitleLength})',
+                  size: 11,
+                  color:
+                      controller.titleController.text.trim().length <
+                          AddItemController.minTitleLength
+                      ? kredColor
+                      : Colors.grey[600],
+                ),
+                const Gap(8),
 
                 // Description
                 const MyText(text: 'Description *', size: 14, weight: FontWeight.w500, color: Colors.black87),
@@ -166,7 +180,21 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
                   radius: 12,
                   backgroundColor: Colors.white,
                   maxLines: 4,
+                  onChanged: (_) => setSheet(() {}),
                 ),
+                const Gap(6),
+                MyText(
+                  text:
+                      'Minimum ${AddItemController.minDescriptionLength} characters '
+                      '(${controller.descriptionController.text.trim().length}/${AddItemController.minDescriptionLength})',
+                  size: 11,
+                  color:
+                      controller.descriptionController.text.trim().length <
+                          AddItemController.minDescriptionLength
+                      ? kredColor
+                      : Colors.grey[600],
+                ),
+                const Gap(8),
 
                 // Price + Per row
                 Row(
@@ -293,6 +321,24 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
 
                 MyButton(
                   onTap: () {
+                    if (controller.titleController.text.trim().length <
+                        AddItemController.minTitleLength) {
+                      Get.snackbar(
+                        'Validation',
+                        'Title must be at least '
+                            '${AddItemController.minTitleLength} characters.',
+                      );
+                      return;
+                    }
+                    if (controller.descriptionController.text.trim().length <
+                        AddItemController.minDescriptionLength) {
+                      Get.snackbar(
+                        'Validation',
+                        'Description must be at least '
+                            '${AddItemController.minDescriptionLength} characters.',
+                      );
+                      return;
+                    }
                     final rawPrice = controller.priceController.text.trim();
                     final parsedPrice = double.tryParse(rawPrice);
                     final Map<String, dynamic> priceUpdates;
@@ -399,6 +445,9 @@ class _AddItemsSummaryScreenState extends State<AddItemsSummaryScreen> {
             children: [
               MyButton(
                 onTap: () async {
+                  // Prevent a fast double-tap from firing two create requests
+                  // while the first is still in flight.
+                  if (addItemController.isSubmitting) return;
                   final mergedDraft = {
                     ...?itemDraft,
                     'bookingType': bookingType ?? 'manual',

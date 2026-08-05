@@ -36,14 +36,18 @@ class _BottomNavBarState extends State<BottomNavBar> {
   @override
   void initState() {
     super.initState();
-    _navController = Get.put(BottomNavController());
+    // `permanent: true` + never deleting here on purpose: BottomNavBar is
+    // re-created via Get.offAll() from many places (login, signup, add-item
+    // success, booking confirmation, ...), and during that transition the
+    // outgoing and incoming BottomNavBar instances are briefly mounted at
+    // the same time. Get.put() reuses an already-registered instance rather
+    // than replacing it, so if this dispose() deleted the controller, it
+    // could rip it out from under a newer BottomNavBar that's still relying
+    // on it — causing "BottomNavController not found" the moment any screen
+    // (e.g. My Listings) calls `BottomNavController.to`. The controller is
+    // explicitly torn down on logout instead (see LogoutBottomSheet).
+    _navController = Get.put(BottomNavController(), permanent: true);
     _navController.currentIndex = widget.initialIndex;
-  }
-
-  @override
-  void dispose() {
-    Get.delete<BottomNavController>();
-    super.dispose();
   }
 
   List<Map<String, dynamic>> _buildItems(int currentIndex) {

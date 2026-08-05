@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/add_item_module/instant_booking.dart';
 import 'package:zip_peer/views/screens/add_item_module/bosst.dart';
@@ -37,6 +38,14 @@ class _DeliveryAvailabilityScreenState
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
     }
+
+    // Pre-select whatever was chosen earlier in this session, if any.
+    final savedBookingType = itemDraft?['bookingType'];
+    if (savedBookingType == 'instant') {
+      _selectedBookingType = 1;
+    } else if (savedBookingType == 'manual') {
+      _selectedBookingType = 0;
+    }
   }
 
   @override
@@ -56,6 +65,17 @@ class _DeliveryAvailabilityScreenState
                   return;
                 }
 
+                final bookingType = _selectedBookingType == 1
+                    ? 'instant'
+                    : 'manual';
+                final mergedDraft = {...?itemDraft, 'bookingType': bookingType};
+
+                if (Get.isRegistered<AddItemController>()) {
+                  Get.find<AddItemController>().mergeExtraDraftFields({
+                    'bookingType': bookingType,
+                  });
+                }
+
                 // Navigate based on booking type
                 if (_selectedBookingType == 1) {
                   // Instant booking selected - show instant booking options
@@ -64,7 +84,7 @@ class _DeliveryAvailabilityScreenState
                     arguments: {
                       'bookingType': 'instant',
                       'rentalType': rentalType,
-                      'itemDraft': itemDraft,
+                      'itemDraft': mergedDraft,
                     },
                   );
                 } else {
@@ -74,7 +94,7 @@ class _DeliveryAvailabilityScreenState
                     arguments: {
                       'bookingType': 'manual',
                       'rentalType': rentalType,
-                      'itemDraft': itemDraft,
+                      'itemDraft': mergedDraft,
                     },
                   );
                 }

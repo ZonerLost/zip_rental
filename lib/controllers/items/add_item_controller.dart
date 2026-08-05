@@ -44,6 +44,19 @@ class AddItemController extends GetxController {
   double? deliveryFlatFee;
   List<DeliveryPricingTier> deliveryPricingTiers = <DeliveryPricingTier>[];
 
+  // Holds whatever the later steps (delivery fee, booking type, schedule,
+  // pickup availability, etc.) have collected so far. Those screens live
+  // outside this controller and their local widget state is destroyed once
+  // popped, so they persist their progress here on every "Continue" tap.
+  // buildDraft() folds this back in, meaning that navigating all the way
+  // back to step 1 and continuing forward again reconstructs those screens
+  // pre-filled instead of blank.
+  final Map<String, dynamic> extraDraftFields = <String, dynamic>{};
+
+  void mergeExtraDraftFields(Map<String, dynamic> fields) {
+    extraDraftFields.addAll(fields);
+  }
+
   // Set after successful item creation, used by createItemWithScheduleAndBoost
   String? _lastCreatedItemId;
 
@@ -147,6 +160,9 @@ class AddItemController extends GetxController {
     'other',
   ];
 
+  static const int minTitleLength = 5;
+  static const int minDescriptionLength = 20;
+
   static const List<String> allowedConditions = <String>[
     'new',
     'like_new',
@@ -226,6 +242,13 @@ class AddItemController extends GetxController {
       Get.snackbar('Validation', 'Title is required.');
       return false;
     }
+    if (titleController.text.trim().length < minTitleLength) {
+      Get.snackbar(
+        'Validation',
+        'Title must be at least $minTitleLength characters.',
+      );
+      return false;
+    }
     if (priceController.text.trim().isEmpty) {
       Get.snackbar('Validation', 'Price is required.');
       return false;
@@ -236,6 +259,13 @@ class AddItemController extends GetxController {
     }
     if (descriptionController.text.trim().isEmpty) {
       Get.snackbar('Validation', 'Description is required.');
+      return false;
+    }
+    if (descriptionController.text.trim().length < minDescriptionLength) {
+      Get.snackbar(
+        'Validation',
+        'Description must be at least $minDescriptionLength characters.',
+      );
       return false;
     }
     if (selectedRentalIndex == null) {
@@ -281,6 +311,10 @@ class AddItemController extends GetxController {
     }
 
     return <String, dynamic>{
+      // Data collected on later steps (delivery fee, booking type, pickup
+      // schedule, ...). Spread first so this step's own fields below always
+      // take priority if a key were ever to collide.
+      ...extraDraftFields,
       'title': titleController.text.trim(),
       'description': descriptionController.text.trim(),
       'category': selectedCategory,
@@ -351,6 +385,14 @@ class AddItemController extends GetxController {
   }
 
   Future<bool> createItemFromDraft(Map<String, dynamic> draft) async {
+    // Guard against double-submission (e.g. a fast double-tap on "Add Item"),
+    // which would otherwise create two items server-side. This flag is set
+    // synchronously below, before any `await`, so a second call arriving
+    // while the first is still in flight bails out immediately.
+    if (isSubmitting) {
+      return false;
+    }
+
     final title = (draft['title'] ?? '').toString().trim();
     final description = (draft['description'] ?? '').toString().trim();
     final rawCategory = (draft['category'] ?? '').toString();
@@ -366,8 +408,22 @@ class AddItemController extends GetxController {
       Get.snackbar('Validation', 'Title is required.');
       return false;
     }
+    if (title.length < minTitleLength) {
+      Get.snackbar(
+        'Validation',
+        'Title must be at least $minTitleLength characters.',
+      );
+      return false;
+    }
     if (description.isEmpty) {
       Get.snackbar('Validation', 'Description is required.');
+      return false;
+    }
+    if (description.length < minDescriptionLength) {
+      Get.snackbar(
+        'Validation',
+        'Description must be at least $minDescriptionLength characters.',
+      );
       return false;
     }
     if (category == null) {
@@ -387,20 +443,20 @@ class AddItemController extends GetxController {
       return false;
     }
 
-    final location = await _resolveLocationFromDraftOrProfile(draft);
-    if ((location.city ?? '').trim().isEmpty) {
-      Get.snackbar('Validation', 'Location city is required.');
-      return false;
-    }
-    if ((location.province ?? '').trim().isEmpty) {
-      Get.snackbar('Validation', 'Province is required.');
-      return false;
-    }
-
     isSubmitting = true;
     update();
 
     try {
+      final location = await _resolveLocationFromDraftOrProfile(draft);
+      if ((location.city ?? '').trim().isEmpty) {
+        Get.snackbar('Validation', 'Location city is required.');
+        return false;
+      }
+      if ((location.province ?? '').trim().isEmpty) {
+        Get.snackbar('Validation', 'Province is required.');
+        return false;
+      }
+
       final weeklyRate = _asPositiveDouble(draft['weeklyRate']);
       final monthlyRate = _asPositiveDouble(draft['monthlyRate']);
       final depositAmount = _asPositiveDouble(draft['depositAmount']);
@@ -471,16 +527,15 @@ class AddItemController extends GetxController {
         await _itemApiService.uploadItemPhotos(createdItem.id, photosToUpload);
       }
 
-      isSubmitting = false;
-      update();
       Get.snackbar('Success', 'Item created successfully.');
       return true;
     } catch (e) {
-      isSubmitting = false;
-      update();
-      print(e);
+      debugPrint('createItemFromDraft failed: $e');
       Get.snackbar('Create Item Failed', _readMessage(e));
       return false;
+    } finally {
+      isSubmitting = false;
+      update();
     }
   }
 

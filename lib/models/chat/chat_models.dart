@@ -38,7 +38,10 @@ class ChatMessage {
     required this.senderId,
     this.senderName = '',
     this.senderPhoto,
+    required this.rawContent,
     required this.content,
+    this.itemId,
+    this.itemTitle,
     this.status = 'sent',
     this.isDeleted = false,
     required this.createdAt,
@@ -49,12 +52,43 @@ class ChatMessage {
   final String senderId;
   final String senderName;
   final String? senderPhoto;
+  final String rawContent;
   final String content;
+  final String? itemId;
+  final String? itemTitle;
   final String status; // sent | delivered | read
   final bool isDeleted;
   final DateTime createdAt;
 
   bool get isRead => status == 'read';
+
+  factory ChatMessage.fromRaw({
+    required String id,
+    required String conversationId,
+    required String senderId,
+    String senderName = '',
+    String? senderPhoto,
+    required String rawContent,
+    String status = 'sent',
+    bool isDeleted = false,
+    required DateTime createdAt,
+  }) {
+    final parsed = _parseContent(rawContent);
+    return ChatMessage(
+      id: id,
+      conversationId: conversationId,
+      senderId: senderId,
+      senderName: senderName,
+      senderPhoto: senderPhoto,
+      rawContent: rawContent,
+      content: parsed.content,
+      itemId: parsed.itemId,
+      itemTitle: parsed.itemTitle,
+      status: status,
+      isDeleted: isDeleted,
+      createdAt: createdAt,
+    );
+  }
 
   factory ChatMessage.fromMap(Map<String, dynamic> m, String conversationId) {
     final sender = m['sender'];
@@ -72,17 +106,36 @@ class ChatMessage {
       senderId = sender?.toString() ?? '';
     }
 
-    return ChatMessage(
+    return ChatMessage.fromRaw(
       id: m['_id']?.toString() ?? m['id']?.toString() ?? '',
       conversationId: m['conversationId']?.toString() ?? conversationId,
       senderId: senderId,
       senderName: senderName,
       senderPhoto: senderPhoto,
-      content: m['content']?.toString() ?? '',
+      rawContent: m['content']?.toString() ?? '',
       status: m['status']?.toString() ?? 'sent',
       isDeleted: m['isDeleted'] == true,
       createdAt: _parseDate(m['createdAt']),
     );
+  }
+
+  static String encodeContentWithItemReference(
+    String content, {
+    String? itemId,
+    String? itemTitle,
+  }) {
+    final trimmedContent = content.trim();
+    final trimmedItemId = itemId?.trim() ?? '';
+    final trimmedItemTitle = itemTitle?.trim() ?? '';
+
+    if (trimmedItemId.isEmpty && trimmedItemTitle.isEmpty) {
+      return trimmedContent;
+    }
+
+    return '$_itemReferencePrefix'
+        '${jsonEncode({'itemId': trimmedItemId, 'itemTitle': trimmedItemTitle})}'
+        '$_itemReferenceSuffix'
+        '$trimmedContent';
   }
 
   static DateTime _parseDate(dynamic raw) {
@@ -90,6 +143,48 @@ class ChatMessage {
     if (raw is DateTime) return raw;
     return DateTime.tryParse(raw.toString()) ?? DateTime.now();
   }
+
+  static _ParsedMessageContent _parseContent(String rawContent) {
+    if (!rawContent.startsWith(_itemReferencePrefix)) {
+      return _ParsedMessageContent(content: rawContent);
+    }
+
+    final markerEnd = rawContent.indexOf(
+      _itemReferenceSuffix,
+      _itemReferencePrefix.length,
+    );
+    if (markerEnd == -1) {
+      return _ParsedMessageContent(content: rawContent);
+    }
+
+    final encodedMeta = rawContent.substring(
+      _itemReferencePrefix.length,
+      markerEnd,
+    );
+    final visibleContent = rawContent
+        .substring(markerEnd + _itemReferenceSuffix.length)
+        .trimLeft();
+
+    try {
+      final decoded = jsonDecode(encodedMeta);
+      if (decoded is Map<String, dynamic>) {
+        final parsedItemId = decoded['itemId']?.toString().trim();
+        final parsedItemTitle = decoded['itemTitle']?.toString().trim();
+        return _ParsedMessageContent(
+          content: visibleContent,
+          itemId: parsedItemId?.isEmpty == true ? null : parsedItemId,
+          itemTitle: parsedItemTitle?.isEmpty == true ? null : parsedItemTitle,
+        );
+      }
+    } catch (_) {
+      return _ParsedMessageContent(content: rawContent);
+    }
+
+    return _ParsedMessageContent(content: visibleContent);
+  }
+
+  static const String _itemReferencePrefix = '__ZIP_ITEM_REF__';
+  static const String _itemReferenceSuffix = '__END_ZIP_ITEM_REF__';
 }
 
 // ─────────────────────────────────────────────
@@ -143,13 +238,18 @@ class ChatConversation {
     }
   }
 
-  factory ChatConversation.fromMap(Map<String, dynamic> m, String conversationId) {
+  factory ChatConversation.fromMap(
+    Map<String, dynamic> m,
+    String conversationId,
+  ) {
     final rawParticipants = m['participants'];
     final participants = <ChatParticipant>[];
     if (rawParticipants is List) {
       for (final p in rawParticipants) {
         if (p is Map) {
-          participants.add(ChatParticipant.fromMap(Map<String, dynamic>.from(p)));
+          participants.add(
+            ChatParticipant.fromMap(Map<String, dynamic>.from(p)),
+          );
         }
       }
     }
@@ -239,6 +339,18 @@ class SendMessageResult {
   final bool success;
   final String message;
   final ChatMessage? chatMessage;
+}
+
+class _ParsedMessageContent {
+  const _ParsedMessageContent({
+    required this.content,
+    this.itemId,
+    this.itemTitle,
+  });
+
+  final String content;
+  final String? itemId;
+  final String? itemTitle;
 }
 
 // ─────────────────────────────────────────────

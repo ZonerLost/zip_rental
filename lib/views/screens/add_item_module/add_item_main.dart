@@ -213,6 +213,18 @@ class _AddNewItemScreenState extends State<AddNewItemScreen> {
                         marginBottom: 0,
                         onChanged: controller.onFieldChanged,
                       ),
+                      const Gap(6),
+                      MyText(
+                        text:
+                            'Minimum ${AddItemController.minTitleLength} characters '
+                            '(${controller.titleController.text.trim().length}/${AddItemController.minTitleLength})',
+                        size: 11,
+                        color:
+                            controller.titleController.text.trim().length <
+                                AddItemController.minTitleLength
+                            ? kredColor
+                            : kSubText,
+                      ),
                     ],
                   ),
                 ),
@@ -413,6 +425,18 @@ class _AddNewItemScreenState extends State<AddNewItemScreen> {
                         maxLines: 4,
                         marginBottom: 0,
                         onChanged: controller.onFieldChanged,
+                      ),
+                      const Gap(6),
+                      MyText(
+                        text:
+                            'Minimum ${AddItemController.minDescriptionLength} characters '
+                            '(${controller.descriptionController.text.trim().length}/${AddItemController.minDescriptionLength})',
+                        size: 11,
+                        color:
+                            controller.descriptionController.text.trim().length <
+                                AddItemController.minDescriptionLength
+                            ? kredColor
+                            : kSubText,
                       ),
                     ],
                   ),

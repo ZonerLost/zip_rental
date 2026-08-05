@@ -10,14 +10,18 @@ import 'package:zip_peer/services/chat/chat_socket_service.dart';
 class ChatMessagesController extends GetxController {
   ChatMessagesController({
     required this.conversationId,
+    this.activeItemId,
+    this.activeItemTitle,
     ChatService? chatService,
     AuthService? authService,
     ChatSocketService? socketService,
-  })  : _chatService = chatService ?? ChatService(),
-        _authService = authService ?? AuthService(),
-        _socket = socketService ?? ChatSocketService();
+  }) : _chatService = chatService ?? ChatService(),
+       _authService = authService ?? AuthService(),
+       _socket = socketService ?? ChatSocketService();
 
   final String conversationId;
+  final String? activeItemId;
+  final String? activeItemTitle;
   final ChatService _chatService;
   final AuthService _authService;
   final ChatSocketService _socket;
@@ -114,11 +118,16 @@ class ChatMessagesController extends GetxController {
 
     // Optimistic UI — add a temporary message immediately
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    final optimistic = ChatMessage(
+    final rawContent = ChatMessage.encodeContentWithItemReference(
+      text,
+      itemId: activeItemId,
+      itemTitle: activeItemTitle,
+    );
+    final optimistic = ChatMessage.fromRaw(
       id: tempId,
       conversationId: conversationId,
       senderId: currentUserId ?? '',
-      content: text,
+      rawContent: rawContent,
       status: 'sent',
       createdAt: DateTime.now(),
     );
@@ -130,7 +139,7 @@ class ChatMessagesController extends GetxController {
 
     final result = await _chatService.sendMessage(
       conversationId: conversationId,
-      content: text,
+      content: rawContent,
     );
 
     isSending = false;
@@ -177,7 +186,8 @@ class ChatMessagesController extends GetxController {
     _typingTimer?.cancel();
   }
 
-  bool get canSend => messageInputController.text.trim().isNotEmpty && !isSending;
+  bool get canSend =>
+      messageInputController.text.trim().isNotEmpty && !isSending;
 
   // ── Cleanup ───────────────────────────────────────────────────────────────
   @override

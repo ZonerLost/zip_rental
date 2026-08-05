@@ -143,6 +143,26 @@ class BrowseItemsController extends GetxController {
     await loadItems(reset: true);
   }
 
+  /// Called when a listing's pause state changes elsewhere in the app (e.g.
+  /// pausing/resuming from My Listings) so Search/Home reflects it right
+  /// away instead of only on the next natural refresh.
+  void handleListingPauseChanged(String itemId, bool isPaused) {
+    if (isPaused) {
+      // Hide it immediately — no need to wait on a round trip for the
+      // common case (an owner pausing a listing they're currently viewing).
+      items.removeWhere((item) => item.id == itemId);
+      nearMe = nearMe.where((item) => item.id != itemId).toList();
+      popular = popular.where((item) => item.id != itemId).toList();
+      recent = recent.where((item) => item.id != itemId).toList();
+      update();
+    }
+    // Reconcile with the server in the background regardless of direction —
+    // covers the resume case (item should reappear) and any pagination
+    // drift from the optimistic removal above.
+    unawaited(loadItems(reset: true));
+    unawaited(loadFeed());
+  }
+
   void setSearchQuery(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 450), () {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/items/add_item_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/add_item_module/pickup_avalibility.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -40,6 +41,14 @@ class _InstantBookingOptionsScreenState
         itemDraft = Get.arguments['itemDraft'] as Map<String, dynamic>;
       }
     }
+
+    // Pre-select whatever was chosen earlier in this session, if any.
+    final savedScheduleType = itemDraft?['scheduleType'];
+    if (savedScheduleType == 'recurring') {
+      _selectedOption = 0;
+    } else if (savedScheduleType == 'specific') {
+      _selectedOption = 1;
+    }
   }
 
   @override
@@ -59,16 +68,28 @@ class _InstantBookingOptionsScreenState
                   return;
                 }
 
+                final scheduleType = _selectedOption == 0
+                    ? 'recurring'
+                    : 'specific';
+                final mergedDraft = {
+                  ...?itemDraft,
+                  'scheduleType': scheduleType,
+                };
+
+                if (Get.isRegistered<AddItemController>()) {
+                  Get.find<AddItemController>().mergeExtraDraftFields({
+                    'scheduleType': scheduleType,
+                  });
+                }
+
                 // Navigate to Pickup Availability with schedule type
                 Get.to(
                   () => PickupAvailabilityScreen(),
                   arguments: {
                     'bookingType': bookingType,
                     'rentalType': rentalType,
-                    'scheduleType': _selectedOption == 0
-                        ? 'recurring'
-                        : 'specific',
-                    'itemDraft': itemDraft,
+                    'scheduleType': scheduleType,
+                    'itemDraft': mergedDraft,
                   },
                 );
               },

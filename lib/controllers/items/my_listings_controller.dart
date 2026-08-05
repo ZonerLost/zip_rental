@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:get/get.dart';
+import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/models/items/item_models.dart';
 import 'package:zip_peer/services/items/item_api_service.dart';
 
@@ -74,6 +75,14 @@ class MyListingsController extends GetxController {
           : await _itemApiService.pauseListing(itemId);
       listings[index] = original.copyWith(isPaused: result.isPaused);
       update();
+
+      // Keep Search/Home in sync — paused items shouldn't linger there.
+      if (Get.isRegistered<BrowseItemsController>()) {
+        Get.find<BrowseItemsController>().handleListingPauseChanged(
+          itemId,
+          result.isPaused ?? false,
+        );
+      }
     } catch (e) {
       listings[index] = original;
       update();

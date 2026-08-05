@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/bottom_nav_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/google_auth_service.dart';
@@ -76,6 +77,15 @@ void LogoutBottomSheet(BuildContext context) {
                   try {
                     await googleAuthService.signOut();
                   } catch (_) {}
+
+                  // BottomNavController is kept as a permanent singleton
+                  // across BottomNavBar re-creations (see bottom_nav.dart),
+                  // so it must be torn down explicitly here — otherwise the
+                  // next login would reuse this account's stale profile
+                  // photo instead of fetching the new one.
+                  if (Get.isRegistered<BottomNavController>()) {
+                    Get.delete<BottomNavController>(force: true);
+                  }
 
                   Get.back();
                   Get.offAll(() => LoginScreen());
