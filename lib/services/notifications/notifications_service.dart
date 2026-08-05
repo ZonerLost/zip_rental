@@ -18,6 +18,7 @@ class NotificationsService {
   }
 
   static const _cachedFcmTokenKey = 'cached_fcm_token';
+  static const _notificationsEnabledKey = 'notifications_enabled_pref';
 
   final AuthService _authService;
   late final GetConnect _client;
@@ -122,7 +123,19 @@ class NotificationsService {
     return token.trim();
   }
 
+  /// Called on every app launch after login, per the API's integration
+  /// note. Honors the local "Enable Notifications" preference — if the user
+  /// has turned notifications off, this deliberately skips (re-)registering
+  /// the device for push rather than silently overriding their choice.
   Future<NotificationActionResult> syncSavedFcmTokenOnLaunch() async {
+    final enabled = await getNotificationsEnabledPreference();
+    if (!enabled) {
+      return const NotificationActionResult(
+        success: false,
+        message: 'Notifications are disabled in Account Settings',
+      );
+    }
+
     final token = await getCachedFcmToken();
     if (token == null) {
       return const NotificationActionResult(
@@ -136,6 +149,19 @@ class NotificationsService {
   Future<void> _cacheFcmToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_cachedFcmTokenKey, token);
+  }
+
+  /// Local "Enable Notifications" preference (Account Settings toggle).
+  /// Defaults to `true` — an app that has never touched this setting should
+  /// behave as if notifications are on.
+  Future<bool> getNotificationsEnabledPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notificationsEnabledKey) ?? true;
+  }
+
+  Future<void> setNotificationsEnabledPreference(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsEnabledKey, enabled);
   }
 
   Future<Response<dynamic>> _request({

@@ -1,3 +1,19 @@
+/// The 10 notification types the backend emits (Module 7 spec).
+class NotificationTypes {
+  const NotificationTypes._();
+
+  static const String bookingRequest = 'booking_request';
+  static const String bookingAccepted = 'booking_accepted';
+  static const String bookingDeclined = 'booking_declined';
+  static const String bookingCancelled = 'booking_cancelled';
+  static const String bookingCompleted = 'booking_completed';
+  static const String reviewReceived = 'review_received';
+  static const String messageReceived = 'message_received';
+  static const String disputeOpened = 'dispute_opened';
+  static const String disputeResolved = 'dispute_resolved';
+  static const String paymentReceived = 'payment_received';
+}
+
 class NotificationItem {
   const NotificationItem({
     required this.id,
