@@ -3,6 +3,7 @@ import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/chat/chat_controller.dart';
 import 'package:zip_peer/controllers/chat/chat_messages_controller.dart';
@@ -19,6 +20,8 @@ class ChatMessagesScreen extends StatefulWidget {
     required this.conversationId,
     required this.participantName,
     this.participantPhoto,
+    this.participantId,
+    this.isArchived = false,
     this.activeItemId,
     this.activeItemTitle,
   });
@@ -26,6 +29,14 @@ class ChatMessagesScreen extends StatefulWidget {
   final String conversationId;
   final String participantName;
   final String? participantPhoto;
+  /// The other participant's user ID — needed to archive/block/report them.
+  /// Optional because some call sites only know the conversation, not the
+  /// participant, yet; falls back to resolving it from the loaded
+  /// conversation once messages/participants are available.
+  final String? participantId;
+  /// Whether the conversation is currently archived (for the current user)
+  /// — determines whether the header menu offers "Archive" or "Unarchive".
+  final bool isArchived;
   final String? activeItemId;
   final String? activeItemTitle;
 
@@ -35,11 +46,14 @@ class ChatMessagesScreen extends StatefulWidget {
 
 class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _imagePicker = ImagePicker();
   late final ChatMessagesController _controller;
+  late bool _isArchived;
 
   @override
   void initState() {
     super.initState();
+    _isArchived = widget.isArchived;
     _controller = Get.put(
       ChatMessagesController(
         conversationId: widget.conversationId,
@@ -55,6 +69,90 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     Get.delete<ChatMessagesController>(tag: widget.conversationId);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// The other participant's user ID, needed for archive/block/report.
+  /// Prefers the ID passed in by the caller; falls back to the sender of
+  /// any message that isn't from the current user (works once at least one
+  /// message has loaded — true for every conversation reachable from this
+  /// screen, since starting one always sends an opening message).
+  String? _resolvedParticipantId() {
+    if ((widget.participantId ?? '').isNotEmpty) {
+      return widget.participantId;
+    }
+    for (final message in _controller.messages) {
+      if (message.senderId.isNotEmpty &&
+          message.senderId != _controller.currentUserId) {
+        return message.senderId;
+      }
+    }
+    return null;
+  }
+
+  /// Whether the other participant is currently blocked — messaging is
+  /// disabled locally rather than only relying on the server's 403, so the
+  /// user gets an immediate, explicit "you can't message this person"
+  /// instead of a failed-send error after the fact.
+  bool get _isBlocked {
+    if (!Get.isRegistered<ChatController>()) return false;
+    final targetId = _resolvedParticipantId();
+    return Get.find<ChatController>().isUserBlocked(targetId);
+  }
+
+  Future<void> _showImageSourceSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: kWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Gap(12),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined, color: kBlack),
+              title: const MyText(
+                text: 'Take Photo',
+                size: 15,
+                weight: FontWeight.w500,
+              ),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: kBlack),
+              title: const MyText(
+                text: 'Choose from Gallery',
+                size: 15,
+                weight: FontWeight.w500,
+              ),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+            const Gap(12),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picked = await _imagePicker.pickImage(
+      source: source,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+
+    // NOTE: the chat API only documents `POST /chats/:id/messages` with a
+    // plain-text `{ content }` body — there's no endpoint to upload/send an
+    // image as a message. Rather than build a preview flow that would
+    // always dead-end at send time, this stops here and says so clearly.
+    Get.snackbar(
+      'Not Supported Yet',
+      'Sending images in chat needs a backend endpoint that doesn\'t exist '
+          'yet (the current API only accepts text messages).',
+      duration: const Duration(seconds: 4),
+    );
   }
 
   void _scrollToBottom() {
@@ -158,9 +256,11 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                               position: RelativeRect.fromLTRB(100, 120, 20, 0),
                               items: [
                                 PopupMenuItem(
-                                  value: 'archive',
+                                  value: _isArchived ? 'unarchive' : 'archive',
                                   child: MyText(
-                                    text: 'Archive User',
+                                    text: _isArchived
+                                        ? 'Unarchive Chat'
+                                        : 'Archive Chat',
                                     color: kBlack,
                                     size: 14,
                                     weight: FontWeight.w500,
@@ -185,26 +285,77 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                                   ),
                                 ),
                               ],
-                            ).then((value) {
+                            ).then((value) async {
                               if (value == 'archive') {
-                                ArchiveUserBottomSheet(
+                                final confirmed = await ArchiveUserBottomSheet(
                                   context,
-                                  onConfirm: () {
-                                    if (Get.isRegistered<ChatController>()) {
-                                      Get.find<ChatController>().setArchived(
-                                        widget.conversationId,
-                                        true,
-                                      );
-                                    }
-                                    Get.back();
-                                  },
                                 );
+                                if (!confirmed ||
+                                    !Get.isRegistered<ChatController>()) {
+                                  return;
+                                }
+                                final ok = await Get.find<ChatController>()
+                                    .archiveConversation(
+                                      widget.conversationId,
+                                    );
+                                if (ok && mounted) {
+                                  setState(() => _isArchived = true);
+                                  Get.back();
+                                }
+                              }
+                              if (value == 'unarchive') {
+                                if (!Get.isRegistered<ChatController>()) {
+                                  return;
+                                }
+                                final ok = await Get.find<ChatController>()
+                                    .unarchiveConversation(
+                                      widget.conversationId,
+                                    );
+                                if (ok && mounted) {
+                                  setState(() => _isArchived = false);
+                                  Get.snackbar(
+                                    'Unarchived',
+                                    '${widget.participantName} moved back to All Chats',
+                                  );
+                                  Get.back();
+                                }
                               }
                               if (value == 'block') {
-                                BlockBottomSheet(context);
+                                final targetId = _resolvedParticipantId();
+                                if (targetId == null || targetId.isEmpty) {
+                                  Get.snackbar(
+                                    'Block Failed',
+                                    'Unable to identify this user.',
+                                  );
+                                  return;
+                                }
+                                final confirmed = await BlockBottomSheet(
+                                  context,
+                                );
+                                if (!confirmed ||
+                                    !Get.isRegistered<ChatController>()) {
+                                  return;
+                                }
+                                final ok = await Get.find<ChatController>()
+                                    .blockUser(targetId);
+                                if (ok && mounted) {
+                                  Get.back();
+                                }
                               }
                               if (value == 'report') {
-                                ReportUserBottomSheet(context);
+                                final targetId = _resolvedParticipantId();
+                                if (targetId == null || targetId.isEmpty) {
+                                  Get.snackbar(
+                                    'Report Failed',
+                                    'Unable to identify this user.',
+                                  );
+                                  return;
+                                }
+                                ReportUserBottomSheet(
+                                  context,
+                                  targetUserId: targetId,
+                                  conversationId: widget.conversationId,
+                                );
                               }
                             });
                           },
@@ -332,7 +483,7 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                               itemTitle: msg.itemTitle,
                               time: _formatTime(msg.createdAt),
                               isMe: controller.isMe(msg.senderId),
-                              showCheck: controller.isMe(msg.senderId),
+                              status: msg.status,
                             ),
                           );
                         },
@@ -343,56 +494,91 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 24,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kWhite,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: MyTextField(
-                            controller: controller.messageInputController,
-                            marginBottom: 0,
-                            hint: 'Type your message here...',
-                            hintColor: kBlack,
-                            alwaysShowLabel: true,
-                            radius: 24,
-                            backgroundColor: const Color(0xFFF4F4F4),
-                            suffix: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: CommonImageView(
-                                imagePath: Assets.imagesCameraNew,
-                                height: 24,
+                  if (_isBlocked)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: kWhite,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.block, size: 18, color: kSubText),
+                          const Gap(8),
+                          MyText(
+                            text: 'You have blocked ${widget.participantName}',
+                            size: 13,
+                            color: kSubText,
+                            weight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 24,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: kWhite,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: MyTextField(
+                              controller: controller.messageInputController,
+                              marginBottom: 0,
+                              hint: 'Type your message here...',
+                              hintColor: kBlack,
+                              alwaysShowLabel: true,
+                              radius: 24,
+                              backgroundColor: const Color(0xFFF4F4F4),
+                              suffix: Bounce(
+                                onTap: _showImageSourceSheet,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: CommonImageView(
+                                    imagePath: Assets.imagesCameraNew,
+                                    height: 24,
+                                  ),
+                                ),
                               ),
+                              onChanged: controller.onMessageInputChanged,
                             ),
-                            onChanged: controller.onMessageInputChanged,
                           ),
-                        ),
-                        const Gap(8),
-                        Bounce(
-                          onTap: () async {
-                            await controller.sendMessage();
-                            _scrollToBottom();
-                          },
-                          child: CommonImageView(
-                            imagePath: Assets.imagesSend,
-                            height: 52,
+                          const Gap(8),
+                          Bounce(
+                            onTap: () async {
+                              await controller.sendMessage();
+                              _scrollToBottom();
+                            },
+                            child: CommonImageView(
+                              imagePath: Assets.imagesSend,
+                              height: 52,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],

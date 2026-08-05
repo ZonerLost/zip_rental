@@ -90,6 +90,18 @@ class NotificationsController extends GetxController {
 
   Future<void> refreshNotifications() => loadNotifications(reset: true);
 
+  /// Pushed in live from the socket's `notification` event — prepended
+  /// immediately so the bell badge/list update in real time instead of only
+  /// after the next manual GET /notifications.
+  void addRealtimeNotification(NotificationItem item) {
+    if (notifications.any((n) => n.id == item.id)) return;
+    notifications.insert(0, item);
+    if (!item.isRead) {
+      unreadCount += 1;
+    }
+    update();
+  }
+
   Future<void> markAllRead() async {
     if (isMarkingAllRead) {
       return;

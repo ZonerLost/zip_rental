@@ -3,8 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:zip_peer/constants/app_colors.dart';
-import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -13,7 +11,10 @@ class ChatBubble extends StatelessWidget {
   final String? itemTitle;
   final String time;
   final bool isMe;
-  final bool showCheck; // Whether to show the orange double tick
+  /// Only meaningful when [isMe] is true — 'sent' | 'delivered' | 'read'.
+  /// Mirrors WhatsApp: single tick while merely sent, double tick once
+  /// delivered, and the double tick only turns blue once actually read.
+  final String status;
 
   const ChatBubble({
     super.key,
@@ -22,7 +23,7 @@ class ChatBubble extends StatelessWidget {
     this.itemTitle,
     required this.time,
     required this.isMe,
-    this.showCheck = true,
+    this.status = 'sent',
   });
 
   @override
@@ -98,9 +99,13 @@ class ChatBubble extends StatelessWidget {
                 color: kSubText2,
                 weight: FontWeight.w500,
               ),
-              if (showCheck) ...[
+              if (isMe) ...[
                 Gap(4),
-                CommonImageView(imagePath: Assets.imagesDoubleTick, height: 20),
+                Icon(
+                  status == 'sent' ? Icons.done : Icons.done_all,
+                  size: 16,
+                  color: status == 'read' ? kPrimaryColor : kSubText2,
+                ),
               ],
             ],
           ),

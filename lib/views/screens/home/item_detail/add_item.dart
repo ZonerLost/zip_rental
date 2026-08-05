@@ -741,12 +741,13 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     itemId: item.id,
                     itemTitle: item.title,
                   );
-                  if (convId == null) return;
+                  if (convId == null || convId.trim().isEmpty) return;
                   Get.to(
                     () => ChatMessagesScreen(
                       conversationId: convId,
                       participantName: ownerName.isEmpty ? 'Owner' : ownerName,
                       participantPhoto: item.owner?.profilePhoto,
+                      participantId: ownerId,
                       activeItemId: item.id,
                       activeItemTitle: item.title,
                     ),

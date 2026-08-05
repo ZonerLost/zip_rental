@@ -6,7 +6,9 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/bottom_nav_controller.dart';
+import 'package:zip_peer/controllers/chat/chat_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/models/chat/chat_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/google_auth_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
@@ -106,8 +108,14 @@ void LogoutBottomSheet(BuildContext context) {
   );
 }
 
-void BlockBottomSheet(BuildContext context) {
-  Get.bottomSheet(
+/// Shows the confirm sheet and resolves once it's closed — `true` only if
+/// the user tapped "Yes, Block". The caller is responsible for the actual
+/// block API call and any navigation *after* this resolves; the sheet
+/// itself only ever pops once, via its own `Get.back(result: ...)`, so
+/// there's no race between it closing and a separate screen-level pop
+/// firing on its own timeline.
+Future<bool> BlockBottomSheet(BuildContext context) async {
+  final confirmed = await Get.bottomSheet<bool>(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     enableDrag: true,
@@ -135,7 +143,8 @@ void BlockBottomSheet(BuildContext context) {
               ),
               const Gap(10),
               const MyText(
-                text: "Are you sure want to block this user?",
+                text:
+                    "Are you sure want to block this user? Neither of you will be able to send messages to the other.",
                 size: 16,
                 textAlign: TextAlign.center,
 
@@ -145,9 +154,7 @@ void BlockBottomSheet(BuildContext context) {
               const Gap(40),
 
               MyButton(
-                onTap: () {
-                  Get.back();
-                },
+                onTap: () => Get.back(result: true),
                 buttonText: "Yes, Block",
                 fontColor: Colors.white,
                 height: 56,
@@ -162,10 +169,12 @@ void BlockBottomSheet(BuildContext context) {
       },
     ),
   );
+  return confirmed ?? false;
 }
 
-void ArchiveUserBottomSheet(BuildContext context, {VoidCallback? onConfirm}) {
-  Get.bottomSheet(
+/// Same "confirm sheet resolves with a bool" pattern as [BlockBottomSheet].
+Future<bool> ArchiveUserBottomSheet(BuildContext context) async {
+  final confirmed = await Get.bottomSheet<bool>(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     enableDrag: true,
@@ -203,10 +212,7 @@ void ArchiveUserBottomSheet(BuildContext context, {VoidCallback? onConfirm}) {
               const Gap(40),
 
               MyButton(
-                onTap: () {
-                  Get.back();
-                  onConfirm?.call();
-                },
+                onTap: () => Get.back(result: true),
                 buttonText: "Yes, Archive",
                 fontColor: Colors.white,
                 height: 56,
@@ -221,11 +227,19 @@ void ArchiveUserBottomSheet(BuildContext context, {VoidCallback? onConfirm}) {
       },
     ),
   );
+  return confirmed ?? false;
 }
 
-void ReportUserBottomSheet(BuildContext context) {
-  // Keep track of selected reason
+void ReportUserBottomSheet(
+  BuildContext context, {
+  required String targetUserId,
+  String? conversationId,
+}) {
+  // Keep track of the selected reason (must be one of ReportReasons.all —
+  // that's the only set the API accepts) and the optional free-text detail.
   String? selectedReason;
+  final descriptionController = TextEditingController();
+  bool isSubmitting = false;
 
   Get.bottomSheet(
     backgroundColor: Colors.transparent,
@@ -233,145 +247,147 @@ void ReportUserBottomSheet(BuildContext context) {
     enableDrag: true,
     StatefulBuilder(
       builder: (context, setState) {
+        Future<void> submit() async {
+          if (selectedReason == null || isSubmitting) return;
+          if (!Get.isRegistered<ChatController>()) return;
+
+          setState(() => isSubmitting = true);
+          final ok = await Get.find<ChatController>().reportUser(
+            userId: targetUserId,
+            reason: selectedReason!,
+            description: descriptionController.text.trim(),
+            conversationId: conversationId,
+          );
+          setState(() => isSubmitting = false);
+          if (ok) {
+            Get.back();
+          }
+        }
+
         return DoubleWhiteContainers(
-          height: 560, // enough space for all items
+          height: 680,
           mainColor: kWhite3,
           topColor: kWhite,
           handleHeight: 14,
           borderRadius: BorderRadius.circular(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Gap(20),
-              Row(
-                children: [
-                  Bounce(
-                    onTap: () => Get.back(),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.arrow_back, size: 18, color: Colors.black),
-                        Gap(6),
-                        MyText(
-                          text: 'Back',
-                          size: 16,
-                          weight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const Gap(20),
-
-              // ───── Title ─────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Gap(20),
+                Row(
                   children: [
-                    MyText(
-                      text: 'Report User',
-                      size: 24,
-                      weight: FontWeight.w700,
-                      color: Colors.black,
-                    ),
-
-                    const Gap(12),
-
-                    // ───── Subtitle ─────
-                    MyText(
-                      text:
-                          'Please select the reasons so we can take the legal actions against the user.',
-                      size: 15,
-                      color: kSubText2,
-                      textAlign: TextAlign.center,
-                      weight: FontWeight.w400,
+                    Bounce(
+                      onTap: () => Get.back(),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.arrow_back, size: 18, color: Colors.black),
+                          Gap(6),
+                          MyText(
+                            text: 'Back',
+                            size: 16,
+                            weight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
 
-              const Gap(24),
+                const Gap(20),
 
-              // ───── Reason Chips ─────
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _reasonChip(
-                    label: 'Fake Profile / Catfishing',
-                    isSelected: selectedReason == 'Fake Profile / Catfishing',
-                    onTap: () => setState(
-                      () => selectedReason = 'Fake Profile / Catfishing',
-                    ),
-                  ),
-                  _reasonChip(
-                    label: 'Spam or Scamming',
-                    isSelected: selectedReason == 'Spam or Scamming',
-                    onTap: () =>
-                        setState(() => selectedReason = 'Spam or Scamming'),
-                    backgroundColor: kPrimaryColor.withOpacity(0.2),
-                    textColor: kPrimaryColor,
-                  ),
-                  _reasonChip(
-                    label: 'Inappropriate Photos or Content',
-                    isSelected:
-                        selectedReason == 'Inappropriate Photos or Content',
-                    onTap: () => setState(
-                      () => selectedReason = 'Inappropriate Photos or Content',
-                    ),
-                    backgroundColor: kPrimaryColor.withOpacity(0.2),
-                    textColor: kPrimaryColor,
-                  ),
-                  _reasonChip(
-                    label: 'Impersonation',
-                    isSelected: selectedReason == 'Impersonation',
-                    onTap: () =>
-                        setState(() => selectedReason = 'Impersonation'),
-                  ),
-                  _reasonChip(
-                    label: 'Underage User',
-                    isSelected: selectedReason == 'Underage User',
-                    onTap: () =>
-                        setState(() => selectedReason = 'Underage User'),
-                  ),
-                  _reasonChip(
-                    label: 'Hate Speech',
-                    isSelected: selectedReason == 'Hate Speech',
-                    onTap: () => setState(() => selectedReason = 'Hate Speech'),
-                    backgroundColor: kPrimaryColor.withOpacity(0.2),
-                    textColor: kPrimaryColor,
-                  ),
-                  _reasonChip(
-                    label: 'Others',
-                    isSelected: selectedReason == 'Others',
-                    onTap: () => setState(() => selectedReason = 'Others'),
-                  ),
-                ],
-              ),
+                // ───── Title ─────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      MyText(
+                        text: 'Report User',
+                        size: 24,
+                        weight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
 
-              const Gap(40),
+                      const Gap(12),
 
-              // ───── Confirm Button ─────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: MyButton(
-                  onTap: () {},
-                  buttonText: 'Confirm',
-                  fontColor: Colors.white,
-                  backgroundColor: kPrimaryColor,
-                  height: 56,
-                  radius: 30,
-                  fontSize: 17,
-                  hasgrad: false,
-                  // optional: disable styling
+                      // ───── Subtitle ─────
+                      MyText(
+                        text:
+                            'Please select a reason so we can review this account.',
+                        size: 15,
+                        color: kSubText2,
+                        textAlign: TextAlign.center,
+                        weight: FontWeight.w400,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const Gap(30),
-            ],
+                const Gap(24),
+
+                // ───── Reason Chips (must match the API's accepted values) ─────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: ReportReasons.all.map((reason) {
+                      final isSelected = selectedReason == reason;
+                      return _reasonChip(
+                        label: ReportReasons.labels[reason] ?? reason,
+                        isSelected: isSelected,
+                        onTap: () => setState(() => selectedReason = reason),
+                        backgroundColor: isSelected
+                            ? kPrimaryColor.withOpacity(0.2)
+                            : kWhite,
+                        textColor: isSelected ? kPrimaryColor : Colors.black87,
+                      );
+                    }).toList(growable: false),
+                  ),
+                ),
+
+                const Gap(20),
+
+                // ───── Optional description ─────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: MyTextField(
+                    controller: descriptionController,
+                    hint: 'Additional details (optional)',
+                    hintColor: kSubText2,
+                    maxLines: 3,
+                    backgroundColor: kWhite,
+                  ),
+                ),
+
+                const Gap(20),
+
+                // ───── Confirm Button ─────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: MyButton(
+                    onTap: selectedReason == null || isSubmitting
+                        ? () {}
+                        : submit,
+                    buttonText: isSubmitting ? 'Submitting...' : 'Confirm',
+                    fontColor: Colors.white,
+                    backgroundColor: kPrimaryColor,
+                    height: 56,
+                    radius: 30,
+                    fontSize: 17,
+                    hasgrad: false,
+                    isactive: selectedReason != null && !isSubmitting,
+                  ),
+                ),
+
+                const Gap(30),
+              ],
+            ),
           ),
         );
       },

@@ -65,6 +65,13 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
     }).toList();
   }
 
+  void _onTabChanged(int index) {
+    setState(() => _selectedTabIndex = index);
+    if (index == 1) {
+      _controller.loadArchivedConversations();
+    }
+  }
+
   void _openConversation(ChatConversation conv) {
     final currentUserId = _controller.currentUserId ?? '';
     final other = conv.otherParticipant(currentUserId);
@@ -74,6 +81,8 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
         conversationId: conv.id,
         participantName: other?.fullName ?? 'User',
         participantPhoto: other?.profilePhoto,
+        participantId: other?.id,
+        isArchived: conv.isArchivedFor(currentUserId),
       ),
     );
   }
@@ -83,14 +92,18 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
     return GetBuilder<ChatController>(
       init: _controller,
       builder: (controller) {
-        final allConvs = controller.conversations;
-        final unarchivedConvs =
-            allConvs.where((c) => !c.isArchived).toList();
+        final unarchivedConvs = controller.visibleConversations;
         final tabConvs = _selectedTabIndex == 1
-            ? allConvs.where((c) => c.isArchived).toList()
+            ? controller.visibleArchivedConversations
             : unarchivedConvs;
         final filtered = _filtered(tabConvs);
         final currentUserId = controller.currentUserId ?? '';
+        final isTabLoading = _selectedTabIndex == 1
+            ? controller.isLoadingArchived
+            : controller.isLoading;
+        final tabErrorMessage = _selectedTabIndex == 1
+            ? controller.archivedErrorMessage
+            : controller.errorMessage;
 
         return Scaffold(
           body: AnimatedListView(
@@ -212,8 +225,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                         final isSelected = _selectedTabIndex == index;
                         return Expanded(
                           child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedTabIndex = index),
+                            onTap: () => _onTabChanged(index),
                             child: Container(
                               padding:
                                   const EdgeInsets.symmetric(vertical: 12),
@@ -242,22 +254,26 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                   const Gap(24),
 
                   // ───── Loading / Error / Empty ─────
-                  if (controller.isLoading && allConvs.isEmpty)
+                  if (isTabLoading && tabConvs.isEmpty)
                     const Center(child: CircularProgressIndicator())
-                  else if (controller.errorMessage != null && allConvs.isEmpty)
+                  else if (tabErrorMessage != null && tabConvs.isEmpty)
                     Center(
                       child: Column(
                         children: [
                           const Gap(40),
                           MyText(
-                            text: controller.errorMessage!,
+                            text: tabErrorMessage,
                             size: 14,
                             color: kSubText,
                             textAlign: TextAlign.center,
                           ),
                           const Gap(16),
                           Bounce(
-                            onTap: controller.loadConversations,
+                            onTap: () => _selectedTabIndex == 1
+                                ? _controller.loadArchivedConversations(
+                                    refresh: true,
+                                  )
+                                : _controller.loadConversations(),
                             child: const MyText(
                               text: 'Retry',
                               size: 14,
@@ -269,11 +285,13 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                       ),
                     )
                   else if (filtered.isEmpty)
-                    const Center(
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.only(top: 40),
+                        padding: const EdgeInsets.only(top: 40),
                         child: MyText(
-                          text: 'No conversations yet',
+                          text: _selectedTabIndex == 1
+                              ? 'No archived chats'
+                              : 'No conversations yet',
                           size: 14,
                           color: kSubText,
                         ),
@@ -295,16 +313,23 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                         final lastMsg = conv.lastMessage?.isDeleted == true
                             ? 'Message deleted'
                             : conv.lastMessage?.content ?? '';
-                        final hasUnread = conv.unreadCount > 0;
+                        final unreadCount = conv.unreadCountFor(currentUserId);
+                        final hasUnread = unreadCount > 0;
+                        final isTyping = _controller.isTypingInConversation(
+                          conv.id,
+                        );
 
                         return GestureDetector(
                           onLongPress: _selectedTabIndex == 1
-                              ? () {
-                                  _controller.setArchived(conv.id, false);
-                                  Get.snackbar(
-                                    'Unarchived',
-                                    '${other?.fullName ?? 'Chat'} moved back to All Chats',
-                                  );
+                              ? () async {
+                                  final ok = await _controller
+                                      .unarchiveConversation(conv.id);
+                                  if (ok) {
+                                    Get.snackbar(
+                                      'Unarchived',
+                                      '${other?.fullName ?? 'Chat'} moved back to All Chats',
+                                    );
+                                  }
                                 }
                               : null,
                           child: Bounce(
@@ -349,9 +374,14 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                                         ),
                                         const Gap(2),
                                         MyText(
-                                          text: lastMsg,
+                                          text: isTyping ? 'typing...' : lastMsg,
                                           size: 14,
-                                          color: kSubText2,
+                                          color: isTyping
+                                              ? kPrimaryColor
+                                              : kSubText2,
+                                          weight: isTyping
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
                                           maxLines: 1,
                                           textOverflow: TextOverflow.ellipsis,
                                         ),
@@ -379,7 +409,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                                                 BorderRadius.circular(10),
                                           ),
                                           child: MyText(
-                                            text: '${conv.unreadCount}',
+                                            text: '$unreadCount',
                                             size: 11,
                                             color: Colors.white,
                                             weight: FontWeight.w600,

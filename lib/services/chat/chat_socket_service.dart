@@ -22,6 +22,8 @@ class ChatSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _typingCtrl =
       StreamController<SocketTypingEvent>.broadcast();
+  final _notificationCtrl =
+      StreamController<Map<String, dynamic>>.broadcast();
   final _connectionStatusCtrl =
       StreamController<bool>.broadcast();
 
@@ -29,6 +31,9 @@ class ChatSocketService {
   Stream<Map<String, dynamic>> get onConversationUpdated =>
       _conversationUpdatedCtrl.stream;
   Stream<SocketTypingEvent> get onTyping => _typingCtrl.stream;
+  /// Real-time app notifications (booking accepted, review received, etc.)
+  /// — distinct from `conversation_updated`, which is chat-specific.
+  Stream<Map<String, dynamic>> get onNotification => _notificationCtrl.stream;
   Stream<bool> get onConnectionStatus => _connectionStatusCtrl.stream;
 
   // ── Connect ──────────────────────────────────────────────────────────────
@@ -38,7 +43,12 @@ class ChatSocketService {
     _socket = io.io(
       _socketUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          // Deliberately NOT forcing transports to ['websocket'] here — this
+          // server requires the initial HTTP polling handshake before the
+          // upgrade to websocket (confirmed against the live server: a
+          // websocket-only connection never even reaches the auth check and
+          // fails at the transport layer). Let socket.io negotiate its
+          // default ['polling', 'websocket'].
           .disableAutoConnect()
           .setAuth({'token': accessToken})
           .setReconnectionAttempts(5)
@@ -61,7 +71,8 @@ class ChatSocketService {
       })
       ..on('new_message', _handleNewMessage)
       ..on('conversation_updated', _handleConversationUpdated)
-      ..on('typing', _handleTyping)
+      ..on('user_typing', _handleUserTyping)
+      ..on('user_stop_typing', _handleUserStopTyping)
       ..on('notification', _handleNotification);
 
     _socket!.connect();
@@ -85,14 +96,14 @@ class ChatSocketService {
   }
 
   // ── Typing indicator ─────────────────────────────────────────────────────
-  void emitTyping({
-    required String conversationId,
-    required bool isTyping,
-  }) {
-    _socket?.emit('typing', {
-      'conversationId': conversationId,
-      'isTyping': isTyping,
-    });
+  // Two distinct events per the server contract — no `isTyping` flag on the
+  // payload, the event name itself carries that meaning.
+  void emitTyping(String conversationId) {
+    _socket?.emit('typing', {'conversationId': conversationId});
+  }
+
+  void emitStopTyping(String conversationId) {
+    _socket?.emit('stop_typing', {'conversationId': conversationId});
   }
 
   // ── Event handlers ────────────────────────────────────────────────────────
@@ -111,19 +122,27 @@ class ChatSocketService {
     }
   }
 
-  void _handleTyping(dynamic data) {
+  void _handleUserTyping(dynamic data) {
     if (data is! Map) return;
     _typingCtrl.add(SocketTypingEvent(
       conversationId: data['conversationId']?.toString() ?? '',
       userId: data['userId']?.toString() ?? '',
-      isTyping: data['isTyping'] == true,
+      isTyping: true,
+    ));
+  }
+
+  void _handleUserStopTyping(dynamic data) {
+    if (data is! Map) return;
+    _typingCtrl.add(SocketTypingEvent(
+      conversationId: data['conversationId']?.toString() ?? '',
+      userId: data['userId']?.toString() ?? '',
+      isTyping: false,
     ));
   }
 
   void _handleNotification(dynamic data) {
-    // Push this into conversation_updated so the list refreshes
     if (data is Map) {
-      _conversationUpdatedCtrl.add(Map<String, dynamic>.from(data));
+      _notificationCtrl.add(Map<String, dynamic>.from(data));
     }
   }
 
@@ -133,6 +152,7 @@ class ChatSocketService {
     _newMessageCtrl.close();
     _conversationUpdatedCtrl.close();
     _typingCtrl.close();
+    _notificationCtrl.close();
     _connectionStatusCtrl.close();
   }
 }

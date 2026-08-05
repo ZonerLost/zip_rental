@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/profile/account_settings_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/views/screens/profile/blocked_users.dart';
 import 'package:zip_peer/views/screens/profile/change_password.dart';
 import 'package:zip_peer/views/screens/profile/help_center.dart';
 import 'package:zip_peer/views/screens/profile/language.dart';
@@ -58,6 +59,15 @@ class AccountSettingsScreen extends StatelessWidget {
             "Text": "",
             "value": controller.notificationsEnabled,
             "onToggle": controller.onNotificationToggle,
+          },
+          {
+            "icon": Assets.imagesPersonIcon,
+            "title": "Blocked Users",
+            "hasArrow": true,
+            "Text": "",
+            "onTap": () {
+              Get.to(() => const BlockedUsersScreen());
+            },
           },
         ];
 

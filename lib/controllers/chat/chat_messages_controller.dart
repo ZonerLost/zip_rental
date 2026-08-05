@@ -41,6 +41,7 @@ class ChatMessagesController extends GetxController {
 
   StreamSubscription<ChatMessage>? _newMsgSub;
   StreamSubscription<SocketTypingEvent>? _typingSub;
+  StreamSubscription<Map<String, dynamic>>? _convUpdatedSub;
 
   @override
   void onInit() {
@@ -49,6 +50,13 @@ class ChatMessagesController extends GetxController {
   }
 
   Future<void> _bootstrap() async {
+    // Logged once per screen-open so a send-failure trace can always be
+    // matched back to exactly which conversationId this screen was opened
+    // with (and from where, via the caller's own logs just before this).
+    debugPrint(
+      '[ChatMessages] screen opened with conversationId="$conversationId" '
+      'activeItemId=$activeItemId',
+    );
     await _resolveUserId();
     await _connectSocket();
     await loadMessages();
@@ -77,9 +85,17 @@ class ChatMessagesController extends GetxController {
     _socket.joinConversation(conversationId);
 
     _newMsgSub = _socket.onNewMessage.listen((msg) {
+      debugPrint(
+        '[ChatMessages] socket new_message received id=${msg.id} '
+        'conversationId=${msg.conversationId} senderId=${msg.senderId} '
+        '(this screen\'s conversationId=$conversationId)',
+      );
       if (msg.conversationId != conversationId) return;
       // Avoid duplicates (message may have been added optimistically)
-      if (messages.any((m) => m.id == msg.id)) return;
+      if (messages.any((m) => m.id == msg.id)) {
+        debugPrint('[ChatMessages] socket new_message id=${msg.id} already present — skipped');
+        return;
+      }
       messages.add(msg);
       update();
       // Mark read immediately when the screen is open
@@ -91,6 +107,18 @@ class ChatMessagesController extends GetxController {
       if (event.userId == currentUserId) return;
       otherUserIsTyping = event.isTyping;
       update();
+    });
+
+    // There's no dedicated "message read" socket event — conversation_updated
+    // is the closest general-purpose signal, and it's the most plausible
+    // way a read receipt on the other end would reach us live. Refresh the
+    // thread so sent/delivered ticks can flip to read without the user
+    // having to leave and reopen the conversation.
+    _convUpdatedSub = _socket.onConversationUpdated.listen((data) {
+      final targetId = data['conversationId']?.toString() ??
+          data['_id']?.toString();
+      if (targetId != null && targetId != conversationId) return;
+      loadMessages();
     });
   }
 
@@ -137,20 +165,52 @@ class ChatMessagesController extends GetxController {
     isSending = true;
     update();
 
+    debugPrint(
+      '[ChatMessages] sendMessage → conversationId="$conversationId" '
+      'tempId=$tempId textLength=${text.length} '
+      'hasItemRef=${(activeItemId ?? '').isNotEmpty}',
+    );
+
     final result = await _chatService.sendMessage(
       conversationId: conversationId,
       content: rawContent,
     );
 
+    debugPrint(
+      '[ChatMessages] sendMessage ← success=${result.success} '
+      'message="${result.message}" '
+      'chatMessage=${result.chatMessage != null ? "id=${result.chatMessage!.id} status=${result.chatMessage!.status}" : "null"}',
+    );
+
     isSending = false;
     if (result.success && result.chatMessage != null) {
-      // Replace optimistic with real message
+      // Replace optimistic with the real message. If the optimistic entry
+      // is gone (e.g. a conversation_updated refresh replaced the whole
+      // list while this send was in flight) but the real one isn't there
+      // either, add it rather than silently dropping it.
       final idx = messages.indexWhere((m) => m.id == tempId);
-      if (idx != -1) messages[idx] = result.chatMessage!;
+      if (idx != -1) {
+        messages[idx] = result.chatMessage!;
+        debugPrint('[ChatMessages] sendMessage ✓ replaced optimistic $tempId with real message');
+      } else if (!messages.any((m) => m.id == result.chatMessage!.id)) {
+        messages.add(result.chatMessage!);
+        debugPrint(
+          '[ChatMessages] sendMessage ⚠ optimistic $tempId was gone by the '
+          'time the response arrived (likely a conversation_updated '
+          'refresh raced it) — appended the real message instead of '
+          'dropping it',
+        );
+      }
     } else if (!result.success) {
       // Remove optimistic and show error
       messages.removeWhere((m) => m.id == tempId);
+      debugPrint('[ChatMessages] sendMessage ✗ failed — reverted optimistic $tempId: ${result.message}');
       Get.snackbar('Send failed', result.message);
+    } else {
+      debugPrint(
+        '[ChatMessages] sendMessage ⚠ server reported success but returned '
+        'no parsable message — optimistic $tempId left in place as-is',
+      );
     }
     update();
   }
@@ -170,7 +230,7 @@ class ChatMessagesController extends GetxController {
   void onMessageInputChanged(String value) {
     if (value.isNotEmpty && !_isEmittingTyping) {
       _isEmittingTyping = true;
-      _socket.emitTyping(conversationId: conversationId, isTyping: true);
+      _socket.emitTyping(conversationId);
     }
 
     _typingTimer?.cancel();
@@ -181,7 +241,7 @@ class ChatMessagesController extends GetxController {
   void _stopTypingEmit() {
     if (_isEmittingTyping) {
       _isEmittingTyping = false;
-      _socket.emitTyping(conversationId: conversationId, isTyping: false);
+      _socket.emitStopTyping(conversationId);
     }
     _typingTimer?.cancel();
   }
@@ -196,6 +256,7 @@ class ChatMessagesController extends GetxController {
     _socket.leaveConversation(conversationId);
     _newMsgSub?.cancel();
     _typingSub?.cancel();
+    _convUpdatedSub?.cancel();
     _typingTimer?.cancel();
     messageInputController.dispose();
     super.onClose();

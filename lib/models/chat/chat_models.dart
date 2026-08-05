@@ -197,9 +197,9 @@ class ChatConversation {
     this.itemId,
     this.itemTitle,
     this.lastMessage,
-    this.unreadCount = 0,
+    this.unreadCountByUser = const <String, int>{},
     required this.updatedAt,
-    this.isArchived = false,
+    this.archivedBy = const <String>[],
   });
 
   final String id;
@@ -207,15 +207,25 @@ class ChatConversation {
   final String? itemId;
   final String? itemTitle;
   final ChatMessage? lastMessage;
-  final int unreadCount;
+  /// Per-user unread counts, keyed by user ID — the API returns
+  /// `unreadCount` as e.g. `{ "<userId>": 1 }`, not a single number, since
+  /// each participant has their own unread count for the conversation.
+  final Map<String, int> unreadCountByUser;
   final DateTime updatedAt;
-  final bool isArchived;
+  /// User IDs who have archived this conversation (per the `archivedBy`
+  /// field on GET /chats). Archiving is one-sided — the other participant
+  /// still sees the conversation normally.
+  final List<String> archivedBy;
+
+  int unreadCountFor(String userId) => unreadCountByUser[userId] ?? 0;
+
+  bool isArchivedFor(String userId) => archivedBy.contains(userId);
 
   ChatConversation copyWith({
-    int? unreadCount,
+    Map<String, int>? unreadCountByUser,
     DateTime? updatedAt,
     ChatMessage? lastMessage,
-    bool? isArchived,
+    List<String>? archivedBy,
   }) {
     return ChatConversation(
       id: id,
@@ -223,9 +233,9 @@ class ChatConversation {
       itemId: itemId,
       itemTitle: itemTitle,
       lastMessage: lastMessage ?? this.lastMessage,
-      unreadCount: unreadCount ?? this.unreadCount,
+      unreadCountByUser: unreadCountByUser ?? this.unreadCountByUser,
       updatedAt: updatedAt ?? this.updatedAt,
-      isArchived: isArchived ?? this.isArchived,
+      archivedBy: archivedBy ?? this.archivedBy,
     );
   }
 
@@ -273,17 +283,30 @@ class ChatConversation {
       itemId = item;
     }
 
+    final unreadRaw = m['unreadCount'];
+    final unreadCountByUser = <String, int>{};
+    if (unreadRaw is Map) {
+      unreadRaw.forEach((key, value) {
+        if (value is num) {
+          unreadCountByUser[key.toString()] = value.toInt();
+        }
+      });
+    }
+
+    final archivedByRaw = m['archivedBy'];
+    final archivedBy = archivedByRaw is List
+        ? archivedByRaw.map((e) => e.toString()).toList(growable: false)
+        : const <String>[];
+
     return ChatConversation(
       id: m['_id']?.toString() ?? m['id']?.toString() ?? conversationId,
       participants: participants,
       itemId: itemId,
       itemTitle: itemTitle,
       lastMessage: lastMessage,
-      unreadCount: m['unreadCount'] is num
-          ? (m['unreadCount'] as num).toInt()
-          : 0,
+      unreadCountByUser: unreadCountByUser,
       updatedAt: ChatMessage._parseDate(m['updatedAt'] ?? m['createdAt']),
-      isArchived: m['isArchived'] == true,
+      archivedBy: archivedBy,
     );
   }
 }
@@ -339,6 +362,92 @@ class SendMessageResult {
   final bool success;
   final String message;
   final ChatMessage? chatMessage;
+}
+
+/// Generic success/message wrapper for the archive, block, unblock, and
+/// report actions — none of them return a meaningful payload beyond a
+/// confirmation message.
+class ChatActionResult {
+  const ChatActionResult({required this.success, required this.message});
+
+  final bool success;
+  final String message;
+}
+
+// ─────────────────────────────────────────────
+//  Block
+// ─────────────────────────────────────────────
+class BlockedUser {
+  const BlockedUser({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    this.profilePhoto,
+  });
+
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? profilePhoto;
+
+  String get fullName {
+    final combined = '$firstName $lastName'.trim();
+    return combined.isEmpty ? 'Unknown user' : combined;
+  }
+
+  factory BlockedUser.fromMap(Map<String, dynamic> m) {
+    return BlockedUser(
+      id: m['_id']?.toString() ?? m['id']?.toString() ?? '',
+      firstName: m['firstName']?.toString() ?? '',
+      lastName: m['lastName']?.toString() ?? '',
+      profilePhoto: m['profilePhoto']?.toString(),
+    );
+  }
+}
+
+class BlockedUsersResult {
+  const BlockedUsersResult({
+    required this.success,
+    required this.message,
+    this.users = const <BlockedUser>[],
+  });
+
+  final bool success;
+  final String message;
+  final List<BlockedUser> users;
+}
+
+// ─────────────────────────────────────────────
+//  Report
+// ─────────────────────────────────────────────
+/// The only `reason` values the backend accepts for POST /users/:id/report.
+class ReportReasons {
+  const ReportReasons._();
+
+  static const String spam = 'spam';
+  static const String fakeProfile = 'fake_profile';
+  static const String harassment = 'harassment';
+  static const String inappropriateContent = 'inappropriate_content';
+  static const String scam = 'scam';
+  static const String other = 'other';
+
+  static const Map<String, String> labels = <String, String>{
+    spam: 'Spam or unwanted promotions',
+    fakeProfile: 'Fake or impersonation account',
+    harassment: 'Bullying or harassment',
+    inappropriateContent: 'Offensive or harmful content',
+    scam: 'Fraud or scam attempt',
+    other: 'Something else',
+  };
+
+  static const List<String> all = <String>[
+    spam,
+    fakeProfile,
+    harassment,
+    inappropriateContent,
+    scam,
+    other,
+  ];
 }
 
 class _ParsedMessageContent {

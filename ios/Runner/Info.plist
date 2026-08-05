@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Zip Peer uses the camera to let you take a photo to share in chat.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Zip Peer uses your photo library to let you attach photos to items and chats.</string>
 </dict>
 </plist>
