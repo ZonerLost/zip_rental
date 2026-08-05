@@ -17,8 +17,6 @@ class DashboardController extends GetxController {
   int listedItemsCount = 0;
   double rating = 0;
   double earnings = 0;
-  double co2SavedKg = 0;
-  String co2EquivalentText = "That's equivalent to 0 km driven by car";
 
   String get fullName {
     final value = profile?.fullName ?? '';
@@ -94,19 +92,6 @@ class DashboardController extends GetxController {
       'stats.earnings',
       'stats.totalEarnings',
     ]);
-    co2SavedKg = _readDouble(root, const [
-      'co2SavedKg',
-      'ecoImpact.co2SavedKg',
-      'stats.co2SavedKg',
-    ]);
-    final distanceKm = _readInt(root, const [
-      'ecoImpact.distanceKm',
-      'stats.equivalentDistanceKm',
-    ]);
-    if (distanceKm > 0) {
-      co2EquivalentText = "That's equivalent to $distanceKm km driven by car";
-    }
-
     isLoading = false;
     update();
   }

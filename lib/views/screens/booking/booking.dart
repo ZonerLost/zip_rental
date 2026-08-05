@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/bookings/booking_controller.dart';
+import 'package:zip_peer/controllers/eco/eco_controller.dart';
 import 'package:zip_peer/controllers/reviews/review_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/bookings/booking_models.dart';
@@ -28,6 +29,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   late final BookingController _controller;
   late final ReviewController _reviewController;
+  late final EcoController _ecoController;
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -43,6 +45,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
     _reviewController = Get.isRegistered<ReviewController>()
         ? Get.find<ReviewController>()
         : Get.put(ReviewController());
+    _ecoController = Get.isRegistered<EcoController>()
+        ? Get.find<EcoController>()
+        : Get.put(EcoController());
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadCurrentTab(refresh: true);
@@ -556,6 +561,10 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   Future<void> _openBookingDetails(BookingModel booking) async {
     _controller.fetchBookingDetail(booking.id);
+    if ((booking.status ?? '').toLowerCase() == BookingStatuses.completed &&
+        !_ecoController.bookingImpactByBookingId.containsKey(booking.id)) {
+      _ecoController.fetchBookingImpact(booking.id);
+    }
 
     await showModalBottomSheet<void>(
       context: context,
@@ -628,6 +637,15 @@ class _BookingsScreenState extends State<BookingsScreen> {
                           _detailTile('Decline Reason', detail.declineReason!),
                         if ((detail.cancelReason ?? '').isNotEmpty)
                           _detailTile('Cancel Reason', detail.cancelReason!),
+                        if ((detail.status ?? '').toLowerCase() ==
+                            BookingStatuses.completed) ...[
+                          const Gap(8),
+                          GetBuilder<EcoController>(
+                            init: _ecoController,
+                            builder: (ecoController) =>
+                                _ecoImpactCard(ecoController, detail.id),
+                          ),
+                        ],
                         if (detail.preRentalPhotos.isNotEmpty) ...[
                           const Gap(12),
                           MyText(
@@ -655,6 +673,57 @@ class _BookingsScreenState extends State<BookingsScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _ecoImpactCard(EcoController ecoController, String bookingId) {
+    final impact = ecoController.bookingImpactByBookingId[bookingId];
+
+    if (impact == null) {
+      if (ecoController.isBookingImpactLoading) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+      // No impact recorded (or the fetch failed) — stay silent rather than
+      // showing an error inside an otherwise-successful booking summary.
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kPrimaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.eco_outlined, color: kPrimaryColor, size: 28),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MyText(
+                  text: '${impact.co2SavedKg.toStringAsFixed(0)} kg CO₂ saved',
+                  size: 15,
+                  weight: FontWeight.w700,
+                  color: kPrimaryColor,
+                ),
+                const Gap(2),
+                MyText(
+                  text: impact.message ??
+                      'Equivalent to ${impact.kmEquivalent.toStringAsFixed(1)} km by car.',
+                  size: 12,
+                  color: kSubText,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

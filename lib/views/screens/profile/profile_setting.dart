@@ -37,7 +37,7 @@ class UserProfileScreen extends StatelessWidget {
                 const Gap(20),
                 EarningsCardWidget(controller: controller),
                 const Gap(20),
-                EcoImpactCardWidget(controller: controller),
+                const EcoImpactCardWidget(),
                 const Gap(20),
                 const MostRentedItemsWidget(),
                 const Gap(30),

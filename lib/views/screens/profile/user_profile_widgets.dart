@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/controllers/eco/eco_controller.dart';
 import 'package:zip_peer/controllers/profile/dashboard_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/profile/edit_profile.dart';
+import 'package:zip_peer/views/screens/profile/eco_imapct.dart';
 import 'package:zip_peer/views/screens/profile/rental.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
@@ -232,94 +234,118 @@ class EarningsCardWidget extends StatelessWidget {
   }
 }
 
-class EcoImpactCardWidget extends StatelessWidget {
-  const EcoImpactCardWidget({Key? key, required this.controller})
-    : super(key: key);
+class EcoImpactCardWidget extends StatefulWidget {
+  const EcoImpactCardWidget({Key? key}) : super(key: key);
 
-  final DashboardController controller;
+  @override
+  State<EcoImpactCardWidget> createState() => _EcoImpactCardWidgetState();
+}
+
+class _EcoImpactCardWidgetState extends State<EcoImpactCardWidget> {
+  late final EcoController _ecoController;
+
+  @override
+  void initState() {
+    super.initState();
+    _ecoController = Get.isRegistered<EcoController>()
+        ? Get.find<EcoController>()
+        : Get.put(EcoController());
+    if (_ecoController.myImpact == null && !_ecoController.isMyImpactLoading) {
+      _ecoController.fetchMyImpact();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          MyText(
-            text: "${controller.co2SavedKg.toStringAsFixed(0)} Kg",
-            size: 26,
-            color: kBlack,
-            weight: FontWeight.w600,
-          ),
-          const Gap(6),
-          MyText(
-            text: "CO₂ saved by renting out items instead of buying",
-            size: 14,
-            color: kSubText2,
-            weight: FontWeight.w400,
-          ),
-          const Gap(16),
-          Row(
-            spacing: 6,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Bounce(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.chevron_left, size: 20),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+    return GetBuilder<EcoController>(
+      init: _ecoController,
+      builder: (controller) {
+        final lifetime = controller.myImpact?.lifetime;
+        final co2Text = lifetime != null
+            ? '${lifetime.totalCO2.toStringAsFixed(0)} Kg'
+            : (controller.isMyImpactLoading ? '—' : '0 Kg');
+        final equivalenceText = lifetime?.equivalence ??
+            (controller.isMyImpactLoading
+                ? 'Loading your eco impact...'
+                : "That's equivalent to 0 km driven by car");
 
-                  child: Center(
-                    child: MyText(
-                      text: controller.co2EquivalentText,
-                      size: 14,
-                      color: kPrimaryColor,
-                      weight: FontWeight.w500,
-                      textAlign: TextAlign.center,
+        return Bounce(
+          onTap: () => Get.to(() => const EcoImpactScreen()),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MyText(
+                  text: co2Text,
+                  size: 26,
+                  color: kBlack,
+                  weight: FontWeight.w600,
+                ),
+                const Gap(6),
+                MyText(
+                  text: "CO₂ saved by renting out items instead of buying",
+                  size: 14,
+                  color: kSubText2,
+                  weight: FontWeight.w400,
+                ),
+                const Gap(16),
+                Row(
+                  spacing: 6,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.eco_outlined, size: 20),
                     ),
-                  ),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: MyText(
+                            text: equivalenceText,
+                            size: 14,
+                            color: kPrimaryColor,
+                            weight: FontWeight.w500,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.chevron_right, size: 20),
+                    ),
+                  ],
                 ),
-              ),
-              Bounce(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.2),
-
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.chevron_right, size: 20),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
