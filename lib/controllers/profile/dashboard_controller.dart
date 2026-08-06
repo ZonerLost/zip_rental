@@ -1,22 +1,34 @@
 import 'package:get/get.dart';
+import 'package:zip_peer/models/profile/dashboard_models.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
+import 'package:zip_peer/services/dashboard/dashboard_service.dart';
 import 'package:zip_peer/services/profile/profile_service.dart';
 
 class DashboardController extends GetxController {
-  DashboardController({ProfileService? profileService})
-    : _profileService = profileService ?? ProfileService();
+  DashboardController({
+    ProfileService? profileService,
+    DashboardService? dashboardService,
+  }) : _profileService = profileService ?? ProfileService(),
+       _dashboardService = dashboardService ?? DashboardService();
 
   final ProfileService _profileService;
+  final DashboardService _dashboardService;
 
   bool isLoading = false;
   UserProfile? profile;
   String? profilePhotoUrl;
 
-  int rentedOutCount = 0;
-  int rentedFromOthersCount = 0;
-  int listedItemsCount = 0;
-  double rating = 0;
-  double earnings = 0;
+  DashboardStats? stats;
+  String? statsErrorMessage;
+
+  // ── Convenience accessors over `stats` — kept so the existing dashboard
+  // widgets (which read these directly) didn't need to change shape. ──
+  int get rentedOutCount => stats?.lending.total ?? 0;
+  int get rentedFromOthersCount => stats?.rentals.total ?? 0;
+  int get listedItemsCount => stats?.items.total ?? 0;
+  double get rating => stats?.rating.average ?? 0;
+  double get earnings => stats?.earnings.total ?? 0;
+  String get earningsCurrency => stats?.earnings.currency ?? 'CAD';
 
   String get fullName {
     final value = profile?.fullName ?? '';
@@ -53,84 +65,32 @@ class DashboardController extends GetxController {
     isLoading = true;
     update();
 
-    final result = await _profileService.getProfile();
-    if (!result.success || result.profile == null) {
-      isLoading = false;
-      update();
-      return;
+    // Profile identity (name/email/photo) and dashboard stats come from two
+    // different endpoints — load them together.
+    final results = await Future.wait([
+      _profileService.getProfile(),
+      _dashboardService.getDashboard(),
+    ]);
+    final profileResult = results[0] as ProfileResult;
+    final dashboardResult = results[1] as DashboardResult;
+
+    if (profileResult.success && profileResult.profile != null) {
+      profile = profileResult.profile;
+      profilePhotoUrl = _withCacheBust(
+        _bestPhotoUrl(profileResult),
+        _resolvePhotoVersion(profileResult),
+      );
     }
 
-    profile = result.profile;
-    profilePhotoUrl = _withCacheBust(
-      _bestPhotoUrl(result),
-      _resolvePhotoVersion(result),
-    );
+    if (dashboardResult.success) {
+      stats = dashboardResult.stats;
+      statsErrorMessage = null;
+    } else {
+      statsErrorMessage = dashboardResult.message;
+    }
 
-    final root = result.data ?? <String, dynamic>{};
-    rentedOutCount = _readInt(root, const [
-      'rentedOutCount',
-      'stats.rentedOutCount',
-      'stats.timesRentedOut',
-    ]);
-    rentedFromOthersCount = _readInt(root, const [
-      'rentedFromOthersCount',
-      'stats.rentedFromOthersCount',
-      'stats.timesRentedFromOthers',
-    ]);
-    listedItemsCount = _readInt(root, const [
-      'listedItemsCount',
-      'stats.listedItemsCount',
-      'stats.itemsListed',
-    ]);
-    rating = _readDouble(root, const [
-      'rating',
-      'stats.rating',
-      'stats.overallRating',
-    ]);
-    earnings = _readDouble(root, const [
-      'earnings',
-      'stats.earnings',
-      'stats.totalEarnings',
-    ]);
     isLoading = false;
     update();
-  }
-
-  int _readInt(Map<String, dynamic> root, List<String> candidates) {
-    for (final key in candidates) {
-      final raw = _getValueByPath(root, key);
-      if (raw == null) {
-        continue;
-      }
-      if (raw is int) {
-        return raw;
-      }
-      if (raw is num) {
-        return raw.toInt();
-      }
-      final parsed = int.tryParse(raw.toString());
-      if (parsed != null) {
-        return parsed;
-      }
-    }
-    return 0;
-  }
-
-  double _readDouble(Map<String, dynamic> root, List<String> candidates) {
-    for (final key in candidates) {
-      final raw = _getValueByPath(root, key);
-      if (raw == null) {
-        continue;
-      }
-      if (raw is num) {
-        return raw.toDouble();
-      }
-      final parsed = double.tryParse(raw.toString());
-      if (parsed != null) {
-        return parsed;
-      }
-    }
-    return 0;
   }
 
   dynamic _getValueByPath(Map<String, dynamic> root, String path) {

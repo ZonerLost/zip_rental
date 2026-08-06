@@ -39,7 +39,7 @@ class UserProfileScreen extends StatelessWidget {
                 const Gap(20),
                 const EcoImpactCardWidget(),
                 const Gap(20),
-                const MostRentedItemsWidget(),
+                MostRentedItemsWidget(controller: controller),
                 const Gap(30),
                 Align(
                   alignment: Alignment.centerLeft,

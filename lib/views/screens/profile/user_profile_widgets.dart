@@ -191,7 +191,8 @@ class EarningsCardWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               MyText(
-                text: "\$${controller.earnings.toStringAsFixed(2)}",
+                text:
+                    "${controller.earningsCurrency} ${controller.earnings.toStringAsFixed(2)}",
                 size: 26,
                 color: kBlack,
                 weight: FontWeight.w600,
@@ -351,76 +352,67 @@ class _EcoImpactCardWidgetState extends State<EcoImpactCardWidget> {
 }
 
 class MostRentedItemsWidget extends StatelessWidget {
-  const MostRentedItemsWidget({Key? key}) : super(key: key);
+  const MostRentedItemsWidget({Key? key, required this.controller})
+    : super(key: key);
+
+  final DashboardController controller;
 
   @override
   Widget build(BuildContext context) {
-    // Sample data - replace with your actual data
-    final rentedItems = [
-      {
-        'name': 'Nike Jordan 6',
-        'category': 'Footwear',
-        'price': '\$50.00',
-        'customer': 'Mike Hesson',
-        'status': 'On Rent',
-      },
-      {
-        'name': 'Canon EOS R5',
-        'category': 'Camera',
-        'price': '\$120.00',
-        'customer': 'Sarah Johnson',
-        'status': 'On Rent',
-      },
-      {
-        'name': 'MacBook Pro',
-        'category': 'Electronics',
-        'price': '\$200.00',
-        'customer': 'John Smith',
-        'status': 'On Rent',
-      },
-      {
-        'name': 'Camping Tent',
-        'category': 'Outdoor',
-        'price': '\$35.00',
-        'customer': 'Emma Wilson',
-        'status': 'On Rent',
-      },
-    ];
+    final recentBookings = controller.stats?.recentBookings ?? const [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         MyText(
-          text: 'Most Rented Items',
+          text: 'Recent Bookings',
           size: 18,
           color: kBlack,
           weight: FontWeight.w600,
         ),
         const Gap(16),
-        SizedBox(
-          height: 140,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: rentedItems.length,
-            itemBuilder: (context, index) {
-              final item = rentedItems[index];
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index != rentedItems.length - 1 ? 12 : 0,
-                ),
-                child: _buildRentedItemCard(
-                  name: item['name']!,
-                  category: item['category']!,
-                  price: item['price']!,
-                  customer: item['customer']!,
-                  status: item['status']!,
-                ),
-              );
-            },
+        if (recentBookings.isEmpty)
+          MyText(
+            text: controller.isLoading
+                ? 'Loading...'
+                : 'No recent bookings yet.',
+            size: 13,
+            color: kSubText2,
+          )
+        else
+          SizedBox(
+            height: 140,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: recentBookings.length,
+              itemBuilder: (context, index) {
+                final booking = recentBookings[index];
+                final currency = booking.item?.currency ?? 'CAD';
+                final amount = booking.pricing?.totalAmount ??
+                    booking.item?.dailyRate ??
+                    0;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: index != recentBookings.length - 1 ? 12 : 0,
+                  ),
+                  child: _buildRentedItemCard(
+                    name: booking.itemTitle,
+                    category: (booking.item?.category ?? '-').toString(),
+                    price: '$currency ${amount.toStringAsFixed(2)}',
+                    customer: booking.partnerName,
+                    status: _capitalize(booking.status ?? '-'),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
       ],
     );
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return value[0].toUpperCase() + value.substring(1);
   }
 
   Widget _buildRentedItemCard({
