@@ -168,7 +168,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                                 final other =
                                     conv.otherParticipant(currentUserId);
                                 final hasPhoto = (other?.profilePhoto ?? '')
-                                    .startsWith('http');
+                                    .isNotEmpty;
                                 return Bounce(
                                   onTap: () => _openConversation(conv),
                                   child: Padding(
@@ -309,7 +309,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                         final conv = filtered[index];
                         final other = conv.otherParticipant(currentUserId);
                         final hasPhoto = (other?.profilePhoto ?? '')
-                            .startsWith('http');
+                            .isNotEmpty;
                         final lastMsg = conv.lastMessage?.isDeleted == true
                             ? 'Message deleted'
                             : conv.lastMessage?.content ?? '';

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../utils/media_url.dart';
+
 // ─────────────────────────────────────────────
 //  Participant
 // ─────────────────────────────────────────────
@@ -23,7 +25,7 @@ class ChatParticipant {
       id: m['_id']?.toString() ?? m['id']?.toString() ?? '',
       firstName: m['firstName']?.toString() ?? '',
       lastName: m['lastName']?.toString() ?? '',
-      profilePhoto: m['profilePhoto']?.toString(),
+      profilePhoto: normalizeMediaUrl(m['profilePhoto']?.toString()),
     );
   }
 }
@@ -101,7 +103,7 @@ class ChatMessage {
       final fn = sender['firstName']?.toString() ?? '';
       final ln = sender['lastName']?.toString() ?? '';
       senderName = '$fn $ln'.trim();
-      senderPhoto = sender['profilePhoto']?.toString();
+      senderPhoto = normalizeMediaUrl(sender['profilePhoto']?.toString());
     } else {
       senderId = sender?.toString() ?? '';
     }
@@ -400,7 +402,7 @@ class BlockedUser {
       id: m['_id']?.toString() ?? m['id']?.toString() ?? '',
       firstName: m['firstName']?.toString() ?? '',
       lastName: m['lastName']?.toString() ?? '',
-      profilePhoto: m['profilePhoto']?.toString(),
+      profilePhoto: normalizeMediaUrl(m['profilePhoto']?.toString()),
     );
   }
 }

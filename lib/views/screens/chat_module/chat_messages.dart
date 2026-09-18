@@ -174,7 +174,7 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = (widget.participantPhoto ?? '').startsWith('http');
+    final hasPhoto = (widget.participantPhoto ?? '').isNotEmpty;
 
     return GetBuilder<ChatMessagesController>(
       tag: widget.conversationId,

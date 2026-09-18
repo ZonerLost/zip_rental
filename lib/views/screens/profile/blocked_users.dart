@@ -177,7 +177,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
       separatorBuilder: (_, __) => const Gap(12),
       itemBuilder: (context, index) {
         final user = controller.blockedUsers[index];
-        final hasPhoto = (user.profilePhoto ?? '').startsWith('http');
+        final hasPhoto = (user.profilePhoto ?? '').isNotEmpty;
 
         return Container(
           padding: const EdgeInsets.all(14),

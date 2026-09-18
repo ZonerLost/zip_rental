@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:zip_peer/config/api/api_config.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
+import 'package:zip_peer/utils/media_url.dart';
 
 class ProfileService {
   ProfileService({AuthService? authService})
@@ -364,35 +365,7 @@ class ProfileService {
     return null;
   }
 
-  String? _normalizePhotoUrl(String? raw) {
-    if (raw == null) {
-      return null;
-    }
-    final value = raw.trim();
-    if (value.isEmpty || value.toLowerCase() == 'null') {
-      return null;
-    }
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return value;
-    }
-    if (value.startsWith('//')) {
-      return 'https:$value';
-    }
-
-    final base = _client.baseUrl ?? '';
-    final baseUri = Uri.tryParse(base);
-    if (baseUri == null || baseUri.host.isEmpty || baseUri.scheme.isEmpty) {
-      return value;
-    }
-
-    final origin =
-        '${baseUri.scheme}://${baseUri.host}'
-        '${baseUri.hasPort ? ':${baseUri.port}' : ''}';
-    if (value.startsWith('/')) {
-      return '$origin$value';
-    }
-    return '$origin/$value';
-  }
+  String? _normalizePhotoUrl(String? raw) => normalizeMediaUrl(raw);
 
   Map<String, dynamic> _stringKeyMap(Map<dynamic, dynamic> source) {
     return source.map((key, value) {

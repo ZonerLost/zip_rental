@@ -3,6 +3,7 @@ class ApiConfig {
 
   static const String productionBaseUrl =
       'https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1';
+  //  'http://192.168.1.5:3000/api/v1';
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
