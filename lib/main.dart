@@ -17,10 +17,8 @@ Future<void> _maybeStartTokenRefresh() async {
   final store = AuthSessionStore();
   final refreshToken = await store.getRefreshToken();
   if (refreshToken == null || refreshToken.isEmpty) return;
-
   final authService = AuthService();
   await authService.ensureAccessToken();
-
   unawaited(TokenRefreshService.start());
 }
 

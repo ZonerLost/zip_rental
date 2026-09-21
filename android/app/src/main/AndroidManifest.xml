@@ -5,8 +5,11 @@
     <!-- Required by image_picker's ImageSource.camera (chat's "Take Photo"
          option) on some Android versions/devices. -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Required to center the Explore map on the user's current location. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
-        android:label="zip_peer"
+        android:label="Atussa"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

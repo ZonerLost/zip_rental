@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Zip Peer</string>
+	<string>Atussa</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>zip_peer</string>
+	<string>Atussa</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -49,5 +49,7 @@
 	<string>Zip Peer uses the camera to let you take a photo to share in chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Zip Peer uses your photo library to let you attach photos to items and chats.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Zip Peer uses your location to show rentable items near you on the map.</string>
 </dict>
 </plist>

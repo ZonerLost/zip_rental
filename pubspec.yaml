@@ -65,6 +65,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   http: ^1.6.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.2
 
 dev_dependencies:
   flutter_test:
@@ -109,5 +112,6 @@ flutter_assets:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/atussa_icon.png"
+  image_path: "assets/images/atussa_icon_launcher.png"
   remove_alpha_ios: true
+  background_color_ios: "#1F4D2E"
