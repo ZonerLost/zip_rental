@@ -111,19 +111,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         style: const TextStyle(fontSize: 14, height: 1.5),
                         children: [
                           TextSpan(
-                            text: "Please enter the email address that starts with",
+                            text: "Please enter the email address.",
                             style: TextStyle(
                               color: kSubText2,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const TextSpan(
-                            text: " k******@gmail.com",
-                            style: TextStyle(
-                              color: kPrimaryColor,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          // const TextSpan(
+                          //   text: " k******@gmail.com",
+                          //   style: TextStyle(
+                          //     color: kPrimaryColor,
+                          //     fontWeight: FontWeight.w700,
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),

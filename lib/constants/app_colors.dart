@@ -6,14 +6,15 @@ const kWhite = Color(0xFFFFFFFF);
 const kWhite44 = Color(0x70FFFFFF);
 const kWhite3 = Color(0xFFF4F4F4);
 const kWhite2 = Color(0xFFAAAAAA);
-const kBlack = Color(0xFF000000);
+const kBlack = Color(0xFF111111);
 
-const kPrimaryColor = Color(0xFF475F58);
-const kPrimaryColor2 = Color(0x80475F58); 
-const kPrimaryColor3 = Color(0x1A475F58);
+// Atussa brand palette
+const kPrimaryColor = Color(0xFF1F4D2E); // Vert forêt
+const kPrimaryColor2 = Color(0x801F4D2E);
+const kPrimaryColor3 = Color(0x1A1F4D2E);
 
-const kSecondaryColor = Color(0xFF359CE6);
-const kSecondaryColor2 = Color(0xFF0088FF);
+const kSecondaryColor = Color(0xFF6E8B55); // Vert mousse
+const kSecondaryColor2 = Color(0xFFA6BE7A); // Vert sauge
 const kSecondaryGreenColor = Color(0xFF34C759);
 const kSecondaryPinkColor = Color(0xFFFF2D55);
 
@@ -24,7 +25,7 @@ const kSecondaryGreyColor3 = Color(0xFFDDDEE4);
 final kOverLay = Color(0x80000000);
 final KSectionBg = Color(0xFF2F2F2F);
 
-const kbackground = Color(0xFFF4F4F4);
+const kbackground = Color(0xFFF5F0E6); // Crème
 
 const kSubText = Color(0xFF848E99);
 
@@ -84,7 +85,7 @@ const kBlack25 = Color(0xFFF8F8F8);
 
 //! All background Colors
 
-const kbackgroundSplash = Color(0xFF06021D);
+const kbackgroundSplash = Color(0xFF1F4D2E);
 
 const kbackgroundpinput = Color(0xFFE9E8E8);
 const kbackgroundContainer = Color(0xFFE6E7EA);
@@ -126,7 +127,7 @@ const kContainerBackgroundGradeintColor = LinearGradient(
 );
 
 const kButtonGradeintColor = LinearGradient(
-  colors: [Color(0xFFFB6347), Color(0xFFEE466A)], // Light orange to red
+  colors: [Color(0xFF1F4D2E), Color(0xFF6E8B55)], // Vert forêt to vert mousse
   begin: Alignment.centerLeft,
   end: Alignment.centerRight,
 );

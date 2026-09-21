@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ],
       ),
-      backgroundColor: Color(0xFFDEEEEA),
+      backgroundColor: kbackground,
       body: AnimatedColumn(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 children: [
                   CommonImageView(
                     imagePath: Assets.imagesLogoMain,
-                    height: 150,
+                    height: 100,
                   ),
                 ],
               ),
