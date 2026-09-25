@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:get/get.dart';
-import 'package:zip_peer/config/api/api_config.dart';
-import 'package:zip_peer/models/auth/auth_models.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/auth_session_store.dart';
 
 /// Registered as a GetxService so it survives navigation and is never
@@ -17,6 +16,11 @@ import 'package:zip_peer/services/auth/auth_session_store.dart';
 ///   If the device is offline when a refresh is due, the call is silently
 ///   skipped and retried every [_retryInterval] until it succeeds, at which
 ///   point the normal [_refreshInterval] cadence resumes.
+///
+/// Every actual refresh goes through [AuthService.refreshToken], which
+/// de-duplicates concurrent refresh attempts and clears the session on a
+/// definitive rejection — so this timer can never race a reactive,
+/// request-triggered refresh happening elsewhere in the app.
 class TokenRefreshService extends GetxService {
   static const Duration _refreshInterval = Duration(minutes: 14);
   static const Duration _retryInterval = Duration(minutes: 2);
@@ -24,17 +28,14 @@ class TokenRefreshService extends GetxService {
   static const Duration _earlyBuffer = Duration(minutes: 1);
 
   final AuthSessionStore _store;
-
-  // Lazily-built HTTP client — avoids importing AuthService (circular dep).
-  late final _RefreshClient _client;
+  final AuthService _authService;
 
   Timer? _timer;
   bool _running = false;
 
-  TokenRefreshService({AuthSessionStore? store})
-      : _store = store ?? AuthSessionStore() {
-    _client = _RefreshClient(ApiConfig.baseUrl);
-  }
+  TokenRefreshService({AuthSessionStore? store, AuthService? authService})
+      : _store = store ?? AuthSessionStore(),
+        _authService = authService ?? AuthService();
 
   // ── public API ────────────────────────────────────────────────────────────
 
@@ -103,15 +104,9 @@ class TokenRefreshService extends GetxService {
       return;
     }
 
-    final result = await _client.refresh(refreshToken);
-    if (result != null) {
-      await _store.saveTokens(
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      );
-    }
-    // On failure the stored token is untouched; per-request 401-retry in
-    // AuthService handles individual calls.
+    // On failure (network hiccup or definitive rejection) AuthService has
+    // already handled the stored session appropriately — nothing to do here.
+    await _authService.refreshToken(refreshToken);
   }
 
   Future<bool> _isOnline() async {
@@ -134,59 +129,5 @@ class TokenRefreshService extends GetxService {
   void onClose() {
     _cancel();
     super.onClose();
-  }
-}
-
-/// Result from a token refresh — carries both tokens so the store
-/// can be updated atomically even when the server rotates the refresh token.
-class _RefreshResult {
-  const _RefreshResult({required this.accessToken, required this.refreshToken});
-  final String accessToken;
-  final String refreshToken;
-}
-
-/// Minimal HTTP client for the refresh endpoint only.
-/// Kept separate to avoid a circular dependency with AuthService.
-class _RefreshClient {
-  _RefreshClient(String baseUrl)
-      : _baseUrl = baseUrl.endsWith('/')
-            ? baseUrl.substring(0, baseUrl.length - 1)
-            : baseUrl;
-
-  final String _baseUrl;
-  final GetConnect _http = GetConnect(timeout: const Duration(seconds: 15));
-
-  Future<_RefreshResult?> refresh(String refreshToken) async {
-    try {
-      final response = await _http.post(
-        '$_baseUrl/auth/refresh-token',
-        RefreshTokenRequest(refreshToken: refreshToken).toJson(),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      );
-      final body = response.body;
-      if (body is Map) {
-        final accessToken = (body['accessToken'] ??
-                body['access_token'] ??
-                body['data']?['accessToken'] ??
-                body['data']?['access_token'])
-            ?.toString();
-        if (accessToken == null || accessToken.isEmpty) return null;
-        final newRefresh = (body['refreshToken'] ??
-                body['refresh_token'] ??
-                body['data']?['refreshToken'] ??
-                body['data']?['refresh_token'])
-            ?.toString();
-        return _RefreshResult(
-          accessToken: accessToken,
-          refreshToken: newRefresh?.isNotEmpty == true ? newRefresh! : refreshToken,
-        );
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
   }
 }

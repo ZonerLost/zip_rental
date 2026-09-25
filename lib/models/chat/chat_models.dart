@@ -11,12 +11,16 @@ class ChatParticipant {
     required this.firstName,
     required this.lastName,
     this.profilePhoto,
+    this.isOnline = false,
+    this.lastSeenAt,
   });
 
   final String id;
   final String firstName;
   final String lastName;
   final String? profilePhoto;
+  final bool isOnline;
+  final DateTime? lastSeenAt;
 
   String get fullName => '$firstName $lastName'.trim();
 
@@ -26,7 +30,17 @@ class ChatParticipant {
       firstName: m['firstName']?.toString() ?? '',
       lastName: m['lastName']?.toString() ?? '',
       profilePhoto: normalizeMediaUrl(m['profilePhoto']?.toString()),
+      isOnline: m['isOnline'] == true,
+      lastSeenAt: ChatMessage._parseOptionalDate(m['lastSeenAt']),
     );
+  }
+
+  /// Some responses (e.g. the nested `conversation` object on `POST /chats`)
+  /// list participants as bare ID strings rather than full objects — this
+  /// still gives callers something to match against `otherParticipant()`,
+  /// just without a name/photo/presence to show.
+  factory ChatParticipant.fromId(String id) {
+    return ChatParticipant(id: id, firstName: '', lastName: '');
   }
 }
 
@@ -44,7 +58,9 @@ class ChatMessage {
     required this.content,
     this.itemId,
     this.itemTitle,
-    this.status = 'sent',
+    this.isRead = false,
+    this.deliveredAt,
+    this.readAt,
     this.isDeleted = false,
     required this.createdAt,
   });
@@ -58,11 +74,47 @@ class ChatMessage {
   final String content;
   final String? itemId;
   final String? itemTitle;
-  final String status; // sent | delivered | read
+  final bool isRead;
+  // Absent on the wire until the corresponding event actually happens — see
+  // guide §4 ("a field that has not happened yet is absent, not null").
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
   final bool isDeleted;
   final DateTime createdAt;
 
-  bool get isRead => status == 'read';
+  /// Tick state for the UI: 'sent' (single check), 'delivered' (double
+  /// check, gray), or 'read' (double check, blue). Derived from the
+  /// message's own timestamps/flags — plus whatever `messages_delivered`
+  /// / `messages_read` socket events have since applied via [copyWith] —
+  /// rather than a server-sent enum, since the real API never sends one.
+  String get status {
+    if (isRead || readAt != null) return 'read';
+    if (deliveredAt != null) return 'delivered';
+    return 'sent';
+  }
+
+  ChatMessage copyWith({
+    bool? isRead,
+    DateTime? deliveredAt,
+    DateTime? readAt,
+  }) {
+    return ChatMessage(
+      id: id,
+      conversationId: conversationId,
+      senderId: senderId,
+      senderName: senderName,
+      senderPhoto: senderPhoto,
+      rawContent: rawContent,
+      content: content,
+      itemId: itemId,
+      itemTitle: itemTitle,
+      isRead: isRead ?? this.isRead,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
+      readAt: readAt ?? this.readAt,
+      isDeleted: isDeleted,
+      createdAt: createdAt,
+    );
+  }
 
   factory ChatMessage.fromRaw({
     required String id,
@@ -71,7 +123,9 @@ class ChatMessage {
     String senderName = '',
     String? senderPhoto,
     required String rawContent,
-    String status = 'sent',
+    bool isRead = false,
+    DateTime? deliveredAt,
+    DateTime? readAt,
     bool isDeleted = false,
     required DateTime createdAt,
   }) {
@@ -86,7 +140,9 @@ class ChatMessage {
       content: parsed.content,
       itemId: parsed.itemId,
       itemTitle: parsed.itemTitle,
-      status: status,
+      isRead: isRead,
+      deliveredAt: deliveredAt,
+      readAt: readAt,
       isDeleted: isDeleted,
       createdAt: createdAt,
     );
@@ -110,12 +166,21 @@ class ChatMessage {
 
     return ChatMessage.fromRaw(
       id: m['_id']?.toString() ?? m['id']?.toString() ?? '',
-      conversationId: m['conversationId']?.toString() ?? conversationId,
+      // `conversationId` is the field that works everywhere (confirmed
+      // with backend — see docs/backend-chat-socket-questions.md item #1);
+      // `conversation` is kept as a fallback since raw REST message objects
+      // still use it, before finally falling back to whatever the caller
+      // already knows.
+      conversationId: m['conversationId']?.toString() ??
+          m['conversation']?.toString() ??
+          conversationId,
       senderId: senderId,
       senderName: senderName,
       senderPhoto: senderPhoto,
       rawContent: m['content']?.toString() ?? '',
-      status: m['status']?.toString() ?? 'sent',
+      isRead: m['isRead'] == true,
+      deliveredAt: _parseOptionalDate(m['deliveredAt']),
+      readAt: _parseOptionalDate(m['readAt']),
       isDeleted: m['isDeleted'] == true,
       createdAt: _parseDate(m['createdAt']),
     );
@@ -144,6 +209,14 @@ class ChatMessage {
     if (raw == null) return DateTime.now();
     if (raw is DateTime) return raw;
     return DateTime.tryParse(raw.toString()) ?? DateTime.now();
+  }
+
+  /// Unlike [_parseDate], stays null when [raw] is absent — used for
+  /// deliveredAt/readAt, which genuinely mean "hasn't happened yet".
+  static DateTime? _parseOptionalDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString());
   }
 
   static _ParsedMessageContent _parseContent(String rawContent) {
@@ -199,7 +272,7 @@ class ChatConversation {
     this.itemId,
     this.itemTitle,
     this.lastMessage,
-    this.unreadCountByUser = const <String, int>{},
+    this.unread = 0,
     required this.updatedAt,
     this.archivedBy = const <String>[],
   });
@@ -209,22 +282,21 @@ class ChatConversation {
   final String? itemId;
   final String? itemTitle;
   final ChatMessage? lastMessage;
-  /// Per-user unread counts, keyed by user ID — the API returns
-  /// `unreadCount` as e.g. `{ "<userId>": 1 }`, not a single number, since
-  /// each participant has their own unread count for the conversation.
-  final Map<String, int> unreadCountByUser;
+  /// The calling user's own unread count for this conversation — the API
+  /// returns this directly as a top-level `unread` field (it also returns a
+  /// per-user `unreadCount` map, but nothing in the app ever needs anyone
+  /// else's count, so there's no reason to carry the whole map around).
+  final int unread;
   final DateTime updatedAt;
   /// User IDs who have archived this conversation (per the `archivedBy`
   /// field on GET /chats). Archiving is one-sided — the other participant
   /// still sees the conversation normally.
   final List<String> archivedBy;
 
-  int unreadCountFor(String userId) => unreadCountByUser[userId] ?? 0;
-
   bool isArchivedFor(String userId) => archivedBy.contains(userId);
 
   ChatConversation copyWith({
-    Map<String, int>? unreadCountByUser,
+    int? unread,
     DateTime? updatedAt,
     ChatMessage? lastMessage,
     List<String>? archivedBy,
@@ -235,7 +307,7 @@ class ChatConversation {
       itemId: itemId,
       itemTitle: itemTitle,
       lastMessage: lastMessage ?? this.lastMessage,
-      unreadCountByUser: unreadCountByUser ?? this.unreadCountByUser,
+      unread: unread ?? this.unread,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedBy: archivedBy ?? this.archivedBy,
     );
@@ -262,6 +334,10 @@ class ChatConversation {
           participants.add(
             ChatParticipant.fromMap(Map<String, dynamic>.from(p)),
           );
+        } else if (p is String && p.trim().isNotEmpty) {
+          // Some responses (e.g. POST /chats's nested conversation object)
+          // list participants as bare ID strings instead of full objects.
+          participants.add(ChatParticipant.fromId(p.trim()));
         }
       }
     }
@@ -285,15 +361,8 @@ class ChatConversation {
       itemId = item;
     }
 
-    final unreadRaw = m['unreadCount'];
-    final unreadCountByUser = <String, int>{};
-    if (unreadRaw is Map) {
-      unreadRaw.forEach((key, value) {
-        if (value is num) {
-          unreadCountByUser[key.toString()] = value.toInt();
-        }
-      });
-    }
+    final unreadRaw = m['unread'];
+    final unread = unreadRaw is num ? unreadRaw.toInt() : 0;
 
     final archivedByRaw = m['archivedBy'];
     final archivedBy = archivedByRaw is List
@@ -306,7 +375,7 @@ class ChatConversation {
       itemId: itemId,
       itemTitle: itemTitle,
       lastMessage: lastMessage,
-      unreadCountByUser: unreadCountByUser,
+      unread: unread,
       updatedAt: ChatMessage._parseDate(m['updatedAt'] ?? m['createdAt']),
       archivedBy: archivedBy,
     );
@@ -338,6 +407,20 @@ class MessagesResult {
   final bool success;
   final String message;
   final List<ChatMessage> messages;
+}
+
+/// `GET /chats/unread-count` — the app-wide badge summary, distinct from
+/// any single conversation's own `unread` count.
+class UnreadSummaryResult {
+  const UnreadSummaryResult({
+    required this.success,
+    this.total = 0,
+    this.conversations = 0,
+  });
+
+  final bool success;
+  final int total;
+  final int conversations;
 }
 
 class StartConversationResult {

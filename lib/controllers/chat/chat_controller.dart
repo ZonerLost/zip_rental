@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:zip_peer/controllers/bottom_nav_controller.dart';
 import 'package:zip_peer/controllers/notifications/notifications_controller.dart';
 import 'package:zip_peer/models/chat/chat_models.dart';
 import 'package:zip_peer/models/notifications/notification_models.dart';
@@ -16,7 +17,12 @@ class ChatController extends GetxController {
     ChatSocketService? socketService,
   }) : _chatService = chatService ?? ChatService(),
        _authService = authService ?? AuthService(),
-       _socket = socketService ?? ChatSocketService();
+       // Shared across the whole app — see ChatSocketService.shared. This
+       // controller only cancels its OWN subscriptions on close; it must
+       // never disconnect/dispose the shared socket itself, since a thread
+       // screen (ChatMessagesController) may still be relying on it, and
+       // this controller gets recreated every time the Chats tab reopens.
+       _socket = socketService ?? ChatSocketService.shared;
 
   final ChatService _chatService;
   final AuthService _authService;
@@ -118,6 +124,11 @@ class ChatController extends GetxController {
     );
     _typingSub = _socket.onTyping.listen(_handleTypingForList);
     _notificationSub = _socket.onNotification.listen(_handleRealtimeNotification);
+    // No message_deleted listener here on purpose: backend confirmed a
+    // conversation_updated now always follows a delete (with the preview
+    // and unread count already reconciled server-side), so
+    // _handleConversationUpdated's reload already covers this. A dedicated
+    // listener here would just double the reload per delete.
   }
 
   void _handleTypingForList(SocketTypingEvent event) {
@@ -163,6 +174,7 @@ class ChatController extends GetxController {
       final updated = conversations.removeAt(activeIdx);
       conversations.insert(0, updated);
       update();
+      _syncUnreadBadge();
       return;
     }
 
@@ -183,19 +195,29 @@ class ChatController extends GetxController {
 
   ChatConversation _applyIncomingMessage(ChatConversation old, ChatMessage msg) {
     final isFromMe = msg.senderId == currentUserId;
-    final updatedUnread = Map<String, int>.from(old.unreadCountByUser);
-    if (!isFromMe && (currentUserId ?? '').isNotEmpty) {
-      updatedUnread[currentUserId!] = (updatedUnread[currentUserId!] ?? 0) + 1;
-    }
     return old.copyWith(
       lastMessage: msg,
-      unreadCountByUser: updatedUnread,
+      unread: isFromMe ? old.unread : old.unread + 1,
       updatedAt: msg.createdAt,
     );
   }
 
   void _handleConversationUpdated(Map<String, dynamic> data) {
-    // Server sent a full refresh signal — reload conversations
+    // Confirmed with backend: this event name is overloaded — `type` is
+    // "conversation" for an actual chat update, but "notification" for an
+    // in-app notification (booking accepted, review received, etc.) piggy-
+    // backed onto the same event name. Route that case through the same
+    // handler as the dedicated 'notification' socket event instead of
+    // misreading it as a conversation change and reloading the chat list
+    // for no reason.
+    if (data['type']?.toString() == 'notification') {
+      final notification = data['notification'];
+      if (notification is Map) {
+        _handleRealtimeNotification(Map<String, dynamic>.from(notification));
+      }
+      return;
+    }
+    // type == "conversation" (or absent, for safety) — reload conversations.
     loadConversations();
   }
 
@@ -211,6 +233,7 @@ class ChatController extends GetxController {
     if (result.success) {
       conversations = result.conversations;
       errorMessage = null;
+      _syncUnreadBadge();
     } else {
       errorMessage = result.message;
     }
@@ -495,12 +518,11 @@ class ChatController extends GetxController {
   }
 
   void resetUnreadCount(String conversationId) {
-    if ((currentUserId ?? '').isEmpty) return;
-
     final activeIdx = conversations.indexWhere((c) => c.id == conversationId);
     if (activeIdx != -1) {
-      conversations[activeIdx] = _withUnreadCleared(conversations[activeIdx]);
+      conversations[activeIdx] = conversations[activeIdx].copyWith(unread: 0);
       update();
+      _syncUnreadBadge();
       return;
     }
 
@@ -508,16 +530,19 @@ class ChatController extends GetxController {
         archivedConversations.indexWhere((c) => c.id == conversationId);
     if (archivedIdx != -1) {
       archivedConversations[archivedIdx] =
-          _withUnreadCleared(archivedConversations[archivedIdx]);
+          archivedConversations[archivedIdx].copyWith(unread: 0);
       update();
     }
   }
 
-  ChatConversation _withUnreadCleared(ChatConversation conversation) {
-    final updatedUnread = Map<String, int>.from(
-      conversation.unreadCountByUser,
-    )..[currentUserId!] = 0;
-    return conversation.copyWith(unreadCountByUser: updatedUnread);
+  /// Keeps the bottom-nav "Chats" badge in sync with what's already loaded
+  /// here, instead of round-tripping `/chats/unread-count` again on every
+  /// local change — that endpoint is only needed to seed the badge before
+  /// this controller has ever loaded anything (see BottomNavController).
+  void _syncUnreadBadge() {
+    if (!Get.isRegistered<BottomNavController>()) return;
+    final total = conversations.fold<int>(0, (sum, c) => sum + c.unread);
+    Get.find<BottomNavController>().setUnreadChatCount(total);
   }
 
   @override
@@ -531,7 +556,11 @@ class ChatController extends GetxController {
       timer.cancel();
     }
     _typingFallbackTimers.clear();
-    _socket.dispose();
+    // Deliberately NOT disposing _socket here — it's the shared, app-wide
+    // socket (see ChatSocketService.shared), not owned by this controller.
+    // This controller gets recreated every time the Chats tab reopens, but
+    // the connection itself should persist for the whole session; it's
+    // torn down on logout instead (see LogoutBottomSheet).
     super.onClose();
   }
 }

@@ -232,11 +232,41 @@ class ChatService extends ApiServiceBase {
             ))
         .toList();
 
-    // API returns newest-first; reverse so oldest is first for the UI
+    // API already returns oldest→newest within the page (confirmed against
+    // the live backend, and matches the documented contract) — no reversal
+    // needed; the message screen's own ListView(reverse: true) handles
+    // bottom-anchoring for display.
     return MessagesResult(
       success: true,
       message: msg,
-      messages: messages.reversed.toList(),
+      messages: messages,
+    );
+  }
+
+  // ── Unread badge summary ──────────────────────────────────────────────────
+  Future<UnreadSummaryResult> getUnreadCount() async {
+    final response = await request(
+      method: ApiHttpMethod.get,
+      path: '/chats/unread-count',
+      requiresAuth: true,
+    );
+
+    final ok = resolveSuccess(response);
+    if (!ok) return const UnreadSummaryResult(success: false);
+
+    final map = asMap(response.body);
+    final data = map['data'] ?? map;
+    final total = data is Map && data['total'] is num
+        ? (data['total'] as num).toInt()
+        : 0;
+    final conversationsCount = data is Map && data['conversations'] is num
+        ? (data['conversations'] as num).toInt()
+        : 0;
+
+    return UnreadSummaryResult(
+      success: true,
+      total: total,
+      conversations: conversationsCount,
     );
   }
 

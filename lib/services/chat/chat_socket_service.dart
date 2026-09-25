@@ -10,6 +10,24 @@ class ChatSocketService {
   static const String _socketUrl =
       'https://au2p3vkiqi.us-east-1.awsapprunner.com';
 
+  // The chat list screen and every open conversation thread each used to
+  // create their own ChatSocketService — meaning two (or more) separate
+  // socket.io connections per session for no reason. This shared instance
+  // is what every controller should use by default; only the explicit
+  // constructor (for tests / DI) creates a standalone one. Lifecycle is
+  // tied to the auth session, not to any one controller — see
+  // [resetShared], called on logout.
+  static ChatSocketService? _shared;
+  static ChatSocketService get shared => _shared ??= ChatSocketService();
+
+  /// Tears down and drops the shared instance. Call on logout — a fresh
+  /// [shared] will be created (and can reconnect) the next time something
+  /// asks for it, e.g. after a subsequent login.
+  static void resetShared() {
+    _shared?.dispose();
+    _shared = null;
+  }
+
   io.Socket? _socket;
   bool _connected = false;
 
@@ -26,15 +44,50 @@ class ChatSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _connectionStatusCtrl =
       StreamController<bool>.broadcast();
+  final _messagesDeliveredCtrl =
+      StreamController<SocketReceiptEvent>.broadcast();
+  final _messagesReadCtrl =
+      StreamController<SocketReceiptEvent>.broadcast();
+  final _messageDeletedCtrl =
+      StreamController<SocketMessageDeletedEvent>.broadcast();
+  final _presenceUpdateCtrl =
+      StreamController<SocketPresenceEvent>.broadcast();
 
   Stream<ChatMessage> get onNewMessage => _newMessageCtrl.stream;
   Stream<Map<String, dynamic>> get onConversationUpdated =>
       _conversationUpdatedCtrl.stream;
   Stream<SocketTypingEvent> get onTyping => _typingCtrl.stream;
-  /// Real-time app notifications (booking accepted, review received, etc.)
-  /// — distinct from `conversation_updated`, which is chat-specific.
+  /// Real-time app notifications (booking accepted, review received, etc.).
+  /// Confirmed with backend: `conversation_updated` is also (separately)
+  /// used to carry these, tagged `type: "notification"` — that variant is
+  /// unwrapped and forwarded to this same stream by ChatController rather
+  /// than being mishandled as a conversation change; this event name
+  /// itself is untouched by that.
   Stream<Map<String, dynamic>> get onNotification => _notificationCtrl.stream;
   Stream<bool> get onConnectionStatus => _connectionStatusCtrl.stream;
+  /// Fires when the recipient's app receives a message (single tick ->
+  /// double tick, gray).
+  Stream<SocketReceiptEvent> get onMessagesDelivered =>
+      _messagesDeliveredCtrl.stream;
+  /// Fires when the recipient actually opens the conversation (double
+  /// tick -> double tick, blue/"seen").
+  Stream<SocketReceiptEvent> get onMessagesRead => _messagesReadCtrl.stream;
+  /// Fires on every participant's socket when a message is deleted by
+  /// anyone in the conversation. A `conversation_updated` (with the
+  /// preview/unread count already reconciled server-side) always follows
+  /// right after — this event is for removing the message from an
+  /// *already-open* thread; the list itself only needs to react to
+  /// `conversation_updated`, not this.
+  Stream<SocketMessageDeletedEvent> get onMessageDeleted =>
+      _messageDeletedCtrl.stream;
+  /// Fires on other participants' sockets both when a user connects
+  /// (`isOnline: true`) and disconnects (`isOnline: false`, confirmed by
+  /// backend — up to ~45s after an ungraceful disconnect, e.g. app killed
+  /// or network drop, since it's driven by an unanswered heartbeat; not at
+  /// all if the user has another device still connected, since presence is
+  /// tracked per-user, not per-socket).
+  Stream<SocketPresenceEvent> get onPresenceUpdate =>
+      _presenceUpdateCtrl.stream;
 
   // ── Connect ──────────────────────────────────────────────────────────────
   void connect(String accessToken) {
@@ -73,7 +126,11 @@ class ChatSocketService {
       ..on('conversation_updated', _handleConversationUpdated)
       ..on('user_typing', _handleUserTyping)
       ..on('user_stop_typing', _handleUserStopTyping)
-      ..on('notification', _handleNotification);
+      ..on('notification', _handleNotification)
+      ..on('messages_delivered', _handleMessagesDelivered)
+      ..on('messages_read', _handleMessagesRead)
+      ..on('message_deleted', _handleMessageDeleted)
+      ..on('presence_update', _handlePresenceUpdate);
 
     _socket!.connect();
   }
@@ -110,8 +167,17 @@ class ChatSocketService {
   void _handleNewMessage(dynamic data) {
     if (data is! Map) return;
     final m = Map<String, dynamic>.from(data);
+    // Originally this event only carried `conversation`, not
+    // `conversationId` (every other event's field), which meant this
+    // always resolved to '' and ChatMessagesController's
+    // `if (msg.conversationId != conversationId)` silently dropped every
+    // real-time message — see docs/backend-chat-socket-questions.md item
+    // #1. Backend has since added `conversationId` here too (kept
+    // `conversation` for REST-shape consistency); it's now the one key
+    // that works on every chat event, so it's checked first, with the
+    // original field kept as a fallback for safety.
     final conversationId =
-        m['conversationId']?.toString() ?? '';
+        m['conversationId']?.toString() ?? m['conversation']?.toString() ?? '';
     final msg = ChatMessage.fromMap(m, conversationId);
     _newMessageCtrl.add(msg);
   }
@@ -146,6 +212,63 @@ class ChatSocketService {
     }
   }
 
+  void _handleMessagesDelivered(dynamic data) {
+    if (data is! Map) return;
+    final m = Map<String, dynamic>.from(data);
+    _messagesDeliveredCtrl.add(SocketReceiptEvent(
+      conversationId: m['conversationId']?.toString() ?? '',
+      messageIds: _toStringList(m['messageIds']),
+      at: _parseDate(m['deliveredAt']),
+    ));
+  }
+
+  void _handleMessagesRead(dynamic data) {
+    if (data is! Map) return;
+    final m = Map<String, dynamic>.from(data);
+    _messagesReadCtrl.add(SocketReceiptEvent(
+      conversationId: m['conversationId']?.toString() ?? '',
+      messageIds: _toStringList(m['messageIds']),
+      at: _parseDate(m['readAt']),
+    ));
+  }
+
+  void _handleMessageDeleted(dynamic data) {
+    if (data is! Map) return;
+    final m = Map<String, dynamic>.from(data);
+    _messageDeletedCtrl.add(SocketMessageDeletedEvent(
+      conversationId: m['conversationId']?.toString() ?? '',
+      messageId: m['messageId']?.toString() ?? '',
+      deletedBy: m['deletedBy']?.toString() ?? '',
+    ));
+  }
+
+  void _handlePresenceUpdate(dynamic data) {
+    if (data is! Map) return;
+    final m = Map<String, dynamic>.from(data);
+    _presenceUpdateCtrl.add(SocketPresenceEvent(
+      userId: m['userId']?.toString() ?? '',
+      isOnline: m['isOnline'] == true,
+      lastSeenAt: _parseOptionalDate(m['lastSeenAt']),
+    ));
+  }
+
+  static List<String> _toStringList(dynamic value) {
+    if (value is! List) return const <String>[];
+    return value.map((e) => e.toString()).toList(growable: false);
+  }
+
+  static DateTime _parseDate(dynamic raw) {
+    if (raw == null) return DateTime.now();
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString()) ?? DateTime.now();
+  }
+
+  static DateTime? _parseOptionalDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString());
+  }
+
   // ── Dispose ───────────────────────────────────────────────────────────────
   void dispose() {
     disconnect();
@@ -154,7 +277,44 @@ class ChatSocketService {
     _typingCtrl.close();
     _notificationCtrl.close();
     _connectionStatusCtrl.close();
+    _messagesDeliveredCtrl.close();
+    _messagesReadCtrl.close();
+    _messageDeletedCtrl.close();
+    _presenceUpdateCtrl.close();
   }
+}
+
+class SocketReceiptEvent {
+  const SocketReceiptEvent({
+    required this.conversationId,
+    required this.messageIds,
+    required this.at,
+  });
+  final String conversationId;
+  final List<String> messageIds;
+  final DateTime at;
+}
+
+class SocketMessageDeletedEvent {
+  const SocketMessageDeletedEvent({
+    required this.conversationId,
+    required this.messageId,
+    required this.deletedBy,
+  });
+  final String conversationId;
+  final String messageId;
+  final String deletedBy;
+}
+
+class SocketPresenceEvent {
+  const SocketPresenceEvent({
+    required this.userId,
+    required this.isOnline,
+    this.lastSeenAt,
+  });
+  final String userId;
+  final bool isOnline;
+  final DateTime? lastSeenAt;
 }
 
 class SocketTypingEvent {

@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 /android/.gradle-user-home/
 Mobile App Functionality Document for larissa18 (4).pdf
+docs/backend-chat-socket-questions.md

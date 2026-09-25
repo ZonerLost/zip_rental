@@ -24,13 +24,63 @@ const _conversationMap = {
     'sender': '6a0b0c3879fdc48385185a68',
     'createdAt': '2026-07-18T19:00:35.078Z',
   },
-  'unreadCount': {'6a5607949482b0d7b6a57f76': 1},
+  // The API also returns a per-user `unreadCount` map (`{ "<userId>": n }`),
+  // but `unread` is the caller's own count, precomputed server-side —
+  // confirmed live against the production API, where both fields are
+  // present on every conversation row. The app reads `unread` directly
+  // rather than resolving "who am I" and looking itself up in the map.
+  'unread': 1,
   'archivedBy': [],
   'createdAt': '2026-07-15T10:59:46.090Z',
   'updatedAt': '2026-07-18T19:00:35.571Z',
 };
 
 void main() {
+  group('ChatMessage.fromMap conversationId resolution', () {
+    test('prefers conversationId when both fields are present', () {
+      // Current production shape (backend fix, 2026-09-25): new_message
+      // now carries both fields — `conversationId` is the one that works
+      // on every chat event, `conversation` is kept for REST-shape
+      // consistency. See docs/backend-chat-socket-questions.md item #1.
+      final msg = ChatMessage.fromMap({
+        '_id': 'msg1',
+        'conversationId': 'conv1',
+        'conversation': 'conv1',
+        'sender': {'_id': 'renter1', 'firstName': 'buyer', 'lastName': 'one'},
+        'content': 'hello',
+        'createdAt': '2026-09-23T11:59:39.923Z',
+      }, '');
+      expect(msg.conversationId, 'conv1');
+    });
+
+    test('falls back to `conversation` when conversationId is absent', () {
+      // Originally the *only* shape new_message sent, before the backend
+      // fix above — before this fallback, ChatSocketService always
+      // resolved this to '', so every real-time incoming message was
+      // silently dropped by ChatMessagesController's conversationId check.
+      // Kept as a fallback since raw REST message objects still use
+      // `conversation` only.
+      final msg = ChatMessage.fromMap({
+        '_id': 'msg1',
+        'conversation': 'conv1',
+        'sender': {'_id': 'renter1', 'firstName': 'buyer', 'lastName': 'one'},
+        'content': 'hello',
+        'createdAt': '2026-09-23T11:59:39.923Z',
+      }, '');
+      expect(msg.conversationId, 'conv1');
+    });
+
+    test('falls back to the caller-supplied id when both are absent', () {
+      final msg = ChatMessage.fromMap({
+        '_id': 'msg1',
+        'sender': 'renter1',
+        'content': 'hello',
+        'createdAt': '2026-09-23T11:59:39.923Z',
+      }, 'caller-known-id');
+      expect(msg.conversationId, 'caller-known-id');
+    });
+  });
+
   group('ChatConversation.fromMap (spec example)', () {
     final conv = ChatConversation.fromMap(_conversationMap, '');
 
@@ -40,11 +90,8 @@ void main() {
       expect(conv.itemTitle, 'Dirt Bike Duke 790');
     });
 
-    test('unreadCount is a per-user map, not a flat number', () {
-      // This is the exact shape the API returns — a map keyed by user ID.
-      // Parsing it as a plain int (the old behavior) would always yield 0.
-      expect(conv.unreadCountFor('6a5607949482b0d7b6a57f76'), 1);
-      expect(conv.unreadCountFor('someone-else'), 0);
+    test('unread reads the caller-specific count directly', () {
+      expect(conv.unread, 1);
     });
 
     test('archivedBy defaults to not-archived for everyone', () {
@@ -56,6 +103,54 @@ void main() {
     test('otherParticipant resolves relative to the current user', () {
       expect(conv.otherParticipant('renter1')?.id, 'owner1');
       expect(conv.otherParticipant('owner1')?.id, 'renter1');
+    });
+
+    test('participant presence (isOnline/lastSeenAt) is parsed', () {
+      // Real GET /chats shape: {"isOnline":false,"_id":"...",...,"lastSeenAt":null}
+      final withPresence = ChatConversation.fromMap({
+        ..._conversationMap,
+        'participants': [
+          {
+            '_id': 'renter1',
+            'firstName': 'buyer',
+            'lastName': 'one',
+            'isOnline': true,
+            'lastSeenAt': null,
+          },
+          {
+            '_id': 'owner1',
+            'firstName': 'Moiz',
+            'lastName': 'Rana',
+            'isOnline': false,
+            'lastSeenAt': '2026-07-18T19:00:35.078Z',
+          },
+        ],
+      }, '');
+      expect(withPresence.otherParticipant('owner1')?.isOnline, isTrue);
+      expect(withPresence.otherParticipant('owner1')?.lastSeenAt, isNull);
+      expect(withPresence.otherParticipant('renter1')?.isOnline, isFalse);
+      expect(
+        withPresence.otherParticipant('renter1')?.lastSeenAt,
+        DateTime.parse('2026-07-18T19:00:35.078Z'),
+      );
+    });
+  });
+
+  group('ChatConversation participant parsing (POST /chats response)', () {
+    test('accepts participants as bare ID strings, not just objects', () {
+      // Confirmed live: the nested `conversation` object on POST /chats's
+      // response lists participants as raw ID strings, e.g.
+      // "participants": ["6ab106ab618496e4dbb8fe1e", "6ab0bfc5a71e40aeb370f177"]
+      final conv = ChatConversation.fromMap({
+        '_id': 'conv1',
+        'participants': ['renter1', 'owner1'],
+        'unread': 0,
+        'archivedBy': [],
+        'updatedAt': '2026-07-18T19:00:35.571Z',
+      }, '');
+      expect(conv.participants, hasLength(2));
+      expect(conv.participants.map((p) => p.id), containsAll(['renter1', 'owner1']));
+      expect(conv.otherParticipant('renter1')?.id, 'owner1');
     });
   });
 

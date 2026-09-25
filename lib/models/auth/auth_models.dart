@@ -223,10 +223,16 @@ class AuthResult {
     required this.message,
     this.tokens,
     this.data,
+    this.statusCode,
   });
 
   final bool success;
   final String message;
   final AuthTokens? tokens;
   final Map<String, dynamic>? data;
+
+  /// Raw HTTP status code of the response, when available. Used to tell a
+  /// definitive auth rejection (401/403) apart from a network/offline
+  /// failure, which need different handling on refresh.
+  final int? statusCode;
 }

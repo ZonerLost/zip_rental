@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:zip_peer/services/auth/auth_session_store.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/token_refresh_service.dart';
+import 'package:zip_peer/services/chat/chat_socket_service.dart';
+import 'package:zip_peer/views/screens/auth/login.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _listenForSessionExpiry();
   await _maybeStartTokenRefresh();
   runApp(MyApp());
 }
@@ -20,6 +23,14 @@ Future<void> _maybeStartTokenRefresh() async {
   final authService = AuthService();
   await authService.ensureAccessToken();
   unawaited(TokenRefreshService.start());
+}
+
+void _listenForSessionExpiry() {
+  AuthService.onSessionExpired.listen((_) {
+    ChatSocketService.resetShared();
+    Get.offAll(() => const LoginScreen());
+    Get.snackbar('Session Expired', 'Please sign in again to continue.');
+  });
 }
 
 class MyApp extends StatelessWidget {

@@ -82,6 +82,8 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
         participantName: other?.fullName ?? 'User',
         participantPhoto: other?.profilePhoto,
         participantId: other?.id,
+        participantIsOnline: other?.isOnline ?? false,
+        participantLastSeenAt: other?.lastSeenAt,
         isArchived: conv.isArchivedFor(currentUserId),
       ),
     );
@@ -313,7 +315,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                         final lastMsg = conv.lastMessage?.isDeleted == true
                             ? 'Message deleted'
                             : conv.lastMessage?.content ?? '';
-                        final unreadCount = conv.unreadCountFor(currentUserId);
+                        final unreadCount = conv.unread;
                         final hasUnread = unreadCount > 0;
                         final isTyping = _controller.isTypingInConversation(
                           conv.id,

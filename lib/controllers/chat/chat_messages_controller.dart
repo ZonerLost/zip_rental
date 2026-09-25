@@ -12,16 +12,29 @@ class ChatMessagesController extends GetxController {
     required this.conversationId,
     this.activeItemId,
     this.activeItemTitle,
+    this.participantId,
+    bool initialParticipantIsOnline = false,
+    DateTime? initialParticipantLastSeenAt,
     ChatService? chatService,
     AuthService? authService,
     ChatSocketService? socketService,
   }) : _chatService = chatService ?? ChatService(),
        _authService = authService ?? AuthService(),
-       _socket = socketService ?? ChatSocketService();
+       // Shared with the chat list screen's socket — see
+       // ChatSocketService.shared. Previously each screen opened its own
+       // separate connection despite this comment already claiming
+       // otherwise; now it's actually true.
+       _socket = socketService ?? ChatSocketService.shared,
+       otherIsOnline = initialParticipantIsOnline,
+       otherLastSeenAt = initialParticipantLastSeenAt;
 
   final String conversationId;
   final String? activeItemId;
   final String? activeItemTitle;
+  /// The other participant's user ID — needed to filter presence_update
+  /// events to just this conversation's counterpart. Optional because not
+  /// every call site knows it up front (matches ChatMessagesScreen).
+  final String? participantId;
   final ChatService _chatService;
   final AuthService _authService;
   final ChatSocketService _socket;
@@ -34,6 +47,11 @@ class ChatMessagesController extends GetxController {
   String? errorMessage;
   String? currentUserId;
   bool otherUserIsTyping = false;
+  /// Live presence for [participantId] — seeded from whatever the caller
+  /// already knew (e.g. the snapshot on GET /chats) and updated in real
+  /// time via presence_update while this screen is open.
+  bool otherIsOnline;
+  DateTime? otherLastSeenAt;
 
   // Debounce timer to stop emitting typing after user pauses
   Timer? _typingTimer;
@@ -41,7 +59,10 @@ class ChatMessagesController extends GetxController {
 
   StreamSubscription<ChatMessage>? _newMsgSub;
   StreamSubscription<SocketTypingEvent>? _typingSub;
-  StreamSubscription<Map<String, dynamic>>? _convUpdatedSub;
+  StreamSubscription<SocketReceiptEvent>? _deliveredSub;
+  StreamSubscription<SocketReceiptEvent>? _readSub;
+  StreamSubscription<SocketMessageDeletedEvent>? _deletedSub;
+  StreamSubscription<SocketPresenceEvent>? _presenceSub;
 
   @override
   void onInit() {
@@ -76,7 +97,8 @@ class ChatMessagesController extends GetxController {
 
   // ── Socket ────────────────────────────────────────────────────────────────
   Future<void> _connectSocket() async {
-    // Reuse an already-connected socket if possible (shared via Get.find)
+    // Reuse the shared socket if it's already connected (e.g. from the
+    // chat list screen) rather than opening a second connection.
     if (!_socket.isConnected) {
       final token = await _authService.ensureAccessToken();
       if (token != null) _socket.connect(token);
@@ -109,17 +131,53 @@ class ChatMessagesController extends GetxController {
       update();
     });
 
-    // There's no dedicated "message read" socket event — conversation_updated
-    // is the closest general-purpose signal, and it's the most plausible
-    // way a read receipt on the other end would reach us live. Refresh the
-    // thread so sent/delivered ticks can flip to read without the user
-    // having to leave and reopen the conversation.
-    _convUpdatedSub = _socket.onConversationUpdated.listen((data) {
-      final targetId = data['conversationId']?.toString() ??
-          data['_id']?.toString();
-      if (targetId != null && targetId != conversationId) return;
-      loadMessages();
+    _deliveredSub = _socket.onMessagesDelivered.listen((event) {
+      if (event.conversationId != conversationId) return;
+      _applyReceipt(event.messageIds, deliveredAt: event.at);
     });
+
+    _readSub = _socket.onMessagesRead.listen((event) {
+      if (event.conversationId != conversationId) return;
+      _applyReceipt(event.messageIds, readAt: event.at);
+    });
+
+    _deletedSub = _socket.onMessageDeleted.listen((event) {
+      if (event.conversationId != conversationId) return;
+      final removed = messages.length;
+      messages.removeWhere((m) => m.id == event.messageId);
+      if (messages.length != removed) update();
+    });
+
+    if ((participantId ?? '').isNotEmpty) {
+      _presenceSub = _socket.onPresenceUpdate.listen((event) {
+        if (event.userId != participantId) return;
+        otherIsOnline = event.isOnline;
+        otherLastSeenAt = event.lastSeenAt ?? otherLastSeenAt;
+        update();
+      });
+    }
+  }
+
+  /// Flips the tick state of the given messages in place — called from the
+  /// `messages_delivered`/`messages_read` socket listeners above.
+  void _applyReceipt(
+    List<String> messageIds, {
+    DateTime? deliveredAt,
+    DateTime? readAt,
+  }) {
+    if (messageIds.isEmpty) return;
+    final ids = messageIds.toSet();
+    var changed = false;
+    messages = messages.map((m) {
+      if (!ids.contains(m.id)) return m;
+      changed = true;
+      return m.copyWith(
+        deliveredAt: deliveredAt,
+        readAt: readAt,
+        isRead: readAt != null ? true : null,
+      );
+    }).toList();
+    if (changed) update();
   }
 
   // ── REST ──────────────────────────────────────────────────────────────────
@@ -156,7 +214,6 @@ class ChatMessagesController extends GetxController {
       conversationId: conversationId,
       senderId: currentUserId ?? '',
       rawContent: rawContent,
-      status: 'sent',
       createdAt: DateTime.now(),
     );
     messages.add(optimistic);
@@ -205,7 +262,7 @@ class ChatMessagesController extends GetxController {
       // Remove optimistic and show error
       messages.removeWhere((m) => m.id == tempId);
       debugPrint('[ChatMessages] sendMessage ✗ failed — reverted optimistic $tempId: ${result.message}');
-      Get.snackbar('Send failed', result.message);
+      Get.snackbar('Send failed', _friendlySendError(result.message));
     } else {
       debugPrint(
         '[ChatMessages] sendMessage ⚠ server reported success but returned '
@@ -213,6 +270,19 @@ class ChatMessagesController extends GetxController {
       );
     }
     update();
+  }
+
+  /// The backend sometimes surfaces raw validation strings — like "Invalid
+  /// ID format" for `POST /chats/{id}/messages`, seen even when this exact
+  /// same conversationId just succeeded on GET/other endpoints (a
+  /// server-side inconsistency, not something wrong with the ID this app
+  /// sent) — that mean nothing to a user. Swap those for plain language;
+  /// everything else passes through as the backend phrased it.
+  String _friendlySendError(String backendMessage) {
+    if (backendMessage.toLowerCase().contains('invalid id format')) {
+      return "Couldn't send that message. Try leaving and reopening this chat.";
+    }
+    return backendMessage;
   }
 
   Future<void> deleteMessage(String messageId) async {
@@ -256,7 +326,10 @@ class ChatMessagesController extends GetxController {
     _socket.leaveConversation(conversationId);
     _newMsgSub?.cancel();
     _typingSub?.cancel();
-    _convUpdatedSub?.cancel();
+    _deliveredSub?.cancel();
+    _readSub?.cancel();
+    _deletedSub?.cancel();
+    _presenceSub?.cancel();
     _typingTimer?.cancel();
     messageInputController.dispose();
     super.onClose();

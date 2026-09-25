@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/views/screens/launch/splash/onboarding.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -11,7 +12,10 @@ import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:bounce/bounce.dart';
 
 class LanguageStartScreen extends StatefulWidget {
-  const LanguageStartScreen({super.key});
+  const LanguageStartScreen({super.key, AuthService? authService})
+      : _authService = authService;
+
+  final AuthService? _authService;
 
   @override
   State<LanguageStartScreen> createState() => _LanguageStartScreenState();
@@ -19,6 +23,21 @@ class LanguageStartScreen extends StatefulWidget {
 
 class _LanguageStartScreenState extends State<LanguageStartScreen> {
   String _selected = "en"; // default English
+  late final AuthService _authService =
+      widget._authService ?? AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStoredLanguage();
+  }
+
+  Future<void> _loadStoredLanguage() async {
+    final stored = await _authService.getLanguagePreference();
+    if (stored != null && stored.isNotEmpty && mounted) {
+      setState(() => _selected = stored);
+    }
+  }
 
   final List<Map<String, dynamic>> _langs = [
     {"code": "en", "flag": "🇬🇧", "name": "English"},
@@ -117,7 +136,8 @@ class _LanguageStartScreenState extends State<LanguageStartScreen> {
             MyButton(
               height: 60,
               buttonText: "Confirm",
-              onTap: () {
+              onTap: () async {
+                await _authService.saveLanguagePreference(_selected);
                 Get.to(() => OnBoardingScreen());
               },
               backgroundColor: kPrimaryColor,

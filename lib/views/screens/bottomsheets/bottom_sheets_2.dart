@@ -11,6 +11,7 @@ import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/chat/chat_models.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/google_auth_service.dart';
+import 'package:zip_peer/services/chat/chat_socket_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/double_white_contianers.dart';
@@ -88,6 +89,12 @@ void LogoutBottomSheet(BuildContext context) {
                   if (Get.isRegistered<BottomNavController>()) {
                     Get.delete<BottomNavController>(force: true);
                   }
+                  // Tear down the shared chat socket connection — it's tied
+                  // to this session, not to any one screen (see
+                  // ChatSocketService.shared). A fresh one is created
+                  // automatically the next time chat is used, e.g. after a
+                  // subsequent login.
+                  ChatSocketService.resetShared();
 
                   Get.back();
                   Get.offAll(() => LoginScreen());

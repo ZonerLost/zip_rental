@@ -94,28 +94,66 @@ class _BottomNavBarState extends State<BottomNavBar> {
   ) {
     final isSelected = currentIndex == index;
     final isProfileItem = items[index]['isProfile'] == true;
+    final isChatsItem = items[index]['label'] == 'Chats';
     return Bounce(
       onTap: () => _navController.switchTo(index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (isProfileItem)
-              _buildProfileAvatar(nav.profilePhotoUrl, isSelected)
-            else
-              CommonImageView(
-                imagePath: items[index]['image'],
-                fit: BoxFit.cover,
-                height: 24,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                if (isProfileItem)
+                  _buildProfileAvatar(nav.profilePhotoUrl, isSelected)
+                else
+                  CommonImageView(
+                    imagePath: items[index]['image'],
+                    fit: BoxFit.cover,
+                    height: 24,
+                  ),
+                if (isChatsItem && nav.unreadChatCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: kWhite, width: 1.5),
+                      ),
+                      child: MyText(
+                        text: nav.unreadChatCount > 99
+                            ? '99+'
+                            : '${nav.unreadChatCount}',
+                        color: kWhite,
+                        size: 9,
+                        weight: FontWeight.w700,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 6),
-            MyText(
-              text: items[index]['label'],
-              color: isSelected ? kPrimaryColor : Colors.grey.shade600,
-              weight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              size: 11,
+            // FittedBox shrinks longer labels (e.g. "My Listings") to fit
+            // the item's share of the row instead of overflowing it.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: MyText(
+                text: items[index]['label'],
+                color: isSelected ? kPrimaryColor : Colors.grey.shade600,
+                weight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                size: 11,
+                maxLines: 1,
+              ),
             ),
           ],
         ),
@@ -193,12 +231,17 @@ class _BottomNavBarState extends State<BottomNavBar> {
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: List.generate(
                       6,
-                      (index) =>
-                          _buildNavItem(index, nav.currentIndex, items, nav),
+                      (index) => Expanded(
+                        child: _buildNavItem(
+                          index,
+                          nav.currentIndex,
+                          items,
+                          nav,
+                        ),
+                      ),
                     ),
                   ),
                 ),

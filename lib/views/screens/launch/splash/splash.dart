@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/notifications/notifications_service.dart';
+import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
 import 'package:zip_peer/views/screens/launch/splash/language_start.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -37,13 +38,23 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (accessToken != null && accessToken.isNotEmpty) {
-      print('Access token found: $accessToken');
       await _notificationsService.syncSavedFcmTokenOnLaunch();
       Get.offAll(() => const BottomNavBar());
       return;
     }
 
-    Get.off(() => const LanguageStartScreen());
+    // Language picker + onboarding are a first-run experience: once this
+    // device has created or logged into an account, a logged-out visit
+    // (manual logout, expired session) should land straight on Login.
+    final hasOnboarded = await _authService.hasCompletedInitialSetup();
+    if (!mounted) {
+      return;
+    }
+    if (hasOnboarded) {
+      Get.off(() => const LoginScreen());
+    } else {
+      Get.off(() => const LanguageStartScreen());
+    }
   }
 
   @override

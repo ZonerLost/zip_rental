@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/chat/chat_controller.dart';
 import 'package:zip_peer/controllers/chat/chat_messages_controller.dart';
@@ -21,6 +22,8 @@ class ChatMessagesScreen extends StatefulWidget {
     required this.participantName,
     this.participantPhoto,
     this.participantId,
+    this.participantIsOnline = false,
+    this.participantLastSeenAt,
     this.isArchived = false,
     this.activeItemId,
     this.activeItemTitle,
@@ -34,6 +37,13 @@ class ChatMessagesScreen extends StatefulWidget {
   /// participant, yet; falls back to resolving it from the loaded
   /// conversation once messages/participants are available.
   final String? participantId;
+  /// Presence, as of when this screen was opened — not live-updated while
+  /// the screen is open. Only known when navigating here from the chat
+  /// list (which already has it from GET /chats); call sites that start a
+  /// conversation fresh (e.g. from an item's detail page) don't have it,
+  /// so the header just omits the line rather than guessing.
+  final bool participantIsOnline;
+  final DateTime? participantLastSeenAt;
   /// Whether the conversation is currently archived (for the current user)
   /// — determines whether the header menu offers "Archive" or "Unarchive".
   final bool isArchived;
@@ -59,6 +69,9 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
         conversationId: widget.conversationId,
         activeItemId: widget.activeItemId,
         activeItemTitle: widget.activeItemTitle,
+        participantId: widget.participantId,
+        initialParticipantIsOnline: widget.participantIsOnline,
+        initialParticipantLastSeenAt: widget.participantLastSeenAt,
       ),
       tag: widget.conversationId,
     );
@@ -172,6 +185,21 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     return '$hour:$minute $period';
   }
 
+  /// Null when there's nothing real to show — the header simply omits the
+  /// line rather than displaying a guess. Live-updated while this screen
+  /// stays open via presence_update (see ChatMessagesController).
+  String? _presenceText(bool isOnline, DateTime? lastSeen) {
+    if (isOnline) return 'Online';
+    if (lastSeen == null) return null;
+
+    final diff = DateTime.now().difference(lastSeen);
+    if (diff.inMinutes < 1) return 'Last seen just now';
+    if (diff.inMinutes < 60) return 'Last seen ${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return 'Last seen ${diff.inHours}h ago';
+    if (diff.inDays < 7) return 'Last seen ${diff.inDays}d ago';
+    return 'Last seen ${DateFormat('MMM d').format(lastSeen)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasPhoto = (widget.participantPhoto ?? '').isNotEmpty;
@@ -237,11 +265,20 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                                     color: kPrimaryColor,
                                     weight: FontWeight.w400,
                                   )
-                                else
+                                else if (_presenceText(
+                                  controller.otherIsOnline,
+                                  controller.otherLastSeenAt,
+                                ) !=
+                                    null)
                                   MyText(
-                                    text: 'Last seen 08:00 PM',
-                                    size: 16,
-                                    color: kSubText2,
+                                    text: _presenceText(
+                                      controller.otherIsOnline,
+                                      controller.otherLastSeenAt,
+                                    )!,
+                                    size: 13,
+                                    color: controller.otherIsOnline
+                                        ? kPrimaryColor
+                                        : kSubText2,
                                     weight: FontWeight.w400,
                                   ),
                               ],

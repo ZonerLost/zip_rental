@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
+import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -18,6 +21,7 @@ class OnBoardingScreen extends StatefulWidget {
 
 class _OnBoardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController = PageController();
+  final AuthService _authService = AuthService();
   int _currentPage = 0;
 
   final List<OnboardingData> _pages = [
@@ -61,8 +65,16 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       );
     } else {
       // When it's the last page → go to login
-      Get.offAll(() => LoginScreen());
+      _finishOnboarding();
     }
+  }
+
+  // Onboarding is a first-run experience: the moment this device finishes
+  // it — however it exits, not only via a successful login/signup — the
+  // language-picker + onboarding screens are done for good on this device.
+  void _finishOnboarding() {
+    unawaited(_authService.markInitialSetupComplete());
+    Get.offAll(() => LoginScreen());
   }
 
   @override
@@ -106,9 +118,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             ),
             const Gap(16),
             Bounce(
-              onTap: () {
-                Get.offAll(() => LoginScreen());
-              },
+              onTap: _finishOnboarding,
               child: Row(
                 spacing: 5,
                 mainAxisAlignment: MainAxisAlignment.center,

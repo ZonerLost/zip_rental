@@ -21,6 +21,23 @@ class AuthService {
   late final GetConnect _client;
   final AuthSessionStore _sessionStore;
 
+  // Shared across every AuthService instance (the app constructs many —
+  // it's not a singleton), so concurrent 401s from different screens all
+  // await the SAME refresh call instead of firing several requests with the
+  // same refresh token at once. The backend rotates the refresh token on
+  // each use, so a second concurrent call using the now-stale token would
+  // otherwise fail and could wrongly look like an expired session.
+  static Future<AuthResult>? _inFlightRefresh;
+
+  // Fires exactly once per definitive session expiry (refresh token
+  // rejected by the server, not just a network hiccup), so the app can
+  // route to Login a single time instead of every screen independently
+  // surfacing "session expired" while requests keep silently failing.
+  static final StreamController<String> _sessionExpiredController =
+      StreamController<String>.broadcast();
+  static Stream<String> get onSessionExpired =>
+      _sessionExpiredController.stream;
+
   bool get _hasValidBaseUrl {
     final baseUrl = _client.baseUrl ?? '';
     if (baseUrl.isEmpty) {
@@ -34,6 +51,8 @@ class AuthService {
     return _post('/auth/register', request.toJson()).then((result) async {
       if (result.success) {
         await _sessionStore.savePendingEmail(request.email);
+        // An account now exists on this device — first-run onboarding is done.
+        await _sessionStore.markInitialSetupComplete();
       }
       return result;
     });
@@ -157,7 +176,13 @@ class AuthService {
     );
   }
 
-  Future<AuthResult> refreshToken([String? refreshToken]) async {
+  Future<AuthResult> refreshToken([String? refreshToken]) {
+    return _inFlightRefresh ??= _performRefresh(refreshToken).whenComplete(() {
+      _inFlightRefresh = null;
+    });
+  }
+
+  Future<AuthResult> _performRefresh(String? refreshToken) async {
     final token = refreshToken ?? await _sessionStore.getRefreshToken();
     if (token == null || token.isEmpty) {
       return const AuthResult(
@@ -178,13 +203,28 @@ class AuthService {
             ? result.tokens!.refreshToken
             : token,
       );
-    } else if (result.success && result.tokens == null) {
+      return result;
+    }
+
+    if (result.success && result.tokens == null) {
       return AuthResult(
         success: false,
         message: 'Refresh token response missing accessToken',
         tokens: result.tokens,
         data: result.data,
+        statusCode: result.statusCode,
       );
+    }
+
+    // A definitive rejection (401/403) means this refresh token is dead —
+    // no amount of retrying will fix it, so clear the session and let the
+    // app route to Login once. Anything else (offline, 5xx, timeout) is
+    // left alone: the stored tokens stay put and a later attempt can still
+    // succeed once connectivity/the backend recovers.
+    if (result.statusCode == 401 || result.statusCode == 403) {
+      await _sessionStore.clearTokens();
+      TokenRefreshService.stop();
+      _sessionExpiredController.add(result.message);
     }
     return result;
   }
@@ -274,6 +314,12 @@ class AuthService {
   Future<String?> getLanguagePreference() =>
       _sessionStore.getLanguagePreference();
 
+  Future<bool> hasCompletedInitialSetup() =>
+      _sessionStore.hasCompletedInitialSetup();
+
+  Future<void> markInitialSetupComplete() =>
+      _sessionStore.markInitialSetupComplete();
+
   Future<String?> getAccessToken() => _sessionStore.getAccessToken();
 
   Future<String?> getRefreshToken() => _sessionStore.getRefreshToken();
@@ -318,6 +364,7 @@ class AuthService {
       message: message,
       tokens: tokens,
       data: map,
+      statusCode: response.statusCode,
     );
   }
 
