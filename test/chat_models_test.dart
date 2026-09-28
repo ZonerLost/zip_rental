@@ -81,6 +81,39 @@ void main() {
     });
   });
 
+  group('ChatMessage.fromMap image fields', () {
+    test('defaults to type "text" when the field is absent', () {
+      // Every message sent before the image-messages feature shipped has no
+      // `type` field at all — must read as text, not as some third "null"
+      // state (backend's explicit instruction).
+      final msg = ChatMessage.fromMap({
+        '_id': 'msg1',
+        'sender': 'renter1',
+        'content': 'hello',
+        'createdAt': '2026-09-23T11:59:39.923Z',
+      }, 'conv1');
+      expect(msg.type, 'text');
+      expect(msg.isImage, isFalse);
+      expect(msg.imageUrl, isNull);
+    });
+
+    test('parses type "image" and imageUrl', () {
+      final msg = ChatMessage.fromMap({
+        '_id': 'msg1',
+        'sender': 'renter1',
+        'type': 'image',
+        'imageUrl':
+            'https://zonerlost-media.s3.us-east-1.amazonaws.com/chat-photos/a.jpg',
+        'content': 'optional caption',
+        'createdAt': '2026-09-23T11:59:39.923Z',
+      }, 'conv1');
+      expect(msg.type, 'image');
+      expect(msg.isImage, isTrue);
+      expect(msg.imageUrl, contains('chat-photos/a.jpg'));
+      expect(msg.content, 'optional caption');
+    });
+  });
+
   group('ChatConversation.fromMap (spec example)', () {
     final conv = ChatConversation.fromMap(_conversationMap, '');
 

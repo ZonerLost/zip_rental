@@ -1,4 +1,6 @@
 // ignore_for_file: prefer_const_constructors, use_build_context_synchronously
+import 'dart:io';
+
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -156,16 +158,16 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     );
     if (picked == null || !mounted) return;
 
-    // NOTE: the chat API only documents `POST /chats/:id/messages` with a
-    // plain-text `{ content }` body — there's no endpoint to upload/send an
-    // image as a message. Rather than build a preview flow that would
-    // always dead-end at send time, this stops here and says so clearly.
-    Get.snackbar(
-      'Not Supported Yet',
-      'Sending images in chat needs a backend endpoint that doesn\'t exist '
-          'yet (the current API only accepts text messages).',
-      duration: const Duration(seconds: 4),
+    // Whatever's already typed goes along as the image's caption, same as
+    // most chat apps — then clear it so it isn't also sent as a follow-up
+    // text message.
+    final caption = _controller.messageInputController.text.trim();
+    _controller.messageInputController.clear();
+    await _controller.sendImageMessage(
+      File(picked.path),
+      caption: caption.isEmpty ? null : caption,
     );
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -185,10 +187,17 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     return '$hour:$minute $period';
   }
 
-  /// Null when there's nothing real to show — the header simply omits the
-  /// line rather than displaying a guess. Live-updated while this screen
-  /// stays open via presence_update (see ChatMessagesController).
+  /// Hidden for now on the backend team's explicit instruction
+  /// (docs/backend-chat-socket-questions.md section 4): the socket that
+  /// would keep this live can't connect at all right now, so every user
+  /// would read as permanently offline with an ever-more-stale "last seen"
+  /// — actively wrong, not just stale, so it's suppressed rather than
+  /// shown. Flip back on once sockets are live again (see
+  /// ChatSocketService.socketEnabled).
+  static const bool _presenceEnabled = false;
+
   String? _presenceText(bool isOnline, DateTime? lastSeen) {
+    if (!_presenceEnabled) return null;
     if (isOnline) return 'Online';
     if (lastSeen == null) return null;
 
@@ -521,6 +530,10 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                               time: _formatTime(msg.createdAt),
                               isMe: controller.isMe(msg.senderId),
                               status: msg.status,
+                              imageUrl: msg.isImage ? msg.imageUrl : null,
+                              onImageError: msg.isImage
+                                  ? () => controller.retryImageLoad(msg.id)
+                                  : null,
                             ),
                           );
                         },

@@ -1,5 +1,8 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:zip_peer/constants/app_colors.dart';
@@ -15,6 +18,17 @@ class ChatBubble extends StatelessWidget {
   /// Mirrors WhatsApp: single tick while merely sent, double tick once
   /// delivered, and the double tick only turns blue once actually read.
   final String status;
+  /// Set for image messages. Before the upload completes this is a local
+  /// file path (the optimistic message uses the picked file directly so the
+  /// image shows immediately); once the server responds it's swapped for
+  /// the real `https://` URL.
+  final String? imageUrl;
+  /// Called (at most once per bubble build) when the network image fails to
+  /// load — lets the caller refetch the message in case the URL itself was
+  /// the problem (a transient failure, or the backend's flagged future move
+  /// to expiring signed URLs) rather than leaving a permanently-broken
+  /// bubble.
+  final VoidCallback? onImageError;
 
   const ChatBubble({
     super.key,
@@ -24,7 +38,11 @@ class ChatBubble extends StatelessWidget {
     required this.time,
     required this.isMe,
     this.status = 'sent',
+    this.imageUrl,
+    this.onImageError,
   });
+
+  bool get _isNetworkImage => (imageUrl ?? '').startsWith('http');
 
   @override
   Widget build(BuildContext context) {
@@ -77,13 +95,61 @@ class ChatBubble extends StatelessWidget {
                       weight: FontWeight.w600,
                     ),
                   ),
-                MyText(
-                  text: message,
-                  size: 15,
-                  color: isMe ? kWhite : kBlack,
-                  weight: FontWeight.w400,
-                  textAlign: TextAlign.start,
-                ),
+                if ((imageUrl ?? '').isNotEmpty) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: _isNetworkImage
+                        ? Image.network(
+                            imageUrl!,
+                            width: 220,
+                            height: 220,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return SizedBox(
+                                width: 220,
+                                height: 220,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: isMe ? kWhite : kPrimaryColor,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (_, __, ___) {
+                              if (onImageError != null) {
+                                // Not called synchronously during this
+                                // build — errorBuilder can itself be
+                                // invoked mid-build, and the callback ends
+                                // up calling GetxController.update().
+                                scheduleMicrotask(onImageError!);
+                              }
+                              return Container(
+                                width: 220,
+                                height: 220,
+                                color: Colors.black12,
+                                child: const Icon(Icons.broken_image_outlined),
+                              );
+                            },
+                          )
+                        : Image.file(
+                            File(imageUrl!),
+                            width: 220,
+                            height: 220,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                  if (message.isNotEmpty) const Gap(8),
+                ],
+                if (message.isNotEmpty)
+                  MyText(
+                    text: message,
+                    size: 15,
+                    color: isMe ? kWhite : kBlack,
+                    weight: FontWeight.w400,
+                    textAlign: TextAlign.start,
+                  ),
               ],
             ),
           ),

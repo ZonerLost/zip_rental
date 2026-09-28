@@ -63,6 +63,8 @@ class ChatMessage {
     this.readAt,
     this.isDeleted = false,
     required this.createdAt,
+    this.type = 'text',
+    this.imageUrl,
   });
 
   final String id;
@@ -75,6 +77,12 @@ class ChatMessage {
   final String? itemId;
   final String? itemTitle;
   final bool isRead;
+  /// `'text'` (default — absent on the wire for every message sent before
+  /// this field existed) or `'image'`.
+  final String type;
+  final String? imageUrl;
+
+  bool get isImage => type == 'image';
   // Absent on the wire until the corresponding event actually happens — see
   // guide §4 ("a field that has not happened yet is absent, not null").
   final DateTime? deliveredAt;
@@ -113,6 +121,8 @@ class ChatMessage {
       readAt: readAt ?? this.readAt,
       isDeleted: isDeleted,
       createdAt: createdAt,
+      type: type,
+      imageUrl: imageUrl,
     );
   }
 
@@ -128,6 +138,8 @@ class ChatMessage {
     DateTime? readAt,
     bool isDeleted = false,
     required DateTime createdAt,
+    String type = 'text',
+    String? imageUrl,
   }) {
     final parsed = _parseContent(rawContent);
     return ChatMessage(
@@ -145,6 +157,8 @@ class ChatMessage {
       readAt: readAt,
       isDeleted: isDeleted,
       createdAt: createdAt,
+      type: type,
+      imageUrl: imageUrl,
     );
   }
 
@@ -183,6 +197,11 @@ class ChatMessage {
       readAt: _parseOptionalDate(m['readAt']),
       isDeleted: m['isDeleted'] == true,
       createdAt: _parseDate(m['createdAt']),
+      // Absent on every message sent before this field existed — those are
+      // plain text, so default to 'text' rather than treating null as its
+      // own state (backend's explicit instruction).
+      type: m['type']?.toString() ?? 'text',
+      imageUrl: normalizeMediaUrl(m['imageUrl']?.toString()),
     );
   }
 
@@ -421,6 +440,20 @@ class UnreadSummaryResult {
   final bool success;
   final int total;
   final int conversations;
+}
+
+/// `GET /users/:id/presence` — one-shot lookup used to catch up when a
+/// live presence_update may have been missed.
+class PresenceResult {
+  const PresenceResult({
+    required this.success,
+    this.isOnline = false,
+    this.lastSeenAt,
+  });
+
+  final bool success;
+  final bool isOnline;
+  final DateTime? lastSeenAt;
 }
 
 class StartConversationResult {

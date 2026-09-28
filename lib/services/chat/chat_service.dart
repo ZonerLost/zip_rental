@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/models/chat/chat_models.dart';
@@ -270,6 +272,38 @@ class ChatService extends ApiServiceBase {
     );
   }
 
+  // ── Presence ───────────────────────────────────────────────────────────────
+  /// One-shot presence lookup, for catching up when a live presence_update
+  /// may have been missed (e.g. the app was backgrounded when the other
+  /// participant went on/offline) — the socket event is still the primary,
+  /// real-time source; this just fills the gap on resume/reconnect.
+  Future<PresenceResult> getPresence(String userId) async {
+    final response = await request(
+      method: ApiHttpMethod.get,
+      path: '/users/$userId/presence',
+      requiresAuth: true,
+    );
+
+    final ok = resolveSuccess(response);
+    if (!ok) return const PresenceResult(success: false);
+
+    final map = asMap(response.body);
+    final data = map['data'] ?? map;
+    if (data is! Map) return const PresenceResult(success: false);
+
+    return PresenceResult(
+      success: true,
+      isOnline: data['isOnline'] == true,
+      lastSeenAt: _parseOptionalDate(data['lastSeenAt']),
+    );
+  }
+
+  static DateTime? _parseOptionalDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString());
+  }
+
   // ── Send a message ────────────────────────────────────────────────────────
   Future<SendMessageResult> sendMessage({
     required String conversationId,
@@ -338,6 +372,73 @@ class ChatService extends ApiServiceBase {
       'be parsed from the response body above — the sent bubble will not '
       'get replaced with server data (id/status will stay the optimistic '
       'placeholder). Check the response shape.',
+    );
+    return SendMessageResult(success: true, message: msg);
+  }
+
+  // ── Send an image message ─────────────────────────────────────────────────
+  Future<SendMessageResult> sendImageMessage({
+    required String conversationId,
+    required File image,
+    String? caption,
+  }) async {
+    debugPrint(
+      '[Chat] sendImageMessage → conversationId="$conversationId" '
+      'path=${image.path}',
+    );
+
+    if (conversationId.trim().isEmpty) {
+      return const SendMessageResult(
+        success: false,
+        message: 'This conversation is missing an ID — try reopening it.',
+      );
+    }
+
+    final formData = FormData(<String, dynamic>{
+      'image': multipartFileFromPath(image),
+      if ((caption ?? '').trim().isNotEmpty) 'caption': caption!.trim(),
+    });
+
+    final response = await request(
+      method: ApiHttpMethod.post,
+      path: '/chats/$conversationId/messages/image',
+      requiresAuth: true,
+      body: formData,
+    );
+
+    final ok = resolveSuccess(response);
+    final msg = resolveMessage(response, ok);
+    debugPrint(
+      '[Chat] sendImageMessage ← status=${response.statusCode} success=$ok '
+      'message="$msg" body=${response.body}',
+    );
+
+    if (!ok) return SendMessageResult(success: false, message: msg);
+
+    final map = asMap(response.body);
+    final raw = map['data'] ?? map['message'] ?? map;
+    if (raw is Map) {
+      final msgMap = raw['message'] ?? raw;
+      if (msgMap is Map) {
+        final chatMsg = ChatMessage.fromMap(
+          Map<String, dynamic>.from(msgMap),
+          conversationId,
+        );
+        debugPrint(
+          '[Chat] sendImageMessage ✓ parsed message id=${chatMsg.id} '
+          'type=${chatMsg.type} imageUrl=${chatMsg.imageUrl}',
+        );
+        return SendMessageResult(
+          success: true,
+          message: msg,
+          chatMessage: chatMsg,
+        );
+      }
+    }
+
+    debugPrint(
+      '[Chat] sendImageMessage ⚠ request succeeded but no message object '
+      'could be parsed from the response body above.',
     );
     return SendMessageResult(success: true, message: msg);
   }

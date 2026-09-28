@@ -65,6 +65,17 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
     }).toList();
   }
 
+  String _lastMessagePreview(ChatMessage? lastMessage) {
+    if (lastMessage == null) return '';
+    if (lastMessage.isDeleted) return 'Message deleted';
+    if (lastMessage.isImage) {
+      return lastMessage.content.isNotEmpty
+          ? '📷 ${lastMessage.content}'
+          : '📷 Photo';
+    }
+    return lastMessage.content;
+  }
+
   void _onTabChanged(int index) {
     setState(() => _selectedTabIndex = index);
     if (index == 1) {
@@ -312,9 +323,7 @@ class _ChatMainScreenState extends State<ChatMainScreen> {
                         final other = conv.otherParticipant(currentUserId);
                         final hasPhoto = (other?.profilePhoto ?? '')
                             .isNotEmpty;
-                        final lastMsg = conv.lastMessage?.isDeleted == true
-                            ? 'Message deleted'
-                            : conv.lastMessage?.content ?? '';
+                        final lastMsg = _lastMessagePreview(conv.lastMessage);
                         final unreadCount = conv.unread;
                         final hasUnread = unreadCount > 0;
                         final isTyping = _controller.isTypingInConversation(

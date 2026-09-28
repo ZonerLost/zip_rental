@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:zip_peer/models/chat/chat_models.dart';
 
@@ -9,6 +10,23 @@ import 'package:zip_peer/models/chat/chat_models.dart';
 class ChatSocketService {
   static const String _socketUrl =
       'https://au2p3vkiqi.us-east-1.awsapprunner.com';
+
+  /// Confirmed with the backend team (2026-09-25): this host's WebSocket
+  /// upgrade is rejected at the AWS App Runner proxy level, before it ever
+  /// reaches their Node process — and on native platforms this client can
+  /// only ever speak WebSocket (see the long comment in [connect]), so the
+  /// socket can never actually connect right now. A fixed host (ECS +
+  /// ALB) exists and is proven working, but isn't live yet (no TLS cert
+  /// on the load balancer). Chat falls back to REST polling
+  /// (ChatController/ChatMessagesController/BottomNavController) while
+  /// this is false, so [connect] is a no-op — no point burning
+  /// battery/network on 5 guaranteed-to-fail reconnect attempts every
+  /// time a chat screen opens. Flip to true (and update [_socketUrl] if
+  /// the backend gives a new origin) once they confirm the switch is
+  /// thrown — see docs/backend-chat-socket-questions.md section 5, which
+  /// also lists the only other change needed at that point (drop the
+  /// forced `transports`/`upgrade` options in [connect]).
+  static const bool socketEnabled = false;
 
   // The chat list screen and every open conversation thread each used to
   // create their own ChatSocketService — meaning two (or more) separate
@@ -91,36 +109,59 @@ class ChatSocketService {
 
   // ── Connect ──────────────────────────────────────────────────────────────
   void connect(String accessToken) {
-    if (_connected) return;
+    if (!socketEnabled || _connected) return;
 
-    _socket = io.io(
-      _socketUrl,
-      io.OptionBuilder()
-          // Deliberately NOT forcing transports to ['websocket'] here — this
-          // server requires the initial HTTP polling handshake before the
-          // upgrade to websocket (confirmed against the live server: a
-          // websocket-only connection never even reaches the auth check and
-          // fails at the transport layer). Let socket.io negotiate its
-          // default ['polling', 'websocket'].
-          .disableAutoConnect()
-          .setAuth({'token': accessToken})
-          .setReconnectionAttempts(5)
-          .setReconnectionDelay(2000)
-          .build(),
-    );
+    // ROOT CAUSE OF THE "chat doesn't update live" REPORT (found 2026-09-25,
+    // confirmed on-device with a real socket, not just reading source):
+    // socket_io_client's IO/native platform transport factory
+    // (lib/src/engine/transport/io_transports.dart, unchanged in both
+    // 2.0.3+1 — what this app uses — and the newer 3.1.6) hardcodes:
+    //   Transport newInstance(String name, options) {
+    //     // only support websocket here.
+    //     return IOWebSocketTransport(options);
+    //   }
+    // It ignores `name` and ALWAYS opens a raw WebSocket, on every Android/
+    // iOS build, no matter what `transports`/`upgrade` are set to — proper
+    // HTTP long-polling is only implemented for the web/browser build of
+    // this package. That's fine against most socket.io servers (which
+    // happily accept a direct WebSocket connection), but this specific
+    // backend's infrastructure (AWS App Runner) rejects the raw upgrade
+    // handshake with HTTP 403 — so on native, the socket can never connect
+    // at all, regardless of any option here. `transports`/`upgrade` below
+    // are kept for correctness (and in case this backend or a future
+    // package version stops requiring the polling-first dance) but they
+    // do NOT currently change native behavior — see
+    // docs/backend-chat-socket-questions.md for the actual fix needed
+    // (App Runner/infra allowing a direct WebSocket upgrade).
+    final options = io.OptionBuilder()
+        .setTransports(['polling'])
+        .disableAutoConnect()
+        .setAuth({'token': accessToken})
+        .setReconnectionAttempts(5)
+        .setReconnectionDelay(2000)
+        .build();
+    options['upgrade'] = false;
+
+    _socket = io.io(_socketUrl, options);
 
     _socket!
       ..onConnect((_) {
+        debugPrint('[ChatSocket] CONNECTED sid=${_socket?.id}');
         _connected = true;
         _connectionStatusCtrl.add(true);
       })
-      ..onDisconnect((_) {
+      ..onDisconnect((reason) {
+        debugPrint('[ChatSocket] DISCONNECTED reason=$reason');
         _connected = false;
         _connectionStatusCtrl.add(false);
       })
-      ..onConnectError((_) {
+      ..onConnectError((err) {
+        debugPrint('[ChatSocket] CONNECT ERROR: $err');
         _connected = false;
         _connectionStatusCtrl.add(false);
+      })
+      ..onError((err) {
+        debugPrint('[ChatSocket] SOCKET ERROR: $err');
       })
       ..on('new_message', _handleNewMessage)
       ..on('conversation_updated', _handleConversationUpdated)

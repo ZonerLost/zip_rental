@@ -1,9 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
 import 'package:zip_peer/services/chat/chat_service.dart';
+import 'package:zip_peer/services/chat/chat_socket_service.dart';
 import 'package:zip_peer/services/profile/profile_service.dart';
 
-class BottomNavController extends GetxController {
+class BottomNavController extends GetxController with WidgetsBindingObserver {
   BottomNavController({ProfileService? profileService, ChatService? chatService})
     : _profileService = profileService ?? ProfileService(),
       _chatService = chatService ?? ChatService();
@@ -18,11 +22,47 @@ class BottomNavController extends GetxController {
   bool isLoadingProfilePhoto = false;
   int unreadChatCount = 0;
 
+  // ── Badge polling fallback ───────────────────────────────────────────────
+  // The socket can't connect at all right now (see ChatSocketService.
+  // socketEnabled) — this is the backend team's own recommended interim
+  // approach (docs/backend-chat-socket-questions.md section 4) while their
+  // fixed host isn't live yet. Becomes a no-op automatically once
+  // socketEnabled flips back to true.
+  static const Duration _pollInterval = Duration(seconds: 30);
+  Timer? _pollTimer;
+
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     refreshProfilePhoto();
     refreshUnreadChatCount();
+    _startPolling();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refreshUnreadChatCount();
+      _startPolling();
+    } else {
+      // Only poll a foregrounded screen (backend's explicit rate-limit
+      // guidance — the cap is shared per-IP, not per-user).
+      _pollTimer?.cancel();
+    }
+  }
+
+  void _startPolling() {
+    if (ChatSocketService.socketEnabled) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => refreshUnreadChatCount());
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
+    super.onClose();
   }
 
   void switchTo(int index) {

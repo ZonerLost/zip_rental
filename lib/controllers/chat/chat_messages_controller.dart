@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,7 +8,7 @@ import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/chat/chat_service.dart';
 import 'package:zip_peer/services/chat/chat_socket_service.dart';
 
-class ChatMessagesController extends GetxController {
+class ChatMessagesController extends GetxController with WidgetsBindingObserver {
   ChatMessagesController({
     required this.conversationId,
     this.activeItemId,
@@ -63,11 +64,72 @@ class ChatMessagesController extends GetxController {
   StreamSubscription<SocketReceiptEvent>? _readSub;
   StreamSubscription<SocketMessageDeletedEvent>? _deletedSub;
   StreamSubscription<SocketPresenceEvent>? _presenceSub;
+  StreamSubscription<bool>? _connSub;
+
+  /// Guards [retryImageLoad] against retrying the same message forever —
+  /// once per message per screen-open is enough to recover from a
+  /// transient load failure (or, per the backend, a future switch to
+  /// expiring signed URLs) without hammering the API for a message whose
+  /// image is genuinely gone (e.g. deleted).
+  final Set<String> _imageRetryAttempted = {};
+
+  // ── REST polling fallback ────────────────────────────────────────────────
+  // The socket can't connect at all right now (see ChatSocketService.
+  // socketEnabled) — this is the backend team's own recommended interim
+  // approach (docs/backend-chat-socket-questions.md section 4) while their
+  // fixed host isn't live yet. Becomes a no-op automatically once
+  // socketEnabled flips back to true.
+  static const Duration _pollInterval = Duration(seconds: 5);
+  Timer? _pollTimer;
 
   @override
   void onInit() {
     super.onInit();
+    // A `new_message` socket event only ever fires once, live, to whoever
+    // is connected at that exact moment — reconnecting (or the app simply
+    // resuming from background, which can silently miss events even
+    // without the socket ever reporting itself as disconnected) does NOT
+    // replay anything that was missed. Without catching up here, an
+    // already-open thread can be left showing stale messages indefinitely,
+    // unlike the chat list screen, which already reloads on reconnect.
+    WidgetsBinding.instance.addObserver(this);
     _bootstrap();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('[ChatMessages] app resumed — refreshing messages to catch up on anything missed');
+      _pollMessages();
+      _startPolling();
+    } else {
+      // Only poll a foregrounded screen (backend's explicit rate-limit
+      // guidance — the cap is shared per-IP, not per-user).
+      _pollTimer?.cancel();
+    }
+  }
+
+  void _startPolling() {
+    if (ChatSocketService.socketEnabled) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _pollMessages());
+  }
+
+  /// Unlike [loadMessages] (which toggles isLoading/errorMessage — fine for
+  /// the initial load, but would flicker a spinner every 5s here), this
+  /// quietly refetches and only calls markAsRead when something actually
+  /// new showed up, per the backend's guidance ("on open, and when new
+  /// messages land") rather than hammering that endpoint every poll.
+  Future<void> _pollMessages() async {
+    final result = await _chatService.getMessages(conversationId);
+    if (!result.success) return;
+    final oldIds = messages.map((m) => m.id).toSet();
+    final hasNew = result.messages.any((m) => !oldIds.contains(m.id));
+    messages = result.messages;
+    update();
+    if (hasNew) {
+      _chatService.markAsRead(conversationId);
+    }
   }
 
   Future<void> _bootstrap() async {
@@ -83,6 +145,7 @@ class ChatMessagesController extends GetxController {
     await loadMessages();
     // Mark as read once loaded
     _chatService.markAsRead(conversationId);
+    _startPolling();
   }
 
   // ── User identity ─────────────────────────────────────────────────────────
@@ -105,6 +168,15 @@ class ChatMessagesController extends GetxController {
     }
 
     _socket.joinConversation(conversationId);
+
+    // Rejoin the room and catch up on anything missed while disconnected —
+    // mirrors ChatController's existing reconnect-refresh, which this
+    // screen didn't have.
+    _connSub = _socket.onConnectionStatus.listen((connected) {
+      if (!connected) return;
+      _socket.joinConversation(conversationId);
+      loadMessages();
+    });
 
     _newMsgSub = _socket.onNewMessage.listen((msg) {
       debugPrint(
@@ -272,6 +344,108 @@ class ChatMessagesController extends GetxController {
     update();
   }
 
+  Future<void> sendImageMessage(File image, {String? caption}) async {
+    if (isSending) return;
+
+    // Same limits as item photos (same upload middleware on the backend) —
+    // checked client-side so a too-large/wrong-type file fails instantly
+    // instead of after a wasted upload round-trip.
+    final validationError = await _validateImageFile(image);
+    if (validationError != null) {
+      Get.snackbar('Can\'t send that image', validationError);
+      return;
+    }
+
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final trimmedCaption = caption?.trim() ?? '';
+    final optimistic = ChatMessage.fromRaw(
+      id: tempId,
+      conversationId: conversationId,
+      senderId: currentUserId ?? '',
+      rawContent: trimmedCaption,
+      createdAt: DateTime.now(),
+      type: 'image',
+      // Local file path — swapped for the real https:// URL once the
+      // upload response comes back (see ChatBubble._isNetworkImage).
+      imageUrl: image.path,
+    );
+    messages.add(optimistic);
+    isSending = true;
+    update();
+
+    debugPrint(
+      '[ChatMessages] sendImageMessage → conversationId="$conversationId" '
+      'tempId=$tempId path=${image.path}',
+    );
+
+    final result = await _chatService.sendImageMessage(
+      conversationId: conversationId,
+      image: image,
+      caption: trimmedCaption.isEmpty ? null : trimmedCaption,
+    );
+
+    debugPrint(
+      '[ChatMessages] sendImageMessage ← success=${result.success} '
+      'message="${result.message}" '
+      'chatMessage=${result.chatMessage != null ? "id=${result.chatMessage!.id} imageUrl=${result.chatMessage!.imageUrl}" : "null"}',
+    );
+
+    isSending = false;
+    if (result.success && result.chatMessage != null) {
+      final idx = messages.indexWhere((m) => m.id == tempId);
+      if (idx != -1) {
+        messages[idx] = result.chatMessage!;
+      } else if (!messages.any((m) => m.id == result.chatMessage!.id)) {
+        messages.add(result.chatMessage!);
+      }
+    } else if (!result.success) {
+      messages.removeWhere((m) => m.id == tempId);
+      Get.snackbar('Send failed', _friendlySendError(result.message));
+    }
+    update();
+  }
+
+  /// Called from [ChatBubble]'s `errorBuilder` when an image fails to load.
+  /// Refetches this one message (via a full reload, since there's no
+  /// single-message GET) in case the URL simply changed — e.g. the
+  /// backend's flagged future move to expiring signed URLs — rather than
+  /// leaving a permanently-broken bubble for what might be a transient or
+  /// since-fixed issue. Guarded to one attempt per message; a message
+  /// that's still broken after that (e.g. genuinely deleted) just keeps
+  /// showing the fallback icon instead of retrying forever.
+  Future<void> retryImageLoad(String messageId) async {
+    if (_imageRetryAttempted.contains(messageId)) return;
+    _imageRetryAttempted.add(messageId);
+
+    final result = await _chatService.getMessages(conversationId);
+    if (!result.success) return;
+
+    final idx = messages.indexWhere((m) => m.id == messageId);
+    final freshIdx = result.messages.indexWhere((m) => m.id == messageId);
+    if (idx != -1 && freshIdx != -1) {
+      messages[idx] = result.messages[freshIdx];
+      update();
+    }
+  }
+
+  Future<String?> _validateImageFile(File file) async {
+    final fileSize = await file.length();
+    const maxBytes = 5 * 1024 * 1024;
+    if (fileSize > maxBytes) {
+      return 'Each image must be 5MB or smaller.';
+    }
+
+    final lower = file.path.toLowerCase();
+    if (lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp')) {
+      return null;
+    }
+
+    return 'Only JPEG, PNG, and WebP images are allowed.';
+  }
+
   /// The backend sometimes surfaces raw validation strings — like "Invalid
   /// ID format" for `POST /chats/{id}/messages`, seen even when this exact
   /// same conversationId just succeeded on GET/other endpoints (a
@@ -322,6 +496,8 @@ class ChatMessagesController extends GetxController {
   // ── Cleanup ───────────────────────────────────────────────────────────────
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
     _stopTypingEmit();
     _socket.leaveConversation(conversationId);
     _newMsgSub?.cancel();
@@ -330,6 +506,7 @@ class ChatMessagesController extends GetxController {
     _readSub?.cancel();
     _deletedSub?.cancel();
     _presenceSub?.cancel();
+    _connSub?.cancel();
     _typingTimer?.cancel();
     messageInputController.dispose();
     super.onClose();

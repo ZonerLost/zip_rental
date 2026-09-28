@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/controllers/bottom_nav_controller.dart';
 import 'package:zip_peer/controllers/notifications/notifications_controller.dart';
@@ -10,7 +10,7 @@ import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/chat/chat_service.dart';
 import 'package:zip_peer/services/chat/chat_socket_service.dart';
 
-class ChatController extends GetxController {
+class ChatController extends GetxController with WidgetsBindingObserver {
   ChatController({
     ChatService? chatService,
     AuthService? authService,
@@ -82,10 +82,43 @@ class ChatController extends GetxController {
   StreamSubscription<Map<String, dynamic>>? _notificationSub;
   StreamSubscription<bool>? _connSub;
 
+  // ── REST polling fallback ────────────────────────────────────────────────
+  // The socket can't connect at all right now (see ChatSocketService.
+  // socketEnabled) — this is the backend team's own recommended interim
+  // approach (docs/backend-chat-socket-questions.md section 4) while their
+  // fixed host isn't live yet. Becomes a no-op automatically once
+  // socketEnabled flips back to true.
+  static const Duration _pollInterval = Duration(seconds: 12);
+  Timer? _pollTimer;
+
   @override
   void onInit() {
     super.onInit();
+    // Belt-and-suspenders alongside the reconnect-triggered reload below:
+    // the app can miss socket events while backgrounded without the
+    // socket ever reporting itself as disconnected (common on mobile —
+    // the OS can pause a backgrounded app's networking without a clean
+    // teardown), so also resync whenever the app comes back to foreground.
+    WidgetsBinding.instance.addObserver(this);
     _bootstrap();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      loadConversations();
+      _startPolling();
+    } else {
+      // Only poll a foregrounded screen (backend's explicit rate-limit
+      // guidance — the cap is shared per-IP, not per-user).
+      _pollTimer?.cancel();
+    }
+  }
+
+  void _startPolling() {
+    if (ChatSocketService.socketEnabled) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => loadConversations());
   }
 
   Future<void> _bootstrap() async {
@@ -96,6 +129,7 @@ class ChatController extends GetxController {
     // user takes some action.
     await loadBlockedUsers();
     await loadConversations();
+    _startPolling();
   }
 
   // ── User identity ─────────────────────────────────────────────────────────
@@ -547,6 +581,8 @@ class ChatController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
     _newMsgSub?.cancel();
     _convUpdatedSub?.cancel();
     _typingSub?.cancel();
