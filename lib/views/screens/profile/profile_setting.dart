@@ -6,8 +6,8 @@ import 'package:zip_peer/controllers/profile/dashboard_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets_2.dart';
 import 'package:zip_peer/views/screens/profile/account_setting.dart';
+import 'package:zip_peer/views/screens/payouts/payout_information_screen.dart';
 import 'package:zip_peer/views/screens/profile/user_profile_widgets.dart';
-import 'package:zip_peer/views/screens/subscriptions/payment.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
@@ -63,7 +63,7 @@ class UserProfileScreen extends StatelessWidget {
                   icon: Assets.imagesMapPin,
                   title: 'Payout Information',
                   onTap: () {
-                    Get.to(() => PaymentMethodsScreen());
+                    Get.to(() => const PayoutInformationScreen());
                   },
                 ),
                 SettingItemWidget(

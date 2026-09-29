@@ -128,6 +128,105 @@ class CreateBookingRequestModel {
   }
 }
 
+/// One line of `pricing.taxes[]` — confirmed shape (2026-09-29 pricing
+/// rewrite). `appliedTo` is `'atussa_fee'` (the renter's tax, show it) or
+/// `'owner_commission'` (the owner's deduction — never show this to the
+/// renter, it would double-count against `renterFee.taxTotal`).
+class PricingTaxLine {
+  const PricingTaxLine({
+    this.code,
+    this.label,
+    this.rate,
+    this.amount,
+    this.appliedTo,
+  });
+
+  final String? code;
+  final String? label;
+  final double? rate;
+  final double? amount;
+  final String? appliedTo;
+
+  factory PricingTaxLine.fromJson(Map<String, dynamic> json) {
+    return PricingTaxLine(
+      code: _asString(json['code']),
+      label: _asString(json['label']),
+      rate: _asDouble(json['rate']),
+      amount: _asDouble(json['amount']),
+      appliedTo: _asString(json['appliedTo']),
+    );
+  }
+}
+
+/// The renter's Atussa Fee breakdown — 3% of the rental amount, minimum
+/// $3.99. `minimumApplied` tells you whether the floor kicked in (true below
+/// a ~$133 rental) if you want to explain why the fee isn't exactly 3%.
+class RenterFeeBreakdown {
+  const RenterFeeBreakdown({
+    this.percent,
+    this.minimum,
+    this.amount,
+    this.taxTotal,
+    this.minimumApplied,
+  });
+
+  final double? percent;
+  final double? minimum;
+  final double? amount;
+  final double? taxTotal;
+  final bool? minimumApplied;
+
+  factory RenterFeeBreakdown.fromJson(Map<String, dynamic> json) {
+    return RenterFeeBreakdown(
+      percent: _asDouble(json['percent']),
+      minimum: _asDouble(json['minimum']),
+      amount: _asDouble(json['amount']),
+      taxTotal: _asDouble(json['taxTotal']),
+      minimumApplied: _asBool(json['minimumApplied']),
+    );
+  }
+}
+
+/// What the owner actually receives — the rental amount less Atussa's
+/// commission and tax on that commission. `amount` is the honest "you'll
+/// get this much" figure for an owner-facing screen.
+class OwnerPayoutBreakdown {
+  const OwnerPayoutBreakdown({
+    this.commissionPercent,
+    this.commission,
+    this.commissionTaxTotal,
+    this.amount,
+  });
+
+  final double? commissionPercent;
+  final double? commission;
+  final double? commissionTaxTotal;
+  final double? amount;
+
+  factory OwnerPayoutBreakdown.fromJson(Map<String, dynamic> json) {
+    return OwnerPayoutBreakdown(
+      commissionPercent: _asDouble(json['commissionPercent']),
+      commission: _asDouble(json['commission']),
+      commissionTaxTotal: _asDouble(json['commissionTaxTotal']),
+      amount: _asDouble(json['amount']),
+    );
+  }
+}
+
+class PlatformRevenueBreakdown {
+  const PlatformRevenueBreakdown({this.revenue, this.taxCollected});
+
+  final double? revenue;
+  final double? taxCollected;
+
+  factory PlatformRevenueBreakdown.fromJson(Map<String, dynamic> json) {
+    return PlatformRevenueBreakdown(
+      revenue: _asDouble(json['revenue']),
+      taxCollected: _asDouble(json['taxCollected']),
+    );
+  }
+}
+
 class BookingPricingModel {
   const BookingPricingModel({
     this.dailyRate,
@@ -138,6 +237,12 @@ class BookingPricingModel {
     this.serviceFee,
     this.securityDeposit,
     this.totalAmount,
+    this.rentalAmount,
+    this.taxTotal,
+    this.taxes = const [],
+    this.renterFee,
+    this.ownerPayout,
+    this.platform,
   });
 
   final double? dailyRate;
@@ -145,11 +250,50 @@ class BookingPricingModel {
   final double? discountPercent;
   final double? discountAmount;
   final double? subtotal;
+  /// Pre-2026-09-29 bookings only: the old flat 5% renter fee. On anything
+  /// priced after that date this still gets populated (equal to
+  /// `renterFee.amount`) for backward compatibility, but prefer
+  /// `renterFee.amount` — see `feeAmount` below.
   final double? serviceFee;
+  /// Always `0` since 2026-09-29 (the deposit was removed) — kept only so
+  /// bookings priced before that date still show what they actually
+  /// charged.
   final double? securityDeposit;
   final double? totalAmount;
+  final double? rentalAmount;
+  final double? taxTotal;
+  final List<PricingTaxLine> taxes;
+  final RenterFeeBreakdown? renterFee;
+  final OwnerPayoutBreakdown? ownerPayout;
+  final PlatformRevenueBreakdown? platform;
+
+  /// The fee to show a renter — `renterFee.amount` on anything priced under
+  /// the new model, falling back to the old flat `serviceFee` for bookings
+  /// priced before 2026-09-29 (whose `renterFee` is absent).
+  double? get feeAmount => renterFee?.amount ?? serviceFee;
+
+  /// The tax lines that belong on a *renter's* receipt — `owner_commission`
+  /// lines are the owner's own deduction and would double-count here.
+  List<PricingTaxLine> get renterTaxes =>
+      taxes.where((t) => t.appliedTo == 'atussa_fee').toList();
 
   factory BookingPricingModel.fromJson(Map<String, dynamic> json) {
+    final taxesRaw = json['taxes'];
+    final taxes = taxesRaw is List
+        ? taxesRaw
+            .whereType<Map>()
+            .map(
+              (t) => PricingTaxLine.fromJson(
+                t.map((k, v) => MapEntry(k.toString(), v)),
+              ),
+            )
+            .toList()
+        : const <PricingTaxLine>[];
+
+    final renterFeeRaw = json['renterFee'];
+    final ownerPayoutRaw = json['ownerPayout'];
+    final platformRaw = json['platform'];
+
     return BookingPricingModel(
       dailyRate: _asDouble(json['dailyRate']),
       basePrice: _asDouble(json['basePrice']),
@@ -159,6 +303,24 @@ class BookingPricingModel {
       serviceFee: _asDouble(json['serviceFee']),
       securityDeposit: _asDouble(json['securityDeposit']),
       totalAmount: _asDouble(json['totalAmount']),
+      rentalAmount: _asDouble(json['rentalAmount']),
+      taxTotal: _asDouble(json['taxTotal']),
+      taxes: taxes,
+      renterFee: renterFeeRaw is Map
+          ? RenterFeeBreakdown.fromJson(
+              renterFeeRaw.map((k, v) => MapEntry(k.toString(), v)),
+            )
+          : null,
+      ownerPayout: ownerPayoutRaw is Map
+          ? OwnerPayoutBreakdown.fromJson(
+              ownerPayoutRaw.map((k, v) => MapEntry(k.toString(), v)),
+            )
+          : null,
+      platform: platformRaw is Map
+          ? PlatformRevenueBreakdown.fromJson(
+              platformRaw.map((k, v) => MapEntry(k.toString(), v)),
+            )
+          : null,
     );
   }
 }
@@ -168,11 +330,15 @@ class QuoteResponseModel {
     this.totalDays,
     this.deliveryFee,
     this.pricing,
+    this.atussaFeeExplainer,
   });
 
   final int? totalDays;
   final double? deliveryFee;
   final BookingPricingModel? pricing;
+  /// Copy for the "?" tooltip next to the Atussa Fee line — server-owned so
+  /// wording can change without an app release.
+  final String? atussaFeeExplainer;
 
   factory QuoteResponseModel.fromJson(Map<String, dynamic> json) {
     final pricingRaw = json['pricing'];
@@ -186,6 +352,7 @@ class QuoteResponseModel {
       pricing: pricingMap == null
           ? null
           : BookingPricingModel.fromJson(pricingMap),
+      atussaFeeExplainer: _asString(json['atussaFeeExplainer']),
     );
   }
 }

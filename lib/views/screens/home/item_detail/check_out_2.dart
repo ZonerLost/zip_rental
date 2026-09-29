@@ -8,12 +8,15 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/bookings/booking_controller.dart';
+import 'package:zip_peer/controllers/payments/payment_method_controller.dart';
 import 'package:zip_peer/controllers/profile/address_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/bookings/booking_models.dart';
 import 'package:zip_peer/models/items/item_models.dart';
+import 'package:zip_peer/models/payments/payment_models.dart';
 import 'package:zip_peer/models/profile/profile_models.dart';
 import 'package:zip_peer/views/screens/home/item_detail/booking_request_sent.dart';
+import 'package:zip_peer/views/screens/payments/add_card_payment_method_screen.dart';
 import 'package:zip_peer/views/screens/subscriptions/add_address.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
@@ -21,13 +24,6 @@ import 'package:zip_peer/views/widget/custom_checkbox_widget.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:zip_peer/views/widget/my_textfeild.dart';
-
-const Map<String, String> kPaymentMethodLabels = {
-  'card': 'Debit/Credit Card',
-  'apple_pay': 'Apple Pay',
-  'google_pay': 'Google Pay',
-  'amex': 'American Express',
-};
 
 class CheckoutScreen2 extends StatefulWidget {
   const CheckoutScreen2({super.key, required this.item});
@@ -40,6 +36,7 @@ class CheckoutScreen2 extends StatefulWidget {
 
 class _CheckoutScreen2State extends State<CheckoutScreen2> {
   late final BookingController _bookingController;
+  late final PaymentMethodController _paymentMethodController;
   final TextEditingController _discountController = TextEditingController();
 
   bool _agreedToTerms = false;
@@ -62,6 +59,9 @@ class _CheckoutScreen2State extends State<CheckoutScreen2> {
     _bookingController = Get.isRegistered<BookingController>()
         ? Get.find<BookingController>()
         : Get.put(BookingController());
+    _paymentMethodController = Get.isRegistered<PaymentMethodController>()
+        ? Get.find<PaymentMethodController>()
+        : Get.put(PaymentMethodController());
   }
 
   @override
@@ -476,10 +476,14 @@ class _CheckoutScreen2State extends State<CheckoutScreen2> {
     );
   }
 
-  Future<String?> _showSelectPaymentSheet() async {
-    String selected = 'card';
+  /// Shows the user's saved cards (`GET /payments/methods`) and lets them
+  /// pick one, add a new one, delete one, or set a default — replacing the
+  /// old fixed Card/Apple Pay/Google Pay picker, which never reflected real
+  /// saved methods and whose choice was never sent to the backend at all.
+  Future<PaymentMethodModel?> _showSelectPaymentSheet() async {
+    String? selectedId = _paymentMethodController.defaultMethod?.id;
 
-    return showModalBottomSheet<String>(
+    return showModalBottomSheet<PaymentMethodModel>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -493,98 +497,255 @@ class _CheckoutScreen2State extends State<CheckoutScreen2> {
                 color: kWhite,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  Bounce(
-                    onTap: () => Navigator.of(sheetContext).pop(),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.arrow_back, size: 20),
-                        const Gap(6),
-                        MyText(text: 'Back', size: 14, weight: FontWeight.w600),
-                      ],
-                    ),
-                  ),
-                  const Gap(16),
-                  MyText(text: 'Select Payment', size: 22, weight: FontWeight.w700),
-                  const Gap(6),
-                  MyText(
-                    text: 'Please select the preferred payment method.',
-                    size: 13,
-                    color: kSubText,
-                  ),
-                  const Gap(20),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: kPaymentMethodLabels.entries.map((entry) {
-                      final isSelected = selected == entry.key;
-                      return Bounce(
-                        onTap: () => setSheetState(() => selected = entry.key),
-                        child: Container(
-                          width: (MediaQuery.of(context).size.width - 40 - 12) / 2,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: kWhite,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected ? kPrimaryColor : kBorderColor2,
-                              width: isSelected ? 1.5 : 1,
+              child: GetBuilder<PaymentMethodController>(
+                init: _paymentMethodController,
+                builder: (controller) {
+                  // Keep the local selection in sync if the list changes
+                  // out from under us (e.g. the just-selected card was
+                  // deleted, or a freshly-added one should now be picked).
+                  if (selectedId != null &&
+                      !controller.methods.any((m) => m.id == selectedId)) {
+                    selectedId = controller.defaultMethod?.id;
+                  }
+
+                  return ListView(
+                    shrinkWrap: true,
+                    children: [
+                      Bounce(
+                        onTap: () => Navigator.of(sheetContext).pop(),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.arrow_back, size: 20),
+                            const Gap(6),
+                            MyText(
+                              text: 'Back',
+                              size: 14,
+                              weight: FontWeight.w600,
                             ),
-                          ),
+                          ],
+                        ),
+                      ),
+                      const Gap(16),
+                      MyText(
+                        text: 'Select Payment',
+                        size: 22,
+                        weight: FontWeight.w700,
+                      ),
+                      const Gap(6),
+                      MyText(
+                        text: 'Please select a saved card, or add a new one.',
+                        size: 13,
+                        color: kSubText,
+                      ),
+                      const Gap(20),
+                      if (controller.isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if ((controller.errorMessage ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Icon(
-                                    _paymentMethodIcon(entry.key),
-                                    size: 22,
-                                    color: isSelected ? kPrimaryColor : kBlack,
-                                  ),
-                                  if (isSelected)
-                                    const Icon(Icons.check_circle, size: 18, color: kPrimaryColor),
-                                ],
+                              MyText(
+                                text: controller.errorMessage!,
+                                size: 13,
+                                color: kredColor,
+                                textAlign: TextAlign.center,
                               ),
-                              const Gap(8),
-                              MyText(text: entry.value, size: 13, weight: FontWeight.w600),
+                              const Gap(10),
+                              Bounce(
+                                onTap: controller.loadMethods,
+                                child: MyText(
+                                  text: 'Retry',
+                                  size: 13,
+                                  color: kPrimaryColor,
+                                  weight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (controller.methods.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: MyText(
+                            text: "You haven't saved a payment method yet.",
+                            size: 13,
+                            color: kSubText,
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      else
+                        ...controller.methods.map((method) {
+                          final isSelected = selectedId == method.id;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Bounce(
+                              onTap: () =>
+                                  setSheetState(() => selectedId = method.id),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: kWhite,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? kPrimaryColor
+                                        : kBorderColor2,
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.credit_card,
+                                      size: 22,
+                                      color: isSelected
+                                          ? kPrimaryColor
+                                          : kBlack,
+                                    ),
+                                    const Gap(12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: MyText(
+                                                  text: method.displayLabel,
+                                                  size: 14,
+                                                  weight: FontWeight.w600,
+                                                  maxLines: 1,
+                                                  textOverflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (method.isDefault) ...[
+                                                const Gap(8),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: kPrimaryColor,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      8,
+                                                    ),
+                                                  ),
+                                                  child: const MyText(
+                                                    text: 'Default',
+                                                    size: 9,
+                                                    color: Colors.white,
+                                                    weight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          if (method.card != null) ...[
+                                            const Gap(4),
+                                            MyText(
+                                              text:
+                                                  'Expires ${method.card!.expiryLabel}',
+                                              size: 12,
+                                              color: kSubText,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 18,
+                                        color: kPrimaryColor,
+                                      )
+                                    else
+                                      Bounce(
+                                        onTap: () =>
+                                            controller.deleteMethod(method.id),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(
+                                            Icons.delete_outline,
+                                            size: 20,
+                                            color: kredColor,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      Bounce(
+                        onTap: () async {
+                          final added = await Get.to<PaymentMethodModel>(
+                            () => const AddCardPaymentMethodScreen(),
+                          );
+                          if (added != null) {
+                            setSheetState(() => selectedId = added.id);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: kBorderColor2),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.add,
+                                size: 18,
+                                color: kPrimaryColor,
+                              ),
+                              const Gap(6),
+                              const MyText(
+                                text: 'Add new card',
+                                size: 14,
+                                weight: FontWeight.w600,
+                                color: kPrimaryColor,
+                              ),
                             ],
                           ),
                         ),
-                      );
-                    }).toList(growable: false),
-                  ),
-                  const Gap(24),
-                  MyButton(
-                    onTap: () => Navigator.of(sheetContext).pop(selected),
-                    buttonText: 'Continue',
-                    height: 56,
-                    radius: 30,
-                    fontSize: 16,
-                  ),
-                ],
+                      ),
+                      const Gap(24),
+                      MyButton(
+                        onTap: () {
+                          if (selectedId == null) return;
+                          Navigator.of(sheetContext).pop(
+                            controller.methods.firstWhere(
+                              (m) => m.id == selectedId,
+                            ),
+                          );
+                        },
+                        buttonText: 'Continue',
+                        height: 56,
+                        radius: 30,
+                        fontSize: 16,
+                        isactive: selectedId != null,
+                      ),
+                    ],
+                  );
+                },
               ),
             );
           },
         );
       },
     );
-  }
-
-  IconData _paymentMethodIcon(String methodId) {
-    switch (methodId) {
-      case 'apple_pay':
-        return Icons.apple;
-      case 'google_pay':
-        return Icons.g_mobiledata;
-      case 'amex':
-        return Icons.credit_card_outlined;
-      case 'card':
-      default:
-        return Icons.credit_card;
-    }
   }
 
   Future<QuoteResponseModel?> _requestQuote() async {
@@ -687,10 +848,17 @@ class _CheckoutScreen2State extends State<CheckoutScreen2> {
       return;
     }
 
+    // NOT calling POST /payments here — confirmed 2026-09-28 that it only
+    // succeeds once the booking's owner has accepted it (every booking
+    // starts `pending`, so this would 400 every time, no exceptions). The
+    // card picked above is carried through as a stated preference for now;
+    // actually recording the payment belongs on a "Pay Now" step once the
+    // booking shows `accepted` — not yet built (see
+    // docs/backend-payment-methods-integration.md).
     Get.off(
       () => BookingRequestSentScreen(
         booking: booking,
-        paymentMethodLabel: kPaymentMethodLabels[paymentMethod] ?? 'Card',
+        paymentMethodLabel: paymentMethod.displayLabel,
       ),
     );
   }
@@ -727,6 +895,42 @@ class _CheckoutScreen2State extends State<CheckoutScreen2> {
       return '$currency 0.00';
     }
     return '$currency ${value.toStringAsFixed(2)}';
+  }
+
+  /// Server-owned copy (`atussaFeeExplainer`) so the wording can change
+  /// without an app release; falls back to a plain description of the
+  /// current 3%/$3.99-minimum rule if a quote hasn't loaded yet.
+  void _showAtussaFeeInfo(QuoteResponseModel? quote) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: kWhite,
+        title: const MyText(
+          text: 'Atussa Fee',
+          size: 16,
+          weight: FontWeight.w600,
+          color: kBlack,
+        ),
+        content: MyText(
+          text: quote?.atussaFeeExplainer ??
+              'The Atussa Fee is 3% of the rental amount, with a minimum '
+                  'fee of \$3.99 per transaction, plus applicable taxes.',
+          size: 14,
+          color: kSubText,
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: const MyText(
+              text: 'Got it',
+              size: 14,
+              weight: FontWeight.w600,
+              color: kPrimaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1290,37 +1494,46 @@ class _CheckoutScreen2State extends State<CheckoutScreen2> {
                       _money(pricing?.subtotal ?? pricing?.basePrice),
                     ),
                     const Gap(12),
-                    _buildPriceRow(
-                      'Service Fee',
-                      _money(pricing?.serviceFee),
-                    ),
-                    const Gap(12),
-                    Divider(color: kDividerColor),
-                    const Gap(12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: [
                             MyText(
-                              text: 'Price to Pay (Security Hold)',
+                              text: 'Atussa Fee',
                               size: 14,
                               color: kSubText,
                             ),
                             const Gap(4),
-                            CommonImageView(
-                              imagePath: Assets.imagesInfoCircleBlack,
-                              height: 20,
+                            Bounce(
+                              onTap: () => _showAtussaFeeInfo(quote),
+                              child: CommonImageView(
+                                imagePath: Assets.imagesInfoCircleBlack,
+                                height: 20,
+                              ),
                             ),
                           ],
                         ),
                         MyText(
-                          text: _money(pricing?.securityDeposit),
+                          text: _money(pricing?.feeAmount),
                           size: 14,
                           weight: FontWeight.w600,
                         ),
                       ],
                     ),
+                    // Only the renter's own tax lines — `owner_commission`
+                    // lines belong on the owner's payout breakdown, not
+                    // here, and would double-count against these.
+                    for (final tax in pricing?.renterTaxes ?? const [])
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: _buildPriceRow(
+                          tax.label ?? tax.code ?? 'Tax',
+                          _money(tax.amount),
+                        ),
+                      ),
+                    const Gap(12),
+                    Divider(color: kDividerColor),
                     const Gap(12),
                     _buildPriceRow(
                       'Total Amount',

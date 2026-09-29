@@ -57,6 +57,7 @@ dependencies:
   rename_app:
   shimmer:
   url_launcher:
+  app_links: ^6.3.2
   flutter_slider_drawer:
   expandable:
   google_nav_bar:

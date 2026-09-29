@@ -55,6 +55,16 @@ class MyListedItemsScreen extends StatelessWidget {
                         : RefreshIndicator(
                             onRefresh: controller.fetchMyListings,
                             child: ListView.builder(
+                              // The bottom nav bar (bottom_nav.dart) is a
+                              // floating Positioned overlay, not a real
+                              // Scaffold.bottomNavigationBar, so it covers
+                              // ~100dp of whatever's beneath it. Every other
+                              // tab screen reserves that space with a
+                              // trailing Gap(100); this is the ListView.
+                              // builder equivalent, so the last card's
+                              // pause/resume toggle isn't left stuck under
+                              // the nav bar with no way to scroll to it.
+                              padding: const EdgeInsets.only(bottom: 100),
                               itemCount: controller.listings.length,
                               itemBuilder: (context, index) {
                                 final item = controller.listings[index];

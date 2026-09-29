@@ -51,5 +51,20 @@
 	<string>Zip Peer uses your photo library to let you attach photos to items and chats.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Zip Peer uses your location to show rentable items near you on the map.</string>
+	<!-- Stripe Connect payout onboarding return/refresh deep links
+	     (atussa://payouts/done, atussa://payouts/retry) — see
+	     lib/main.dart's deep-link listener and
+	     docs/backend-payout-onboarding.md. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sequoia.sequoiaapp.payouts</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>atussa</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

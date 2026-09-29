@@ -46,3 +46,7 @@ app.*.map.json
 /android/.gradle-user-home/
 Mobile App Functionality Document for larissa18 (4).pdf
 docs/backend-chat-socket-questions.md
+docs/backend-payment-methods-integration.md
+lib/main.dart
+docs/backend-payout-deep-links.md
+docs/backend-payout-information.md

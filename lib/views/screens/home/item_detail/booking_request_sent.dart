@@ -98,11 +98,13 @@ class BookingRequestSentScreen extends StatelessWidget {
                   : booking.deliveryType![0].toUpperCase() +
                       booking.deliveryType!.substring(1),
             ),
-            _detailRow(
-              'Amount in escrow',
-              _money(booking.pricing?.securityDeposit),
-            ),
-            _detailRow('Payment Method Used', paymentMethodLabel),
+            // Was "Amount in escrow" (the security deposit) — the deposit
+            // was removed from pricing entirely (2026-09-29), so that figure
+            // is always 0 now. Total is the honest number to show here.
+            _detailRow('Total Amount', _money(booking.pricing?.totalAmount)),
+            // "Selected", not "Used" — nothing is actually charged until
+            // the owner accepts and a separate payment step runs.
+            _detailRow('Payment Method Selected', paymentMethodLabel),
             const Gap(20),
             Container(
               padding: const EdgeInsets.all(14),

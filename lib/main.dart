@@ -1,19 +1,65 @@
 import 'dart:async';
+import 'dart:developer' as developer;
+import 'package:app_links/app_links.dart' as deep_links;
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/config/routes/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:zip_peer/controllers/payouts/payout_controller.dart';
 import 'package:zip_peer/services/auth/auth_session_store.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/token_refresh_service.dart';
 import 'package:zip_peer/services/chat/chat_socket_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
+import 'package:zip_peer/views/screens/payouts/payout_information_screen.dart';
+
+// Stripe Connect payout onboarding return/refresh deep links
+// (atussa://payouts/done, atussa://payouts/retry — see
+// docs/backend-payout-onboarding.md). Neither URL carries data; both just
+// mean "the owner is back, check payout status again". `restricted` is a
+// normal outcome here (Stripe often wants one more document), so `done` and
+// `retry` are handled identically — the status itself says what's next.
+StreamSubscription<Uri>? _deepLinkSub;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _listenForSessionExpiry();
+  _listenForPayoutDeepLinks();
   await _maybeStartTokenRefresh();
   runApp(MyApp());
+}
+
+void _listenForPayoutDeepLinks() {
+  final appLinks = deep_links.AppLinks();
+
+  _deepLinkSub = appLinks.uriLinkStream.listen(
+    _handlePayoutDeepLink,
+    onError: (Object e) =>
+        developer.log('payout deep link stream error: $e', name: 'payouts'),
+  );
+
+  // Covers the app having been killed (e.g. by the OS during the external
+  // Stripe browser session) rather than merely backgrounded — the stream
+  // above only fires for links received while already running. Deferred
+  // past the first frame so `Get.to` below always has a navigator to work
+  // with, even on a cold start.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handlePayoutDeepLink(uri);
+    });
+  });
+}
+
+void _handlePayoutDeepLink(Uri uri) {
+  if (uri.scheme != 'atussa' || uri.host != 'payouts') return;
+
+  if (Get.isRegistered<PayoutController>()) {
+    Get.find<PayoutController>().loadStatus();
+  } else {
+    // App was relaunched cold — there's no existing Payout Information
+    // screen instance to refresh, so open one.
+    Get.to(() => const PayoutInformationScreen());
+  }
 }
 
 Future<void> _maybeStartTokenRefresh() async {
