@@ -12,6 +12,7 @@ import 'package:zip_peer/views/screens/profile/help_center.dart';
 import 'package:zip_peer/views/screens/profile/language.dart';
 import 'package:zip_peer/views/screens/profile/privacy_policy.dart';
 import 'package:zip_peer/views/screens/profile/terms_condition.dart';
+import 'package:zip_peer/views/screens/disputes/my_disputes_screen.dart';
 import 'package:zip_peer/views/screens/reviews/my_reviews_screen.dart';
 import 'package:zip_peer/views/screens/subscriptions/address.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
@@ -70,15 +71,24 @@ class AccountSettingsScreen extends StatelessWidget {
               Get.to(() => const BlockedUsersScreen());
             },
           },
-          {
-            "icon": Assets.imagesStar,
-            "title": "My Reviews",
-            "hasArrow": true,
-            "Text": "",
-            "onTap": () {
-              Get.to(() => const MyReviewsScreen());
-            },
-          },
+          // {
+          //   "icon": Assets.imagesStar,
+          //   "title": "My Reviews",
+          //   "hasArrow": true,
+          //   "Text": "",
+          //   "onTap": () {
+          //     Get.to(() => const MyReviewsScreen());
+          //   },
+          // },
+          // {
+          //   "icon": Assets.imagesInfoCircle,
+          //   "title": "My Disputes",
+          //   "hasArrow": true,
+          //   "Text": "",
+          //   "onTap": () {
+          //     Get.to(() => const MyDisputesScreen());
+          //   },
+          // },
         ];
 
         final List<Map<String, dynamic>> helpSettingsItems = [

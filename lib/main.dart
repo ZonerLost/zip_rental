@@ -38,11 +38,7 @@ void _listenForPayoutDeepLinks() {
         developer.log('payout deep link stream error: $e', name: 'payouts'),
   );
 
-  // Covers the app having been killed (e.g. by the OS during the external
-  // Stripe browser session) rather than merely backgrounded — the stream
-  // above only fires for links received while already running. Deferred
-  // past the first frame so `Get.to` below always has a navigator to work
-  // with, even on a cold start.
+
   WidgetsBinding.instance.addPostFrameCallback((_) {
     appLinks.getInitialLink().then((uri) {
       if (uri != null) _handlePayoutDeepLink(uri);

@@ -9,10 +9,12 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/bookings/booking_controller.dart';
+import 'package:zip_peer/controllers/disputes/dispute_controller.dart';
 import 'package:zip_peer/controllers/eco/eco_controller.dart';
 import 'package:zip_peer/controllers/reviews/review_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/bookings/booking_models.dart';
+import 'package:zip_peer/models/disputes/dispute_models.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
@@ -30,6 +32,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   late final BookingController _controller;
   late final ReviewController _reviewController;
   late final EcoController _ecoController;
+  late final DisputeController _disputeController;
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -48,6 +51,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
     _ecoController = Get.isRegistered<EcoController>()
         ? Get.find<EcoController>()
         : Get.put(EcoController());
+    _disputeController = Get.isRegistered<DisputeController>()
+        ? Get.find<DisputeController>()
+        : Get.put(DisputeController());
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadCurrentTab(refresh: true);
@@ -666,11 +672,81 @@ class _BookingsScreenState extends State<BookingsScreen> {
                           const Gap(10),
                           _photoStrip(detail.postRentalPhotos),
                         ],
+                        if (detail.status?.toLowerCase() == BookingStatuses.active ||
+                            detail.status?.toLowerCase() ==
+                                BookingStatuses.completed) ...[
+                          const Gap(20),
+                          MyButton(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _showOpenDisputeSheet(detail);
+                            },
+                            buttonText: 'Report a Problem',
+                            backgroundColor: kredColor.withOpacity(0.12),
+                            fontColor: kredColor,
+                            radius: 20,
+                          ),
+                        ],
                         const Gap(16),
                       ],
                     ),
             );
           },
+        );
+      },
+    );
+  }
+
+  Future<void> _showOpenDisputeSheet(BookingModel booking) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          margin: const EdgeInsets.only(top: 100),
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  MyText(
+                    text: 'Report a Problem',
+                    size: 20,
+                    weight: FontWeight.w700,
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const Gap(8),
+              MyText(text: booking.itemTitle, size: 14, color: kSubText),
+              const Gap(16),
+              _OpenDisputeForm(
+                onSubmit: (reason, description, evidence) =>
+                    _disputeController.openDispute(
+                      bookingId: booking.id,
+                      reason: reason,
+                      description: description,
+                      evidence: evidence,
+                    ),
+                onSubmitted: () {
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+              const Gap(16),
+            ],
+          ),
         );
       },
     );
@@ -1365,6 +1441,192 @@ class _ReviewTypeFormState extends State<_ReviewTypeForm> {
               onTap: _isSubmitting ? () {} : _submit,
               buttonText: _isSubmitting ? 'Submitting...' : 'Submit',
               backgroundColor: kPrimaryColor,
+              fontColor: kWhite,
+              radius: 20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OpenDisputeForm extends StatefulWidget {
+  const _OpenDisputeForm({required this.onSubmit, required this.onSubmitted});
+
+  final Future<bool> Function(
+    String reason,
+    String description,
+    List<File> evidence,
+  )
+  onSubmit;
+  final VoidCallback onSubmitted;
+
+  @override
+  State<_OpenDisputeForm> createState() => _OpenDisputeFormState();
+}
+
+class _OpenDisputeFormState extends State<_OpenDisputeForm> {
+  final TextEditingController _descriptionController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  String _reason = DisputeReasons.itemDamaged;
+  final List<File> _evidence = [];
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickEvidence() async {
+    final remaining = 5 - _evidence.length;
+    if (remaining <= 0) {
+      Get.snackbar('Evidence', 'You can attach up to 5 photos.');
+      return;
+    }
+    final picked = await _picker.pickMultiImage();
+    if (picked.isEmpty) return;
+    setState(() {
+      _evidence.addAll(
+        picked.take(remaining).map((f) => File(f.path)),
+      );
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_descriptionController.text.trim().length < 10) {
+      Get.snackbar('Description', 'Please describe the issue in at least 10 characters.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    final success = await widget.onSubmit(
+      _reason,
+      _descriptionController.text.trim(),
+      _evidence,
+    );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (success) {
+      widget.onSubmitted();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kWhite3,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText(text: 'Reason', size: 13, color: kSubText, weight: FontWeight.w600),
+          const Gap(10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: DisputeReasons.all.map((reason) {
+              final isSelected = reason == _reason;
+              return Bounce(
+                onTap: () => setState(() => _reason = reason),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? kPrimaryColor : kWhite,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? kPrimaryColor : kBorderColor2,
+                    ),
+                  ),
+                  child: MyText(
+                    text: DisputeReasons.labelFor(reason),
+                    size: 12,
+                    weight: FontWeight.w500,
+                    color: isSelected ? kWhite : kSubText,
+                  ),
+                ),
+              );
+            }).toList(growable: false),
+          ),
+          const Gap(14),
+          MyText(text: 'Description', size: 13, color: kSubText, weight: FontWeight.w600),
+          const Gap(8),
+          TextField(
+            controller: _descriptionController,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: 'Describe what happened',
+            ),
+          ),
+          const Gap(14),
+          Row(
+            children: [
+              MyText(text: 'Evidence (optional)', size: 13, color: kSubText, weight: FontWeight.w600),
+              const Spacer(),
+              Bounce(
+                onTap: _pickEvidence,
+                child: MyText(
+                  text: 'Add Photos',
+                  size: 12,
+                  color: kPrimaryColor,
+                  weight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (_evidence.isNotEmpty) ...[
+            const Gap(10),
+            SizedBox(
+              height: 64,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _evidence.length,
+                separatorBuilder: (_, _) => const Gap(8),
+                itemBuilder: (context, index) {
+                  final file = _evidence[index];
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: CommonImageView(
+                          file: file,
+                          height: 64,
+                          width: 64,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: -6,
+                        right: -6,
+                        child: Bounce(
+                          onTap: () => setState(() => _evidence.removeAt(index)),
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: kredColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, color: kWhite, size: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+          const Gap(16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: MyButton(
+              onTap: _isSubmitting ? () {} : _submit,
+              buttonText: _isSubmitting ? 'Submitting...' : 'Submit Report',
+              backgroundColor: kredColor,
               fontColor: kWhite,
               radius: 20,
             ),
