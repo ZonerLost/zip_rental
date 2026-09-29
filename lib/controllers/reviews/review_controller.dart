@@ -13,19 +13,24 @@ class ReviewController extends GetxController {
   bool isOwnerReviewsLoading = false;
   bool isPendingReviewsLoading = false;
   bool isSubmitReviewLoading = false;
+  bool isMyReviewsLoading = false;
 
   String? itemReviewsErrorMessage;
   String? ownerReviewsErrorMessage;
   String? pendingReviewsErrorMessage;
+  String? myReviewsErrorMessage;
 
   final List<ReviewModel> itemReviews = <ReviewModel>[];
   final List<ReviewModel> ownerReviews = <ReviewModel>[];
   final List<PendingReviewModel> pendingReviews = <PendingReviewModel>[];
+  final List<ReviewModel> myReviews = <ReviewModel>[];
 
   int itemReviewsPage = 1;
   bool itemReviewsHasNext = false;
   int ownerReviewsPage = 1;
   bool ownerReviewsHasNext = false;
+  int myReviewsPage = 1;
+  bool myReviewsHasNext = false;
 
   Future<void> fetchItemReviews(String itemId, {bool refresh = false}) async {
     if (refresh) {
@@ -108,6 +113,45 @@ class ReviewController extends GetxController {
     ownerReviewsHasNext =
         pagination?.hasNext ?? (result.reviews.length >= _pageSize);
     ownerReviewsPage = (pagination?.page ?? ownerReviewsPage) + 1;
+    update();
+  }
+
+  Future<void> fetchMyReviews({bool refresh = false}) async {
+    if (refresh) {
+      myReviewsPage = 1;
+      myReviewsHasNext = false;
+      myReviews.clear();
+    } else if (isMyReviewsLoading || (myReviews.isNotEmpty && !myReviewsHasNext)) {
+      return;
+    }
+
+    isMyReviewsLoading = true;
+    myReviewsErrorMessage = null;
+    update();
+
+    final result = await _reviewService.getMyReviews(
+      page: myReviewsPage,
+      limit: _pageSize,
+    );
+
+    isMyReviewsLoading = false;
+    if (!result.success) {
+      myReviewsErrorMessage = result.message;
+      update();
+      return;
+    }
+
+    if (refresh) {
+      myReviews
+        ..clear()
+        ..addAll(result.reviews);
+    } else {
+      myReviews.addAll(result.reviews);
+    }
+
+    final pagination = result.pagination;
+    myReviewsHasNext = pagination?.hasNext ?? (result.reviews.length >= _pageSize);
+    myReviewsPage = (pagination?.page ?? myReviewsPage) + 1;
     update();
   }
 

@@ -52,6 +52,11 @@ class ReviewUserModel {
     );
   }
 
+  /// `reviewee` arrives as a bare id string on some review-list endpoints
+  /// (confirmed: `GET /reviews/user/:id`) rather than the populated object
+  /// other endpoints send — this keeps at least the id instead of losing it.
+  factory ReviewUserModel.fromId(String id) => ReviewUserModel(id: id);
+
   String get fullName {
     final combined = <String>[
       (firstName ?? '').trim(),
@@ -76,15 +81,38 @@ class ReviewItemModel {
     );
   }
 
+  /// `item` arrives as a bare id string on some review-list endpoints
+  /// (confirmed: `GET /reviews/item/:id`) rather than the populated object
+  /// other endpoints send — this keeps at least the id instead of losing it.
+  factory ReviewItemModel.fromId(String id) => ReviewItemModel(id: id);
+
   String get thumbnailUrl => photos.isNotEmpty ? photos.first : '';
+}
+
+/// The populated `booking` on a review — confirmed shape (2026-09-29, via
+/// `GET /reviews/admin/all` returning real seed data): `{ _id, startDate,
+/// endDate }`, an object, not a bare id string.
+class ReviewBookingInfo {
+  const ReviewBookingInfo({required this.id, this.startDate, this.endDate});
+
+  final String id;
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  factory ReviewBookingInfo.fromJson(Map<String, dynamic> json) {
+    return ReviewBookingInfo(
+      id: _asString(json['_id']) ?? _asString(json['id']) ?? '',
+      startDate: _asDateTime(json['startDate']),
+      endDate: _asDateTime(json['endDate']),
+    );
+  }
 }
 
 class ReviewModel {
   const ReviewModel({
     required this.id,
-    this.bookingId,
+    this.booking,
     this.reviewer,
-    this.revieweeId,
     this.reviewee,
     this.item,
     this.type,
@@ -94,9 +122,10 @@ class ReviewModel {
   });
 
   final String id;
-  final String? bookingId;
+  final ReviewBookingInfo? booking;
   final ReviewUserModel? reviewer;
-  final String? revieweeId;
+  /// Absent on `renter_to_item` reviews (confirmed) — those are about the
+  /// item, not a person, so there's no reviewee to show.
   final ReviewUserModel? reviewee;
   final ReviewItemModel? item;
   final String? type;
@@ -104,12 +133,18 @@ class ReviewModel {
   final String? comment;
   final DateTime? createdAt;
 
+  String? get bookingId => booking?.id.isNotEmpty == true ? booking!.id : null;
+  String? get revieweeId => reviewee?.id;
+
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     final bookingRaw = json['booking'];
     final reviewerRaw = json['reviewer'];
     final revieweeRaw = json['reviewee'];
     final itemRaw = json['item'];
 
+    final bookingMap = bookingRaw is Map
+        ? bookingRaw.map((key, value) => MapEntry(key.toString(), value))
+        : null;
     final reviewerMap = reviewerRaw is Map
         ? reviewerRaw.map((key, value) => MapEntry(key.toString(), value))
         : null;
@@ -120,17 +155,48 @@ class ReviewModel {
         ? itemRaw.map((key, value) => MapEntry(key.toString(), value))
         : null;
 
+    ReviewBookingInfo? booking;
+    if (bookingMap != null) {
+      booking = ReviewBookingInfo.fromJson(bookingMap);
+    } else if (bookingRaw is String && bookingRaw.trim().isNotEmpty) {
+      booking = ReviewBookingInfo(id: bookingRaw.trim());
+    } else {
+      final fallbackId =
+          _asString(json['bookingId']) ?? _asString(json['booking_id']);
+      booking = fallbackId == null ? null : ReviewBookingInfo(id: fallbackId);
+    }
+
+    // `reviewer`/`reviewee`/`item` are populated objects on most endpoints
+    // but confirmed as bare id strings on others (e.g. `reviewee` on
+    // `GET /reviews/user/:id`, `item` on `GET /reviews/item/:id`) — keep at
+    // least the id in that case rather than silently dropping it.
+    ReviewUserModel? reviewer = reviewerMap == null
+        ? null
+        : ReviewUserModel.fromJson(reviewerMap);
+    if (reviewer == null && reviewerRaw is String && reviewerRaw.trim().isNotEmpty) {
+      reviewer = ReviewUserModel.fromId(reviewerRaw.trim());
+    }
+
+    ReviewUserModel? reviewee = revieweeMap == null
+        ? null
+        : ReviewUserModel.fromJson(revieweeMap);
+    if (reviewee == null && revieweeRaw is String && revieweeRaw.trim().isNotEmpty) {
+      reviewee = ReviewUserModel.fromId(revieweeRaw.trim());
+    }
+
+    ReviewItemModel? item = itemMap == null
+        ? null
+        : ReviewItemModel.fromJson(itemMap);
+    if (item == null && itemRaw is String && itemRaw.trim().isNotEmpty) {
+      item = ReviewItemModel.fromId(itemRaw.trim());
+    }
+
     return ReviewModel(
       id: _asString(json['_id']) ?? _asString(json['id']) ?? '',
-      bookingId: bookingRaw is String
-          ? bookingRaw
-          : _asString(json['bookingId']) ?? _asString(json['booking_id']),
-      reviewer: reviewerMap == null ? null : ReviewUserModel.fromJson(reviewerMap),
-      revieweeId: revieweeRaw is String
-          ? revieweeRaw
-          : _asString(json['revieweeId']),
-      reviewee: revieweeMap == null ? null : ReviewUserModel.fromJson(revieweeMap),
-      item: itemMap == null ? null : ReviewItemModel.fromJson(itemMap),
+      booking: booking,
+      reviewer: reviewer,
+      reviewee: reviewee,
+      item: item,
       type: _asString(json['type']),
       rating: _asInt(json['rating']),
       comment: _asString(json['comment']),
@@ -211,7 +277,10 @@ class PendingReviewModel {
       bookingId: _asString(bookingMap['_id']) ?? _asString(bookingMap['id']) ?? '',
       itemTitle: itemMap == null ? null : _asString(itemMap['title']),
       itemPhoto: photos.isNotEmpty ? photos.first : null,
-      pendingTypes: _toStringList(json['pendingTypes']),
+      // Growable, unlike `_toStringList`'s own fixed-length result —
+      // ReviewController.submitReview() calls `.remove()` on this list in
+      // place, which throws UnsupportedError on a fixed-length list.
+      pendingTypes: List<String>.from(_toStringList(json['pendingTypes'])),
     );
   }
 }

@@ -101,14 +101,19 @@ class MyButton extends StatelessWidget {
                             height: 20,
                           ),
                         ),
-                      MyText(
-                        paddingLeft: hasicon ? 10 : 0,
-                        text: buttonText,
-                        size: fontSize ?? 16,
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: MyText(
+                            paddingLeft: hasicon ? 10 : 0,
+                            text: buttonText,
+                            size: fontSize ?? 16,
 
-                        letterSpacing: 0.5,
-                        color: fontColor ?? kWhite,
-                        weight: fontWeight ?? FontWeight.w500,
+                            letterSpacing: 0.5,
+                            color: fontColor ?? kWhite,
+                            weight: fontWeight ?? FontWeight.w500,
+                          ),
+                        ),
                       ),
                       if (hasiconRight)
                         Padding(
