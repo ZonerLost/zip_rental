@@ -1,89 +1,85 @@
 # Disputes API — two bugs found during integration
 
-**Context:** integrated the `08 · Disputes` Postman collection into the Flutter app and tested every renter/owner-facing endpoint live against production (`https://au2p3vkiqi.us-east-1.awsapprunner.com`), not just against the docs. Two things don't match the documented/expected behavior. Neither is blocking — the client handles both gracefully — but both need a backend fix.
+**Re:** `disputes-api-answers.md`
+**Status: ✅ all three resolved, re-tested live on production 2026-10-01.** Both bugs are fixed and the `/my` semantics question is answered — client updated to match. Thanks for the detailed writeup, especially flagging the pre/post-rental photos 403 before we hit it independently.
+
+**Context:** integrated the `08 · Disputes` Postman collection into the Flutter app and tested every renter/owner-facing endpoint live against production (`https://au2p3vkiqi.us-east-1.awsapprunner.com`), not just against the docs. Original report below, kept for the record, with resolution notes added to each section.
 
 ---
 
-## 1. Evidence images are uploaded successfully but come back `403 Forbidden` — the S3 path isn't public-read
+## 1. ✅ RESOLVED — evidence images now load (signed URLs)
 
-`POST /disputes/:id/evidence` works correctly: it accepts the multipart upload and returns the new URL in `evidence[]`. But that URL isn't fetchable by anyone — it 403s even with no auth headers at all, same as a browser or the app's image loader would request it.
+Confirmed live: `evidence[]` URLs are now presigned and actually fetchable.
 
-**Repro:**
 ```bash
-# Upload evidence to an existing dispute
-curl -X POST "https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1/disputes/6abb96375fad339ccdfa5a2e/evidence" \
-  -H "Authorization: Bearer <token>" \
-  -F "evidence=@photo.png;type=image/png"
-
-# → 200, data.evidence[0] =
-# https://zonerlost-media.s3.us-east-1.amazonaws.com/disputes/6abb96375fad339ccdfa5a2e/evidence/17b62142-9ab0-41a0-ba90-5f3901fca702-1790678634148
-
-# Now fetch that exact URL:
-curl -s -o /dev/null -w "%{http_code}\n" \
-  "https://zonerlost-media.s3.us-east-1.amazonaws.com/disputes/6abb96375fad339ccdfa5a2e/evidence/17b62142-9ab0-41a0-ba90-5f3901fca702-1790678634148"
-# → 403
+curl -s -o /dev/null -w "%{http_code}\n" "<fresh evidence URL from GET /disputes/:id>"
+# → 200 (was 403)
 ```
 
-Compare with two other prefixes in the **same bucket**, both public-read and working fine (these are what item photos and profile photos already use elsewhere in the app):
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" "https://zonerlost-media.s3.us-east-1.amazonaws.com/item-photos/6df83b15-8258-49af-b675-148d9b2dea87-1789968559478"
-# → 200
+Also confirmed the new `evidenceUrlsExpireAt` field is present alongside `evidence[]` on `GET /disputes/my`, `GET /disputes/:id`, and the `POST /disputes/:id/evidence` response — all three checked directly. **Client change made:** the app never persisted these URLs to begin with (each screen re-fetches the dispute fresh on open), so no caching fix was needed — we just added `evidenceUrlsExpireAt` to our model for completeness. Kept the existing fallback error icon for the rare case a URL goes stale mid-session.
 
-curl -s -o /dev/null -w "%{http_code}\n" "https://zonerlost-media.s3.us-east-1.amazonaws.com/profile-photos/373b50cc-d743-4051-87a2-97d2b965afec-1790317496145"
-# → 200
-```
+One thing we hadn't realized until testing the fix: **both parties can add evidence to an open dispute**, not just the reporter (confirmed live — the reported-against account successfully uploaded evidence and got `myRole: "reported_against"` back). Our UI previously only showed "Add Evidence" to the reporter; now it shows to both parties while open, and only "Cancel Dispute" stays reporter-only (also re-confirmed: reported-against still gets `"Only the reporter can cancel a dispute"`).
 
-Looks like the bucket policy / object ACL for the `disputes/` prefix just wasn't set up the same way as `item-photos/` and `profile-photos/` when this feature was added. Either make `disputes/evidence/*` public-read to match, or — if evidence photos are meant to be more restricted than item/profile photos on purpose — switch the API to return signed/presigned URLs instead of raw S3 URLs, and let us know so we can adjust how we cache/refresh them client-side.
+<details>
+<summary>Original report (for the record)</summary>
 
-**Client impact:** none crash-wise — our image widget already handles a failed load with a fallback error icon instead of breaking the screen. But evidence photos are currently unviewable by anyone (reporter, the other party, or admin) until this is fixed.
+`POST /disputes/:id/evidence` accepted uploads fine, but the returned `evidence[]` URL 403'd for everyone, including no-auth requests — compared against `item-photos/` and `profile-photos/` in the same bucket, both public-read and working.
+</details>
 
 ---
 
-## 2. `GET /disputes/my?status=` is ignored server-side
+## 2. ✅ RESOLVED — `?status=` now filters, and rejects bad values
 
-The `status` query param (documented values: `open`, `under_review`, `resolved_for_renter`, `resolved_for_owner`, `resolved_mutually`, `closed`) doesn't filter anything — every value returns the same unfiltered list.
-
-**Repro:** one account with exactly one dispute, whose actual `status` is `"closed"`:
 ```bash
-curl "https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1/disputes/my?status=open&page=1&limit=10" \
-  -H "Authorization: Bearer <token>"
-# → data: [ { ..., "status": "closed", ... } ]   (should be empty)
+curl "https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1/disputes/my?status=open&page=1&limit=10" -H "Authorization: Bearer <token>"
+# → only open disputes now (previously returned everything, including closed ones)
 
-curl "https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1/disputes/my?status=closed&page=1&limit=10" \
-  -H "Authorization: Bearer <token>"
-# → data: [ { ..., "status": "closed", ... } ]   (same result either way)
+curl "https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1/disputes/my?status=bogus&page=1&limit=10" -H "Authorization: Bearer <token>"
+# → 400, "\"status\" must be one of [open, under_review, resolved_for_renter, resolved_for_owner, resolved_mutually, closed]"
 ```
 
-Both calls return byte-identical `data`/`pagination`, including a `status=open` request returning a dispute whose real status is `closed`. Looks like the param is either never read or never applied to the query.
+Both re-tested directly. **Client change made:** our `DisputeStatuses` model now also names the four admin-only outcomes (`under_review`, `resolved_for_renter`, `resolved_for_owner`, `resolved_mutually`) alongside `open`/`closed`, since those are now confirmed-valid values a user's own dispute could carry. Our Open/Closed tabs are unchanged — a dispute in one of the four admin states still displays correctly via our existing "prettify unknown status" fallback, so we didn't add dedicated tabs for them.
 
-**Client impact:** none crash-wise — our Open/Closed filter tabs are wired up correctly and send the right param, they just won't actually narrow the list until the backend honors it. Currently every tab shows the same full list.
+<details>
+<summary>Original report (for the record)</summary>
+
+`status=open` and `status=closed` returned byte-identical, unfiltered results — including a `status=open` request returning a dispute whose real status was `closed`.
+</details>
 
 ---
 
-## 3. Not a bug, but worth flagging: `GET /disputes/my` doesn't match its own description
+## 3. ✅ RESOLVED — "either party" confirmed and implemented
 
-The collection describes this endpoint as "Disputes I am part of," which reads as *either* party — reporter or the one reported against, matching how `GET /disputes/:id` is documented ("Either party" can view a single dispute). In practice it only returns disputes where the caller is `reportedBy`.
+Re-tested with the same two-account setup as the original report:
 
-**Repro:** two accounts, one dispute each way on the same booking —
 ```bash
-# Account A reports account B
-POST /disputes  (as A)  → reportedBy: A, reportedAgainst: B
-
-# Account B reports account A (different booking not required — same booking is fine)
-POST /disputes  (as B)  → reportedBy: B, reportedAgainst: A
-
-GET /disputes/my  (as A)  → only the dispute A filed. The one B filed against A is absent.
-GET /disputes/my  (as B)  → only the dispute B filed. The one A filed against A is absent from A's own list too (obviously — different account), but B's own filed-by-A-against-B dispute doesn't show on B's `/my` either.
+GET /disputes/my  (as A)
+# → now returns BOTH disputes: the one A filed (myRole: "reporter")
+#   AND the one B filed against A (myRole: "reported_against")
 ```
 
-So today there's no way for a user to see disputes filed *against* them — `GET /disputes/:id` would show it if they somehow had the id, but nothing surfaces that id to them. If the intent really is "either party," `/my` should also match on `reportedAgainst`. If the intent is "only what I filed," that's fine too, just means we should reword our own UI copy rather than mirroring the doc's "either party" framing — let us know which one it's supposed to be.
+Also confirmed: `?role=against` and `?role=reporter` both filter correctly, `reportedBy`/`reportedAgainst` are now both fully populated objects on the list endpoint (previously `reportedBy` was a bare id string there), and `myRole` is present on list/detail/evidence-upload responses — not yet confirmed on the create/cancel action responses, so the client falls back to an id comparison when `myRole` is absent rather than assuming it's always there.
+
+**Client change made:** `DisputeController.isReporter()` now reads `dispute.myRole` directly instead of comparing ids, with the id-comparison kept only as a fallback. Card labels ("You reported X" / "X reported you") now work correctly for disputes filed against the current user, which simply didn't show up in the list before.
+
+<details>
+<summary>Original report (for the record)</summary>
+
+`GET /disputes/my` only returned disputes where the caller was `reportedBy`, despite being documented as "disputes I am part of" — disputes filed against a user were invisible with no way to discover their id.
+</details>
+
+---
+
+## 4. Noted, not actioned: known issue nearby
+
+Booking condition photos (`bookings/:id/pre-rental` / `post-rental`) are confirmed still 403ing for the same original reason (unsigned raw URLs, no public ACL on that prefix). Not re-testing or filing separately since you already flagged it as known and tracked — just confirming we read that note and won't file a duplicate report if/when we notice it independently in that part of the app.
 
 ---
 
 ## Appendix: environment
 
 - Backend: `https://au2p3vkiqi.us-east-1.awsapprunner.com/api/v1`
-- Test accounts: `zaindev2@yopmail.com` (owner, reporter of dispute `6abb96375fad339ccdfa5a2e`, reason `item_damaged`, now `closed`), `v8fujw3ene@olipii.com` (renter, reporter of dispute `6abb96bf5fad339ccdfa5a6b`, reason `item_not_as_described`, `open`)
+- Test accounts: `zaindev2@yopmail.com` (dispute `6abb96375fad339ccdfa5a2e`, reason `item_damaged`, `closed`, `myRole: reporter` for this account), `v8fujw3ene@olipii.com` (dispute `6abb96bf5fad339ccdfa5a6b`, reason `item_not_as_described`, `open`, `myRole: reporter` for this account — and `reported_against` for the other)
 - Shared booking used for both: `6abb8c2b5fad339ccdfa58c2`
-- Confirmed while testing, not a bug — noting for the record: the `reason` enum isn't in the collection description, but a validation error names it exactly: `item_damaged, item_not_returned, item_not_as_described, late_return, no_show, payment_issue, other`. Also confirmed: only the reporter can cancel a dispute (`"Only the reporter can cancel a dispute"`), only an `open` dispute can be cancelled, cancelling sets `status` to `closed` (not a separate `cancelled` value), and a second dispute on the same booking by the same reporter is rejected with `"You have already raised a dispute for this booking"`.
-- Tested: 2026-09-29
+- Confirmed while testing, not a bug: `reason` enum is `item_damaged, item_not_returned, item_not_as_described, late_return, no_show, payment_issue, other`; `description` must be 20–2000 characters (client-side minimum bumped from 10 to 20 to match, `maxLength: 2000` added to the input); only the reporter can cancel, only while `open`, cancelling sets `closed` (no separate `cancelled` value); one dispute per booking per reporter (both parties can each file their own on the same booking).
+- Original test pass: 2026-09-29. Fix re-verification pass: 2026-10-01.

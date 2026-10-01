@@ -75,6 +75,43 @@ const _detailJson = {
   '__v': 0,
 };
 
+// Real entry captured live from GET /disputes/my on 2026-10-01, after the
+// backend fix — confirms `myRole` and `evidenceUrlsExpireAt` are present,
+// and that `reportedBy`/`reportedAgainst` are now both populated objects on
+// this endpoint (previously `reportedBy` was a bare string here).
+const _myDisputesEntryPostFixJson = {
+  '_id': '6abb96375fad339ccdfa5a2e',
+  'booking': {
+    '_id': '6abb8c2b5fad339ccdfa58c2',
+    'startDate': '2026-10-25T09:00:00.000Z',
+    'endDate': '2026-10-26T09:00:00.000Z',
+    'status': 'completed',
+  },
+  'reportedBy': {
+    '_id': '6ab0bfc5a71e40aeb370f177',
+    'firstName': 'Zain',
+    'lastName': 'Hassan',
+    'profilePhoto': 'https://example.com/photo2.jpg',
+  },
+  'reportedAgainst': {
+    '_id': '6ab61352bcde82db5bf416a5',
+    'firstName': 'Zain',
+    'lastName': 'Hassan2',
+    'profilePhoto': 'https://example.com/photo.jpg',
+  },
+  'reason': 'item_damaged',
+  'description': 'The drill chuck was cracked when it came back.',
+  'evidence': [
+    'https://zonerlost-media.s3.us-east-1.amazonaws.com/disputes/6abb96375fad339ccdfa5a2e/evidence/17b62142-9ab0-41a0-ba90-5f3901fca702-1790678634148?X-Amz-Signature=redacted',
+  ],
+  'status': 'closed',
+  'createdAt': '2026-09-29T10:43:03.770Z',
+  'updatedAt': '2026-09-29T10:44:02.790Z',
+  '__v': 0,
+  'evidenceUrlsExpireAt': '2026-10-01T06:23:54.747Z',
+  'myRole': 'reporter',
+};
+
 void main() {
   group('DisputeModel.fromJson (real production data, 2026-09-29)', () {
     test('POST /disputes sends booking/reportedBy/reportedAgainst as bare id strings', () {
@@ -127,6 +164,22 @@ void main() {
     test('labelFor produces a friendly label for every known reason', () {
       expect(DisputeReasons.labelFor(DisputeReasons.itemNotAsDescribed), 'Item Not As Described');
       expect(DisputeReasons.labelFor('unknown_reason'), 'Other');
+    });
+  });
+
+  group('DisputeModel.fromJson — post-fix fields (real, confirmed 2026-10-01)', () {
+    test('parses myRole and evidenceUrlsExpireAt', () {
+      final dispute = DisputeModel.fromJson(_myDisputesEntryPostFixJson);
+      expect(dispute.myRole, DisputeRoles.reporter);
+      expect(dispute.evidenceUrlsExpireAt, DateTime.parse('2026-10-01T06:23:54.747Z'));
+      expect(dispute.reportedBy?.fullName, 'Zain Hassan');
+      expect(dispute.reportedAgainst?.fullName, 'Zain Hassan2');
+    });
+
+    test('myRole is null when absent, not a crash (e.g. unconfirmed action responses)', () {
+      final dispute = DisputeModel.fromJson(_createResponseJson);
+      expect(dispute.myRole, isNull);
+      expect(dispute.evidenceUrlsExpireAt, isNull);
     });
   });
 

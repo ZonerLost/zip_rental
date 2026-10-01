@@ -12,8 +12,6 @@ import 'package:zip_peer/views/screens/profile/help_center.dart';
 import 'package:zip_peer/views/screens/profile/language.dart';
 import 'package:zip_peer/views/screens/profile/privacy_policy.dart';
 import 'package:zip_peer/views/screens/profile/terms_condition.dart';
-import 'package:zip_peer/views/screens/disputes/my_disputes_screen.dart';
-import 'package:zip_peer/views/screens/reviews/my_reviews_screen.dart';
 import 'package:zip_peer/views/screens/subscriptions/address.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';

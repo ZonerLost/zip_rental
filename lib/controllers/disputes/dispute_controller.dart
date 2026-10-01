@@ -47,8 +47,17 @@ class DisputeController extends GetxController {
     }
   }
 
-  bool isReporter(DisputeModel dispute) =>
-      currentUserId != null && dispute.reportedBy?.id == currentUserId;
+  /// Prefers the server's own `myRole` (added 2026-10-01) over an id
+  /// comparison — confirmed present on the list/detail/evidence-upload
+  /// responses; falls back to comparing ids for any response shape that
+  /// doesn't carry it (e.g. the create/cancel action responses, unconfirmed).
+  bool isReporter(DisputeModel dispute) {
+    final role = dispute.myRole;
+    if (role != null) {
+      return role == DisputeRoles.reporter;
+    }
+    return currentUserId != null && dispute.reportedBy?.id == currentUserId;
+  }
 
   Future<void> setStatusFilter(String? status) async {
     myDisputesStatusFilter = status;

@@ -506,7 +506,9 @@ class _DisputeDetailSheet extends StatelessWidget {
                   .toList(growable: false),
             ),
           ],
-          if (isReporter && dispute.isOpen) ...[
+          if (dispute.isOpen) ...[
+            // Either party can add evidence while a dispute is open
+            // (confirmed live, 2026-10-01) — only cancelling is reporter-only.
             const Gap(20),
             MyButton(
               onTap: isUploadingEvidence ? () {} : onAddEvidence,
@@ -515,14 +517,16 @@ class _DisputeDetailSheet extends StatelessWidget {
               fontColor: kPrimaryColor,
               radius: 20,
             ),
-            const Gap(12),
-            MyButton(
-              onTap: isCancelling ? () {} : onCancel,
-              buttonText: isCancelling ? 'Cancelling...' : 'Cancel Dispute',
-              backgroundColor: kredColor.withOpacity(0.15),
-              fontColor: kredColor,
-              radius: 20,
-            ),
+            if (isReporter) ...[
+              const Gap(12),
+              MyButton(
+                onTap: isCancelling ? () {} : onCancel,
+                buttonText: isCancelling ? 'Cancelling...' : 'Cancel Dispute',
+                backgroundColor: kredColor.withOpacity(0.15),
+                fontColor: kredColor,
+                radius: 20,
+              ),
+            ],
           ],
           const Gap(16),
         ],

@@ -1495,8 +1495,9 @@ class _OpenDisputeFormState extends State<_OpenDisputeForm> {
   }
 
   Future<void> _submit() async {
-    if (_descriptionController.text.trim().length < 10) {
-      Get.snackbar('Description', 'Please describe the issue in at least 10 characters.');
+    // Server requires 20–2000 characters (confirmed live, 2026-10-01).
+    if (_descriptionController.text.trim().length < 20) {
+      Get.snackbar('Description', 'Please describe the issue in at least 20 characters.');
       return;
     }
 
@@ -1558,6 +1559,7 @@ class _OpenDisputeFormState extends State<_OpenDisputeForm> {
           TextField(
             controller: _descriptionController,
             maxLines: 4,
+            maxLength: 2000,
             decoration: const InputDecoration(
               hintText: 'Describe what happened',
             ),

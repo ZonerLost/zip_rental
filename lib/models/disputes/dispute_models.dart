@@ -38,15 +38,33 @@ class DisputeReasons {
 
 /// `open`/`closed` are the only statuses this app ever sets (cancelling a
 /// dispute moves it to `closed`, confirmed live — there's no separate
-/// `cancelled` value). Admin-only outcomes (`under_review`,
-/// `resolved_for_renter`, `resolved_for_owner`, `resolved_mutually`) can
-/// still show up on a dispute the other party resolved, so status display
-/// falls back to a prettified raw string rather than restricting to these.
+/// `cancelled` value). The other four are admin-only outcomes (confirmed as
+/// the full, validated set via `GET /disputes/my?status=` live, 2026-10-01)
+/// that can still show up on a dispute the other party had resolved; status
+/// display falls back to a prettified raw string rather than restricting to
+/// these, so an admin outcome always renders sensibly without a dedicated tab.
 class DisputeStatuses {
   const DisputeStatuses._();
 
   static const String open = 'open';
   static const String closed = 'closed';
+  static const String underReview = 'under_review';
+  static const String resolvedForRenter = 'resolved_for_renter';
+  static const String resolvedForOwner = 'resolved_for_owner';
+  static const String resolvedMutually = 'resolved_mutually';
+}
+
+/// Who the current user is on a given dispute, as told directly by the
+/// server (`myRole`, added 2026-10-01) rather than inferred by comparing
+/// ids client-side. Confirmed live on `GET /disputes/my`, `GET /disputes/:id`
+/// and the evidence-upload response; not confirmed on the create/cancel
+/// action responses, so callers should fall back to an id comparison when
+/// `myRole` is absent.
+class DisputeRoles {
+  const DisputeRoles._();
+
+  static const String reporter = 'reporter';
+  static const String reportedAgainst = 'reported_against';
 }
 
 class CreateDisputeRequestModel {
@@ -143,6 +161,8 @@ class DisputeModel {
     this.status,
     this.createdAt,
     this.updatedAt,
+    this.myRole,
+    this.evidenceUrlsExpireAt,
   });
 
   final String id;
@@ -155,6 +175,13 @@ class DisputeModel {
   final String? status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? myRole;
+
+  /// `evidence[]` URLs are presigned S3 links valid for ~1 hour (added
+  /// 2026-10-01, fixing a prior 403 on raw unsigned URLs). Never persist
+  /// these — re-fetch the dispute for fresh links once they're close to or
+  /// past this timestamp.
+  final DateTime? evidenceUrlsExpireAt;
 
   String? get bookingId => booking?.id.isNotEmpty == true ? booking!.id : null;
   bool get isOpen => (status ?? '').toLowerCase() == DisputeStatuses.open;
@@ -214,6 +241,8 @@ class DisputeModel {
       status: _asString(json['status']),
       createdAt: _asDateTime(json['createdAt']),
       updatedAt: _asDateTime(json['updatedAt']),
+      myRole: _asString(json['myRole']),
+      evidenceUrlsExpireAt: _asDateTime(json['evidenceUrlsExpireAt']),
     );
   }
 }
