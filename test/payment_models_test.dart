@@ -93,25 +93,33 @@ void main() {
       StripeRuntimeConfig.paymentsEnabled = false;
     });
 
-    // NOTE (2026-10-06): StripeConfig.publishableKeyOverride is temporarily
-    // hardcoded to a real test key (see the TODO in stripe_config.dart) for
-    // local "Pay Now" testing, rather than sourced from --dart-define — so
-    // it's always non-empty here, and by design bypasses the paymentsEnabled
-    // gate entirely (a manual override is explicit "test now" intent). These
-    // three assert that bypass. Once the override is reverted to
-    // String.fromEnvironment(...) (empty by default), restore the original
-    // intent of this group: isConfigured should require a fetched server
-    // config with paymentsEnabled: true, not just a key.
+    // NOTE (2026-10-07): the override is back to String.fromEnvironment (empty unless someone
+    // passes --dart-define=STRIPE_PUBLISHABLE_KEY), so these assert the original intent again:
+    // isConfigured requires a *fetched* server config that says paymentsEnabled, not merely a key.
+    // The previous two tests asserted the override's bypass and so failed the moment the hardcoded
+    // key was removed — which is what a test pinned to a temporary workaround does.
 
-    test('override bypasses the paymentsEnabled gate — true even before applyFrom', () {
-      expect(StripeRuntimeConfig.isConfigured, isTrue);
+    test('false before applyFrom — a key alone is not a configured gateway', () {
+      expect(StripeRuntimeConfig.isConfigured, isFalse);
     });
 
-    test('override bypasses the paymentsEnabled gate — true even when server reports false', () {
+    test('false when the server reports paymentsEnabled: false', () {
       StripeRuntimeConfig.applyFrom(
         PaymentsConfigModel.fromJson({..._paymentsConfigJson, 'paymentsEnabled': false}),
       );
-      expect(StripeRuntimeConfig.isConfigured, isTrue);
+      expect(StripeRuntimeConfig.isConfigured, isFalse);
+    });
+
+    test('false when the server sends no publishable key at all', () {
+      // Exactly what production returns today: { publishableKey: null, paymentsEnabled: false }.
+      StripeRuntimeConfig.applyFrom(
+        PaymentsConfigModel.fromJson({
+          ..._paymentsConfigJson,
+          'publishableKey': null,
+          'paymentsEnabled': false,
+        }),
+      );
+      expect(StripeRuntimeConfig.isConfigured, isFalse);
     });
 
     test('true once applied with paymentsEnabled and a pk_ key', () {
