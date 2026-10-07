@@ -24,13 +24,30 @@ import 'package:zip_peer/views/screens/payouts/payout_information_screen.dart';
 // `retry` are handled identically — the status itself says what's next.
 StreamSubscription<Uri>? _deepLinkSub;
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await _maybeInitStripe();
+
+  // Synchronous only: these just install listeners, so they cannot delay the first frame.
   _listenForSessionExpiry();
   _listenForPayoutDeepLinks();
-  await _maybeStartTokenRefresh();
+
   runApp(MyApp());
+
+  // Deliberately NOT awaited, and deliberately after runApp().
+  //
+  // Both of these make network calls, and ApiServiceBase has a 25s timeout — so awaiting them before
+  // runApp() meant a cold start on a flaky network could sit on a blank screen for up to ~50s with
+  // nothing rendered. That reads as a crash to a user and as a hang to an app reviewer.
+  //
+  // Neither is needed for correctness before the first frame:
+  //   - the Stripe config has two independent fallbacks (PaymentMethodController.onInit and
+  //     ensureStripeConfigLoaded), and a Pay Now tap with Stripe unconfigured is already handled
+  //     with a message rather than a crash;
+  //   - the access token is ensured per-request inside ApiServiceBase, which also refreshes and
+  //     retries once on a 401, so the only thing _maybeStartTokenRefresh adds is the background
+  //     refresh timer — useful, but not something to hold the UI for.
+  unawaited(_maybeInitStripe());
+  unawaited(_maybeStartTokenRefresh());
 }
 
 Future<void> _maybeInitStripe() async {

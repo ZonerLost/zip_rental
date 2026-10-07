@@ -8,25 +8,37 @@ import 'package:zip_peer/models/chat/chat_models.dart';
 //  Manages the Socket.io connection and exposes typed stream callbacks.
 // ─────────────────────────────────────────────────────────────────────────────
 class ChatSocketService {
-  static const String _socketUrl =
-      'https://au2p3vkiqi.us-east-1.awsapprunner.com';
+  /// Override with `--dart-define=SOCKET_URL=https://...`.
+  ///
+  /// Defaults to the CloudFront distribution in front of the ECS/ALB service, which is **not** the
+  /// REST host. REST still goes to App Runner, and that is deliberate: App Runner cannot carry a
+  /// WebSocket at all (see [socketEnabled]), so sockets need a different origin until the API moves
+  /// over wholesale. Both serve the same backend, so a token works on either.
+  static const String _socketUrl = String.fromEnvironment(
+    'SOCKET_URL',
+    defaultValue: 'https://d2gl4lhyqlw2e6.cloudfront.net',
+  );
 
-  /// Confirmed with the backend team (2026-09-25): this host's WebSocket
-  /// upgrade is rejected at the AWS App Runner proxy level, before it ever
-  /// reaches their Node process — and on native platforms this client can
-  /// only ever speak WebSocket (see the long comment in [connect]), so the
-  /// socket can never actually connect right now. A fixed host (ECS +
-  /// ALB) exists and is proven working, but isn't live yet (no TLS cert
-  /// on the load balancer). Chat falls back to REST polling
-  /// (ChatController/ChatMessagesController/BottomNavController) while
-  /// this is false, so [connect] is a no-op — no point burning
-  /// battery/network on 5 guaranteed-to-fail reconnect attempts every
-  /// time a chat screen opens. Flip to true (and update [_socketUrl] if
-  /// the backend gives a new origin) once they confirm the switch is
-  /// thrown — see docs/backend-chat-socket-questions.md section 5, which
-  /// also lists the only other change needed at that point (drop the
-  /// forced `transports`/`upgrade` options in [connect]).
-  static const bool socketEnabled = false;
+  /// On by default since 2026-10-07. Disable with `--dart-define=SOCKET_ENABLED=false`.
+  ///
+  /// This was off for weeks because there was nowhere to connect to. App Runner rejects the
+  /// WebSocket upgrade at its proxy, before the Node process sees it, and on native platforms this
+  /// client can only ever speak WebSocket (see the long comment in [connect]) — so the socket could
+  /// not connect at all, and trying would only burn battery on five guaranteed failures every time a
+  /// chat screen opened. Chat fell back to REST polling, and still does whenever this is false.
+  ///
+  /// [_socketUrl] now points at a CloudFront distribution in front of the ECS/ALB service, verified
+  /// end to end on 2026-10-07: health 200 over TLS, socket.io handshake fine, and the WebSocket
+  /// upgrade answering **HTTP 101 Switching Protocols** — the exact thing App Runner refuses.
+  /// CloudFront carries WebSocket natively and serves a trusted `*.cloudfront.net` certificate,
+  /// which is what makes `wss://` work without owning a domain.
+  ///
+  /// That hostname is a stopgap. When the API gets a real domain with its own certificate, point
+  /// `SOCKET_URL` at it — no code change needed.
+  static const bool socketEnabled = bool.fromEnvironment(
+    'SOCKET_ENABLED',
+    defaultValue: true,
+  );
 
   // The chat list screen and every open conversation thread each used to
   // create their own ChatSocketService — meaning two (or more) separate
@@ -133,14 +145,16 @@ class ChatSocketService {
     // do NOT currently change native behavior — see
     // docs/backend-chat-socket-questions.md for the actual fix needed
     // (App Runner/infra allowing a direct WebSocket upgrade).
+    // Transports are left to socket.io to negotiate. Forcing polling was a workaround for App
+    // Runner, and it never worked on native anyway — the comment above explains why the IO transport
+    // factory ignores it. Against an origin that accepts upgrades it is actively wrong: it would
+    // pin the web build to long-polling for no reason, while native uses WebSocket regardless.
     final options = io.OptionBuilder()
-        .setTransports(['polling'])
         .disableAutoConnect()
         .setAuth({'token': accessToken})
         .setReconnectionAttempts(5)
         .setReconnectionDelay(2000)
         .build();
-    options['upgrade'] = false;
 
     _socket = io.io(_socketUrl, options);
 
@@ -167,7 +181,6 @@ class ChatSocketService {
       ..on('conversation_updated', _handleConversationUpdated)
       ..on('user_typing', _handleUserTyping)
       ..on('user_stop_typing', _handleUserStopTyping)
-      ..on('notification', _handleNotification)
       ..on('messages_delivered', _handleMessagesDelivered)
       ..on('messages_read', _handleMessagesRead)
       ..on('message_deleted', _handleMessageDeleted)
@@ -224,9 +237,31 @@ class ChatSocketService {
   }
 
   void _handleConversationUpdated(dynamic data) {
-    if (data is Map) {
-      _conversationUpdatedCtrl.add(Map<String, dynamic>.from(data));
+    if (data is! Map) return;
+    final map = Map<String, dynamic>.from(data);
+
+    // There is no `notification` socket event — confirmed against the server's emit sites. In-app
+    // notifications arrive here instead, as conversation_updated with type: "notification" and the
+    // row nested under `notification`. Routing them across is what makes [onNotification] fire at
+    // all: a direct .on('notification') listener sits silent forever, because nothing emits it.
+    if (map['type'] == 'notification') {
+      final row = notificationRowFrom(map);
+      if (row != null) _notificationCtrl.add(row);
+      return;
     }
+
+    _conversationUpdatedCtrl.add(map);
+  }
+
+  /// Pulls the notification row out of a `conversation_updated` event.
+  ///
+  /// Exposed for tests because the extraction is the whole behaviour: the row is nested one level
+  /// down, and reading the wrong level yields a NotificationItem with an empty id, which the
+  /// controller silently drops. That failure looks exactly like "no notifications arrived".
+  @visibleForTesting
+  static Map<String, dynamic>? notificationRowFrom(Map<String, dynamic> event) {
+    final nested = event['notification'];
+    return nested is Map ? Map<String, dynamic>.from(nested) : null;
   }
 
   void _handleUserTyping(dynamic data) {
@@ -245,12 +280,6 @@ class ChatSocketService {
       userId: data['userId']?.toString() ?? '',
       isTyping: false,
     ));
-  }
-
-  void _handleNotification(dynamic data) {
-    if (data is Map) {
-      _notificationCtrl.add(Map<String, dynamic>.from(data));
-    }
   }
 
   void _handleMessagesDelivered(dynamic data) {

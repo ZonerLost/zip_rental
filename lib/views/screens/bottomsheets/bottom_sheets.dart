@@ -12,7 +12,6 @@ import 'package:zip_peer/controllers/items/browse_items_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/auth/reset_password.dart';
 import 'package:zip_peer/views/screens/bottom_nav/bottom_nav.dart';
-import 'package:zip_peer/views/screens/home/item_detail/check_out_2.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_checkbox_widget.dart';
 import 'package:zip_peer/views/widget/custom_dropdown.dart';
@@ -1498,8 +1497,6 @@ void showCalenderBottomSheet(BuildContext context) {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   int tapCount = 0;
-
-  bool isInstantBooking = true;
 
   Get.bottomSheet(
     backgroundColor: Colors.transparent,

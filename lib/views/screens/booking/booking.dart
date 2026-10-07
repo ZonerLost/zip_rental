@@ -285,7 +285,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
     // both the payments guide and a live 400 when attempted on a pending
     // booking, so "Pay Now" only appears here, not on the pending branch
     // above.
-    if (!isOwnerView && status == BookingStatuses.accepted) {
+    //
+    // `awaitingPayment` also requires the booking not to be paid already. Keying off `status` alone
+    // kept Pay Now on screen after a successful charge, because a paid booking stays `accepted` —
+    // so the renter saw "Payment Successful" and then the same button, which reads like it failed.
+    // Tapping again was refused with a 409 rather than double-charging, but the button should not
+    // have been there at all.
+    if (!isOwnerView && booking.awaitingPayment) {
       final isPaying = _payingBookingId == booking.id;
       return Column(
         children: [
@@ -294,6 +300,35 @@ class _BookingsScreenState extends State<BookingsScreen> {
             buttonText: isPaying ? 'Processing...' : 'Pay Now',
             backgroundColor: kPrimaryColor,
             fontColor: kWhite,
+            radius: 20,
+          ),
+          const Gap(12),
+          MyButton(
+            onTap: () => _showReasonDialog(
+              title: 'Cancel Booking',
+              confirmText: 'Cancel Booking',
+              onConfirm: (reason) => _controller.cancelBooking(booking.id, reason),
+            ),
+            buttonText: 'Cancel Booking',
+            backgroundColor: kredColor.withOpacity(0.2),
+            fontColor: kredColor,
+            radius: 20,
+          ),
+        ],
+      );
+    }
+
+    // Paid and accepted, renter's view. Cancel still belongs here — it used to live in the Pay Now
+    // column, so gating that column on `awaitingPayment` would otherwise take cancellation away from
+    // exactly the people who have the most at stake.
+    if (!isOwnerView && status == BookingStatuses.accepted && booking.isPaid) {
+      return Column(
+        children: [
+          MyButton(
+            onTap: () => _openBookingDetails(booking),
+            buttonText: 'Paid · View Details',
+            backgroundColor: kPrimaryColor.withOpacity(0.18),
+            fontColor: kPrimaryColor,
             radius: 20,
           ),
           const Gap(12),

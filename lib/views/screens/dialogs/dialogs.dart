@@ -9,7 +9,6 @@ import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
-import 'package:zip_peer/views/widget/custom_animated_row.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 
