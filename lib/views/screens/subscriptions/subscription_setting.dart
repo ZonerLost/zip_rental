@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
-import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets_2.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/my_button_new.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';

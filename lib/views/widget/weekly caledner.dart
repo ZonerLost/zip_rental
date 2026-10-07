@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/views/widget/my_text_widget.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:week_of_year/week_of_year.dart';
 import "package:weekly_date_picker/datetime_apis.dart";
 
 class CustomWeeklyDatePicker extends StatefulWidget {
@@ -50,7 +49,6 @@ class _WeeklyDatePickerState extends State<CustomWeeklyDatePicker> {
   late DateTime _currentDate;
   late PageController _controller;
   late DateTime _initialSelectedDay;
-  late int _weeknumberInSwipe;
   final DateTime _todaysDateTime = DateTime.now();
   final int _weekIndexOffset = 5200;
 
@@ -68,7 +66,6 @@ class _WeeklyDatePickerState extends State<CustomWeeklyDatePicker> {
     _controller = PageController(
       initialPage: _weekIndexOffset + initialWeekDifference,
     );
-    _weeknumberInSwipe = _initialSelectedDay.weekOfYear;
 
     // Set initial selection
     if (widget.selectedDays.isEmpty) {
@@ -132,11 +129,10 @@ class _WeeklyDatePickerState extends State<CustomWeeklyDatePicker> {
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (int index) {
-              setState(() {
-                _weeknumberInSwipe = _initialSelectedDay
-                    .addDays(7 * (index - _weekIndexOffset))
-                    .weekOfYear;
-              });
+              // The rebuild is the point here, not any value: _weeknumberInSwipe was computed on
+              // every page change and never read by anything, so the field is gone and the
+              // setState stays, which keeps the rendering identical.
+              setState(() {});
             },
             padEnds: true,
             scrollDirection: Axis.horizontal,

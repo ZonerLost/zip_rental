@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/generated/assets.dart';
-import 'package:zip_peer/views/screens/add_item_module/add_insurance2.dart';
 import 'package:zip_peer/views/screens/bottomsheets/bottom_sheets.dart';
 import 'package:zip_peer/views/widget/common_image_view_widget.dart';
 import 'package:zip_peer/views/widget/custom_animated_column.dart';
