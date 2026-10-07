@@ -444,86 +444,65 @@ class _AddNewItemScreenState extends State<AddNewItemScreen> {
                 const Gap(20),
 
                 // Min / Max Rental Duration
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: kWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          MyText(
+                            text: 'Rental Duration',
+                            size: 14,
+                            color: kSubText,
+                            weight: FontWeight.w500,
+                          ),
+                          MyText(
+                            text:
+                                '${controller.rentalDaysRange.start.round()}-${controller.rentalDaysRange.end.round()} days',
+                            size: 14,
+                            weight: FontWeight.w600,
+                          ),
+                        ],
+                      ),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: kPrimaryColor,
+                          inactiveTrackColor: kbackground,
+                          thumbColor: kPrimaryColor,
+                          overlayColor: kPrimaryColor.withOpacity(0.15),
+                          rangeThumbShape: const RoundRangeSliderThumbShape(
+                            enabledThumbRadius: 9,
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MyText(
-                              text: 'Min Days',
-                              size: 14,
-                              color: kSubText,
-                              weight: FontWeight.w500,
-                            ),
-                            const Gap(8),
-                            MyTextField(
-                              controller: controller.minRentalDaysController,
-                              hint: '1',
-                              hintColor: kBlack.withOpacity(0.4),
-                              radius: 12,
-                              backgroundColor: kbackground,
-                              marginBottom: 0,
-                              keyboardType: TextInputType.number,
-                              onChanged: controller.onFieldChanged,
-                            ),
-                          ],
+                        child: RangeSlider(
+                          min: AddItemController.minRentalDaysBound.toDouble(),
+                          max: AddItemController.maxRentalDaysBound.toDouble(),
+                          divisions:
+                              AddItemController.maxRentalDaysBound -
+                              AddItemController.minRentalDaysBound,
+                          values: controller.rentalDaysRange,
+                          labels: RangeLabels(
+                            '${controller.rentalDaysRange.start.round()}',
+                            '${controller.rentalDaysRange.end.round()}',
+                          ),
+                          onChanged: controller.onRentalDaysRangeChanged,
                         ),
                       ),
-                    ),
-                    const Gap(12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: kWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MyText(
-                              text: 'Max Days',
-                              size: 14,
-                              color: kSubText,
-                              weight: FontWeight.w500,
-                            ),
-                            const Gap(8),
-                            MyTextField(
-                              controller: controller.maxRentalDaysController,
-                              hint: '30',
-                              hintColor: kBlack.withOpacity(0.4),
-                              radius: 12,
-                              backgroundColor: kbackground,
-                              marginBottom: 0,
-                              keyboardType: TextInputType.number,
-                              onChanged: controller.onFieldChanged,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const Gap(20),
 

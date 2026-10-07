@@ -188,7 +188,7 @@ class _SneakerGridCard extends StatelessWidget {
                         id: item.id,
                         title: item.title ?? '',
                         price:
-                            '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                            '${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}/day',
                         imageUrl: item.thumbnailUrl,
                         ownerName: item.ownerName,
                         ownerPhoto: item.owner?.profilePhoto ?? '',
@@ -281,8 +281,7 @@ class _SneakerGridCard extends StatelessWidget {
             children: [
               Flexible(
                 child: MyText(
-                  text:
-                      '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                  text: item.dailyRate?.toStringAsFixed(2) ?? '0.00',
                   size: 14,
                   color: kBlack,
                   weight: FontWeight.w600,

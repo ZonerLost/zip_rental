@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 40.0),
             child: MyText(
-              text: 'Powered by ZIP',
+              text: 'Powered by Atussa inc.',
               color: kPrimaryColor,
               size: 16,
               weight: FontWeight.w500,

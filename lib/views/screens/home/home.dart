@@ -105,16 +105,16 @@ class _HomeScreenState extends State<HomeScreen> {
               const Gap(20),
               MyTextField(
                 backgroundColor: kWhite,
-                hint: 'What tools are you looking for ...',
+                hint: 'What are you looking for?',
                 hintColor: kSubText2,
                 isObSecure: false,
                 radius: 25,
-                hintsize: 12,
+                hintsize: 11,
                 hintWeight: FontWeight.w400,
                 onChanged: controller.setSearchQuery,
                 prefix: CommonImageView(
                   imagePath: Assets.imagesMynauiSearch,
-                  height: 24,
+                  height: 20,
                 ),
                 suffix: Bounce(
                   onTap: () {
@@ -122,16 +122,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 20,
+                      vertical: 8,
+                      horizontal: 10,
                     ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25),
                       color: kPrimaryColor.withOpacity(0.2),
                     ),
                     child: MyText(
-                      text: 'Explore on Map',
-                      size: 12,
+                      text: 'Map',
+                      size: 11,
                       weight: FontWeight.w400,
                       color: kPrimaryColor,
                     ),
@@ -240,8 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SneakerCard(
               itemId: item.id,
               title: item.title ?? 'Untitled',
-              price:
-                  '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+              price: '${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}/day',
               imageUrl: item.thumbnailUrl.isNotEmpty
                   ? item.thumbnailUrl
                   : Assets.imagesShoes1,
@@ -278,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const Gap(20),
         SizedBox(
-          height: 310,
+          height: 205,
           child: items.isEmpty
               ? Center(
                   child: MyText(
@@ -294,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context, index) {
                     final item = items[index];
                     return Padding(
-                      padding: const EdgeInsets.only(right: 20),
+                      padding: const EdgeInsets.only(right: 12),
                       child: Bounce(
                         onTap: () {
                           Get.to(() => ItemDetailsScreen(itemId: item.id));
@@ -303,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemId: item.id,
                           title: item.title ?? 'Untitled',
                           price:
-                              '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                              '${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}/day',
                           imageUrl: item.thumbnailUrl.isNotEmpty
                               ? item.thumbnailUrl
                               : Assets.imagesShoes1,

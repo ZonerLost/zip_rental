@@ -154,7 +154,7 @@ class _MyTextFieldState extends State<MyTextField> {
                     contentPadding: EdgeInsets.zero,
                     hintText: widget.hint,
                     hintStyle: TextStyle(
-                      fontSize: 15,
+                      fontSize: widget.hintsize ?? 15,
                       color: widget.hintColor ?? kSubText,
                       fontWeight: widget.hintWeight ?? FontWeight.w600,
                     ),

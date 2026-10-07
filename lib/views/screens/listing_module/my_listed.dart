@@ -171,7 +171,7 @@ class _ListingCard extends StatelessWidget {
             const Gap(12),
             _buildDetailRow(
               'Price',
-              '${item.currency ?? 'CAD'} ${(item.dailyRate ?? 0).toStringAsFixed(2)}/day',
+              '${(item.dailyRate ?? 0).toStringAsFixed(2)}/day',
             ),
             const Gap(12),
             _buildDetailRow('Address', item.location?.fullLocation ?? '-'),

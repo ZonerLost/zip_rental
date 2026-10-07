@@ -89,26 +89,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                         ],
                       ),
                       const Gap(12),
-                      // Message owner button — hidden when item is null or
-                      // owner id is missing
-                      if ((item?.ownerId ?? item?.owner?.id ?? '').isNotEmpty)
-                        Bounce(
-                          onTap: () => _showStartChatSheet(item!),
-                          child: Container(
-                            height: 56,
-                            width: 56,
-                            decoration: BoxDecoration(
-                              color: kPrimaryColor.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              color: kPrimaryColor,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      const Gap(12),
                       Expanded(
                         child: MyButton(
                           onTap: () {
@@ -411,36 +391,41 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                               weight: FontWeight.w600,
                             ),
                             const Gap(4),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  size: 16,
-                                  color: Colors.amber,
-                                ),
-                                const Gap(4),
-                                MyText(
-                                  text:
-                                      '${(item.owner?.averageRating ?? item.averageRating ?? 0).toStringAsFixed(1)} ratings',
-                                  size: 14,
-                                  color: kBlack,
-                                ),
-                                const Gap(12),
-                              ],
+                            // Tapping the rating still reaches reviews now that
+                            // the icon button beside it opens chat instead.
+                            Bounce(
+                              onTap: () {
+                                Get.to(
+                                  () => CommentsScreen(
+                                    itemId: item.id,
+                                    ownerId: item.ownerId ?? item.owner?.id,
+                                  ),
+                                );
+                              },
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    size: 16,
+                                    color: Colors.amber,
+                                  ),
+                                  const Gap(4),
+                                  MyText(
+                                    text:
+                                        '${(item.owner?.averageRating ?? item.averageRating ?? 0).toStringAsFixed(1)} ratings',
+                                    size: 14,
+                                    color: kBlack,
+                                  ),
+                                  const Gap(12),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                     Bounce(
-                      onTap: () {
-                        Get.to(
-                          () => CommentsScreen(
-                            itemId: item.id,
-                            ownerId: item.ownerId ?? item.owner?.id,
-                          ),
-                        );
-                      },
+                      onTap: () => _showStartChatSheet(item),
                       child: CommonImageView(
                         imagePath: Assets.imagesCommentsNewIcon,
                         height: 40,

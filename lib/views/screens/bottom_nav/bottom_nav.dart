@@ -200,6 +200,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
       init: _navController,
       builder: (nav) {
         final items = _buildItems(nav.currentIndex);
+        // Devices on classic 3-button navigation (as opposed to gesture nav)
+        // reserve a system bar at the bottom of the screen that this Stack's
+        // edge-to-edge body draws behind. Without this inset, the system
+        // buttons sit on top of our own nav row instead of below it.
+        final systemNavInset = MediaQuery.of(context).padding.bottom;
         return Scaffold(
           backgroundColor: kWhite,
           extendBody: true,
@@ -211,10 +216,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 right: 0,
                 bottom: 0,
                 child: Container(
-                  height: 100,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+                  height: 100 + systemNavInset,
+                  padding: EdgeInsets.only(
+                    left: 8,
+                    right: 8,
+                    top: 8,
+                    bottom: 8 + systemNavInset,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,

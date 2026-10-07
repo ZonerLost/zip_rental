@@ -177,7 +177,27 @@ class AddItemController extends GetxController {
     titleController.text = '';
     priceController.text = '';
     descriptionController.text = '';
+    minRentalDaysController.text = '1';
+    maxRentalDaysController.text = '30';
     _loadFormConfig();
+  }
+
+  static const int minRentalDaysBound = 1;
+  static const int maxRentalDaysBound = 365;
+
+  RangeValues get rentalDaysRange => RangeValues(
+    (int.tryParse(minRentalDaysController.text) ?? minRentalDaysBound)
+        .toDouble()
+        .clamp(minRentalDaysBound.toDouble(), maxRentalDaysBound.toDouble()),
+    (int.tryParse(maxRentalDaysController.text) ?? 30)
+        .toDouble()
+        .clamp(minRentalDaysBound.toDouble(), maxRentalDaysBound.toDouble()),
+  );
+
+  void onRentalDaysRangeChanged(RangeValues values) {
+    minRentalDaysController.text = values.start.round().toString();
+    maxRentalDaysController.text = values.end.round().toString();
+    update();
   }
 
   Future<void> _loadFormConfig() async {

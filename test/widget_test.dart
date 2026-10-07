@@ -5,7 +5,7 @@ void main() {
   testWidgets('App shows splash screen on launch', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('Powered by ZIP'), findsOneWidget);
+    expect(find.text('Powered by Atussa inc.'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();

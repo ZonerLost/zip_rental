@@ -197,7 +197,7 @@ class _ListingItemDetailsScreenState extends State<ListingItemDetailsScreen> {
                                 const Gap(4),
                                 MyText(
                                   text:
-                                      '${item.category ?? '-'} | ${(item.currency ?? 'CAD')} ${(item.dailyRate ?? 0).toStringAsFixed(2)}',
+                                      '${item.category ?? '-'} | ${(item.dailyRate ?? 0).toStringAsFixed(2)}/day',
                                   size: 14,
                                   color: kSubText,
                                 ),
@@ -240,7 +240,7 @@ class _ListingItemDetailsScreenState extends State<ListingItemDetailsScreen> {
                       _detailRow('Total Rentals', '${item.totalRentals ?? 0}'),
                       _detailRow(
                         'Price',
-                        '${item.currency ?? 'CAD'} ${(item.dailyRate ?? 0).toStringAsFixed(2)}/day',
+                        '${(item.dailyRate ?? 0).toStringAsFixed(2)}/day',
                       ),
                       const Gap(8),
                     ],

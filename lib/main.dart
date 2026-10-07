@@ -33,24 +33,6 @@ void main() async {
   runApp(MyApp());
 }
 
-/// Fetches `GET /payments/config` and applies it — "fetching it at launch
-/// means a test→live switch, or a key rotation, needs no app release" (the
-/// backend's own framing). Guarded by [StripeRuntimeConfig.fetched], so
-/// this is skipped if it somehow already ran (it can't have, this early,
-/// but [PaymentMethodController.ensureStripeConfigLoaded] uses the same
-/// guard as a fallback in case this one failed, e.g. no network at boot).
-/// A "Pay Now" attempt with Stripe still unconfigured is caught separately
-/// and shown as a friendly message rather than crashing.
-///
-/// The whole body is wrapped defensively: `Stripe.instance.applySettings()`
-/// previously threw an **unhandled** `PlatformException` here when the
-/// native SDK couldn't initialize (confirmed live, 2026-10-06 — caused by
-/// `MainActivity` extending `FlutterActivity` instead of the
-/// `FlutterFragmentActivity` flutter_stripe's Android side requires), which
-/// happened early enough in `main()` to block `runApp()` entirely — the app
-/// never rendered. Fixed at the root (MainActivity.kt), but config-fetching
-/// code this early in boot should never be able to take the whole app down
-/// regardless of the specific cause, so every path here is now non-fatal.
 Future<void> _maybeInitStripe() async {
   if (StripeRuntimeConfig.fetched) return;
   try {

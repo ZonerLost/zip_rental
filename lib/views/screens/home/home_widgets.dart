@@ -206,42 +206,42 @@ class SneakerCard extends StatelessWidget {
         avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://');
 
     return SizedBox(
-      width: 200,
+      width: 115,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 200,
-            height: 240,
+            width: 115,
+            height: 135,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(16),
                   child: CommonImageView(
                     imagePath: hasNetworkImage ? null : imageUrl,
                     url: hasNetworkImage ? imageUrl : null,
                     fit: BoxFit.cover,
-                    height: 240,
-                    width: 200,
+                    height: 135,
+                    width: 115,
                   ),
                 ),
 
                 // Heart icon
                 if (itemId != null)
                   Positioned(
-                    top: 5,
-                    right: 10,
+                    top: 4,
+                    right: 6,
                     child: GetBuilder<FavouritesController>(
                       builder: (favCtrl) {
                         final isFav = favCtrl.isFavourite(itemId!);
@@ -258,7 +258,7 @@ class SneakerCard extends StatelessWidget {
                             imagePath: isFav
                                 ? Assets.imagesHeartFilled
                                 : Assets.imagesHeartEmpty,
-                            height: 30,
+                            height: 18,
                           ),
                         );
                       },
@@ -266,18 +266,18 @@ class SneakerCard extends StatelessWidget {
                   )
                 else
                   Positioned(
-                    top: 5,
-                    right: 10,
+                    top: 4,
+                    right: 6,
                     child: CommonImageView(
                       imagePath: Assets.imagesHeartEmpty,
-                      height: 30,
+                      height: 18,
                     ),
                   ),
 
                 Positioned(
-                  bottom: 10,
-                  right: 10,
-                  left: 10,
+                  bottom: 6,
+                  right: 6,
+                  left: 6,
                   child: Row(
                     children: [
                       Expanded(
@@ -286,26 +286,26 @@ class SneakerCard extends StatelessWidget {
                             CommonImageView(
                               imagePath: hasNetworkAvatar ? null : avatarUrl,
                               url: hasNetworkAvatar ? avatarUrl : null,
-                              height: 30,
-                              width: 30,
+                              height: 18,
+                              width: 18,
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: Column(
-                                spacing: 5,
+                                spacing: 3,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   MyText(
                                     text: userName,
-                                    size: 14,
+                                    size: 10,
                                     color: kBlack,
                                     weight: FontWeight.w500,
                                     maxLines: 1,
                                     textOverflow: TextOverflow.ellipsis,
                                   ),
                                   Container(
-                                    width: 40,
-                                    height: 4,
+                                    width: 22,
+                                    height: 3,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(12),
                                       color: Colors.black,
@@ -317,52 +317,31 @@ class SneakerCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(3, (i) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            width: i == 0 ? 18 : 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: kWhite,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          );
-                        }),
-                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const Gap(10),
+          const Gap(6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               MyText(
                 text: title,
-                size: 16,
+                size: 12,
                 color: kBlack,
                 weight: FontWeight.w500,
+                maxLines: 1,
+                textOverflow: TextOverflow.ellipsis,
               ),
-              Row(
-                children: [
-                  MyText(
-                    text: price,
-                    size: 14,
-                    color: kBlack,
-                    weight: FontWeight.w500,
-                  ),
-                  MyText(
-                    text: "/month",
-                    size: 14,
-                    color: kSubText,
-                    weight: FontWeight.w500,
-                  ),
-                ],
+              MyText(
+                text: price,
+                size: 11,
+                color: kBlack,
+                weight: FontWeight.w500,
+                maxLines: 1,
+                textOverflow: TextOverflow.ellipsis,
               ),
             ],
           ),

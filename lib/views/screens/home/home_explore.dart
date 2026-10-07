@@ -318,7 +318,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> {
                                                   title:
                                                       item.title ?? 'Untitled',
                                                   price:
-                                                      '${item.currency ?? 'CAD'} ${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}',
+                                                      '${item.dailyRate?.toStringAsFixed(2) ?? '0.00'}/day',
                                                   imageUrl: item.thumbnailUrl
                                                           .isNotEmpty
                                                       ? item.thumbnailUrl
