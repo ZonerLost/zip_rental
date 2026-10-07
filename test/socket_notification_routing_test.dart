@@ -66,11 +66,11 @@ void main() {
   });
 
   group('socket host configuration', () {
-    test('stays disabled unless SOCKET_ENABLED is defined', () {
-      // App Runner rejects the WebSocket upgrade, and on native this client only speaks WebSocket,
-      // so connecting there burns battery on guaranteed failures. Off is the correct default until
-      // a wss://-capable origin exists; flipping it is a --dart-define, not a code change.
-      expect(ChatSocketService.socketEnabled, isFalse);
+    test('is enabled by default now that a wss://-capable origin exists', () {
+      // Off for weeks because App Runner rejects the upgrade and this client only speaks WebSocket
+      // on native. A CloudFront distribution in front of the ALB answers 101 over TLS, so there is
+      // somewhere to connect to; disabling it again is a --dart-define, not a code change.
+      expect(ChatSocketService.socketEnabled, isTrue);
     });
   });
 }

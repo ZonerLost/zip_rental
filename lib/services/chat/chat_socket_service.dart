@@ -10,33 +10,35 @@ import 'package:zip_peer/models/chat/chat_models.dart';
 class ChatSocketService {
   /// Override with `--dart-define=SOCKET_URL=https://...`.
   ///
-  /// Defaults to the REST host, which is App Runner — and App Runner cannot carry a socket at all
-  /// (see below). Keeping this a build flag means moving to the WebSocket-capable host costs a
-  /// rebuild rather than a code change and a review.
+  /// Defaults to the CloudFront distribution in front of the ECS/ALB service, which is **not** the
+  /// REST host. REST still goes to App Runner, and that is deliberate: App Runner cannot carry a
+  /// WebSocket at all (see [socketEnabled]), so sockets need a different origin until the API moves
+  /// over wholesale. Both serve the same backend, so a token works on either.
   static const String _socketUrl = String.fromEnvironment(
     'SOCKET_URL',
-    defaultValue: 'https://au2p3vkiqi.us-east-1.awsapprunner.com',
+    defaultValue: 'https://d2gl4lhyqlw2e6.cloudfront.net',
   );
 
-  /// Enable with `--dart-define=SOCKET_ENABLED=true`, together with a `SOCKET_URL` that can actually
-  /// carry a WebSocket. Off by default, and that default is correct for the current host.
+  /// On by default since 2026-10-07. Disable with `--dart-define=SOCKET_ENABLED=false`.
   ///
-  /// App Runner rejects the WebSocket upgrade at its proxy, before the Node process sees it, and on
-  /// native platforms this client can only ever speak WebSocket (see the long comment in [connect]) —
-  /// so against App Runner the socket cannot connect at all, and connecting would only burn battery
-  /// on five guaranteed failures every time a chat screen opens. Chat falls back to REST polling
-  /// (ChatController / ChatMessagesController / BottomNavController) while this is false.
+  /// This was off for weeks because there was nowhere to connect to. App Runner rejects the
+  /// WebSocket upgrade at its proxy, before the Node process sees it, and on native platforms this
+  /// client can only ever speak WebSocket (see the long comment in [connect]) — so the socket could
+  /// not connect at all, and trying would only burn battery on five guaranteed failures every time a
+  /// chat screen opened. Chat fell back to REST polling, and still does whenever this is false.
   ///
-  /// The replacement host is further along than it used to be. Verified against the ALB in front of
-  /// the ECS service on 2026-10-07: health 200, socket.io polling handshake fine, and the WebSocket
-  /// upgrade answered **HTTP 101 Switching Protocols** — the exact thing App Runner refuses. What is
-  /// still missing is TLS, because the ALB has no certificate and the account has no domain yet. A
-  /// CloudFront distribution in front of the ALB would supply a trusted `*.cloudfront.net`
-  /// certificate and carries WebSocket natively, which is the intended fix; it is awaiting approval.
+  /// [_socketUrl] now points at a CloudFront distribution in front of the ECS/ALB service, verified
+  /// end to end on 2026-10-07: health 200 over TLS, socket.io handshake fine, and the WebSocket
+  /// upgrade answering **HTTP 101 Switching Protocols** — the exact thing App Runner refuses.
+  /// CloudFront carries WebSocket natively and serves a trusted `*.cloudfront.net` certificate,
+  /// which is what makes `wss://` work without owning a domain.
   ///
-  /// So: once there is a `wss://`-capable origin, set both defines. No code change is needed here,
-  /// and the forced `transports`/`upgrade` options in [connect] can come out at the same time.
-  static const bool socketEnabled = bool.fromEnvironment('SOCKET_ENABLED');
+  /// That hostname is a stopgap. When the API gets a real domain with its own certificate, point
+  /// `SOCKET_URL` at it — no code change needed.
+  static const bool socketEnabled = bool.fromEnvironment(
+    'SOCKET_ENABLED',
+    defaultValue: true,
+  );
 
   // The chat list screen and every open conversation thread each used to
   // create their own ChatSocketService — meaning two (or more) separate
@@ -143,14 +145,16 @@ class ChatSocketService {
     // do NOT currently change native behavior — see
     // docs/backend-chat-socket-questions.md for the actual fix needed
     // (App Runner/infra allowing a direct WebSocket upgrade).
+    // Transports are left to socket.io to negotiate. Forcing polling was a workaround for App
+    // Runner, and it never worked on native anyway — the comment above explains why the IO transport
+    // factory ignores it. Against an origin that accepts upgrades it is actively wrong: it would
+    // pin the web build to long-polling for no reason, while native uses WebSocket regardless.
     final options = io.OptionBuilder()
-        .setTransports(['polling'])
         .disableAutoConnect()
         .setAuth({'token': accessToken})
         .setReconnectionAttempts(5)
         .setReconnectionDelay(2000)
         .build();
-    options['upgrade'] = false;
 
     _socket = io.io(_socketUrl, options);
 
