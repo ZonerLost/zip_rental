@@ -18,6 +18,18 @@ class BookingStatuses {
   ];
 }
 
+/// `booking.paymentStatus`, which is independent of [BookingStatuses] — a booking stays `accepted`
+/// whether or not it has been paid, so the two must never be conflated.
+class BookingPaymentStatuses {
+  const BookingPaymentStatuses._();
+
+  static const String unpaid = 'unpaid';
+  static const String paid = 'paid';
+  static const String failed = 'failed';
+
+  static const List<String> all = <String>[unpaid, paid, failed];
+}
+
 class QuoteRequestModel {
   const QuoteRequestModel({
     required this.dailyRate,
@@ -442,6 +454,7 @@ class BookingModel {
     this.pickupTimeFrom,
     this.pickupTimeTo,
     this.status,
+    this.paymentStatus,
     this.pricing,
     this.preRentalPhotos = const <String>[],
     this.postRentalPhotos = const <String>[],
@@ -465,6 +478,13 @@ class BookingModel {
   final String? pickupTimeFrom;
   final String? pickupTimeTo;
   final String? status;
+
+  /// `unpaid` | `paid` | `failed`, added server-side 2026-10-07.
+  ///
+  /// `status` says nothing about money - a paid booking and an unpaid one are both `accepted` - so
+  /// this is the only way to tell them apart. Null on bookings created before the field existed,
+  /// which [isPaid] treats as unpaid.
+  final String? paymentStatus;
   final BookingPricingModel? pricing;
   final List<String> preRentalPhotos;
   final List<String> postRentalPhotos;
@@ -519,6 +539,7 @@ class BookingModel {
       pickupTimeFrom: _asString(json['pickupTimeFrom']),
       pickupTimeTo: _asString(json['pickupTimeTo']),
       status: _asString(json['status']),
+      paymentStatus: _asString(json['paymentStatus']),
       pricing: pricingMap == null
           ? null
           : BookingPricingModel.fromJson(pricingMap),
@@ -533,6 +554,7 @@ class BookingModel {
 
   BookingModel copyWith({
     String? status,
+    String? paymentStatus,
     BookingPricingModel? pricing,
     List<String>? preRentalPhotos,
     List<String>? postRentalPhotos,
@@ -555,6 +577,7 @@ class BookingModel {
       pickupTimeFrom: pickupTimeFrom,
       pickupTimeTo: pickupTimeTo,
       status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
       pricing: pricing ?? this.pricing,
       preRentalPhotos: preRentalPhotos ?? this.preRentalPhotos,
       postRentalPhotos: postRentalPhotos ?? this.postRentalPhotos,
@@ -564,6 +587,21 @@ class BookingModel {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  /// Whether this booking has been paid for.
+  ///
+  /// Only `'paid'` counts. A null [paymentStatus] — every booking created before the server grew the
+  /// field — reads as unpaid, which is the safe direction: the worst case is offering Pay Now on a
+  /// booking that was already paid, and the server refuses that with a 409 rather than charging
+  /// twice. Treating null as paid would instead hide the button on genuinely unpaid bookings and
+  /// leave an owner unpaid with no way for the renter to fix it.
+  bool get isPaid => paymentStatus == BookingPaymentStatuses.paid;
+
+  /// Whether the renter should be offered Pay Now.
+  ///
+  /// Payment is only permitted once the owner has accepted, and only once — `status` alone is not
+  /// enough, because a paid booking stays `accepted`.
+  bool get awaitingPayment => status == BookingStatuses.accepted && !isPaid;
 
   String get itemTitle => (item?.title ?? '').trim().isNotEmpty
       ? item!.title!.trim()
