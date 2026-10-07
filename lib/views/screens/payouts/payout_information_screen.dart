@@ -17,13 +17,45 @@ import 'package:zip_peer/views/widget/my_text_widget.dart';
 /// collects their bank details and identity documents directly (this app
 /// never sees them), and this screen just reflects `state` from
 /// `GET /users/payout-account`.
-class PayoutInformationScreen extends StatelessWidget {
+class PayoutInformationScreen extends StatefulWidget {
   const PayoutInformationScreen({super.key});
+
+  @override
+  State<PayoutInformationScreen> createState() => _PayoutInformationScreenState();
+}
+
+class _PayoutInformationScreenState extends State<PayoutInformationScreen>
+    with WidgetsBindingObserver {
+  late final PayoutController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = Get.isRegistered<PayoutController>()
+        ? Get.find<PayoutController>()
+        : Get.put(PayoutController());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// `returnsTo: "web"` onboarding links don't come back via deep link —
+  /// see `PayoutController.onAppResumed`.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _controller.onAppResumed();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<PayoutController>(
-      init: PayoutController(),
+      init: _controller,
       builder: (controller) {
         return Scaffold(
           backgroundColor: const Color(0xFFF8F8F8),

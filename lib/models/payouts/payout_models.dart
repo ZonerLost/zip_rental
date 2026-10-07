@@ -84,11 +84,25 @@ class PayoutAccountStatus {
 }
 
 class PayoutOnboardingLink {
-  const PayoutOnboardingLink({required this.url, this.expiresAt, this.accountId});
+  const PayoutOnboardingLink({
+    required this.url,
+    this.expiresAt,
+    this.accountId,
+    this.returnsTo,
+  });
 
   final String url;
   final DateTime? expiresAt;
   final String? accountId;
+
+  /// `"app"` — Stripe redirects back via the `atussa://payouts/done|retry`
+  /// deep links (see `main.dart`'s listener). `"web"` — Stripe lands the
+  /// owner on a hosted page instead and no deep link will ever arrive, so
+  /// the caller should re-check status on the next app-resume instead
+  /// (confirmed live, 2026-10-06 — see `PayoutController.onAppResumed`).
+  final String? returnsTo;
+
+  bool get returnsToWeb => returnsTo == 'web';
 
   factory PayoutOnboardingLink.fromJson(Map<String, dynamic> json) {
     return PayoutOnboardingLink(
@@ -97,6 +111,7 @@ class PayoutOnboardingLink {
           ? DateTime.tryParse(json['expiresAt'].toString())
           : null,
       accountId: json['accountId']?.toString(),
+      returnsTo: json['returnsTo']?.toString(),
     );
   }
 }

@@ -102,6 +102,96 @@ class SavePaymentMethodRequest {
 }
 
 // ─────────────────────────────────────────────
+//  Stripe PaymentIntent (real-money checkout)
+// ─────────────────────────────────────────────
+
+/// `POST /payments/create-intent` response — confirmed shape per the
+/// Payments & Stripe Connect guide. Supersedes the earlier assumption in
+/// backend-payment-methods-integration.md that `/payments` "does not move
+/// money and is not verified with any gateway" — that was accurate for the
+/// plain `paymentMethodId`/`method` record path, which still exists, but
+/// this `paymentIntentId` path is the real, Stripe-verified one.
+class PaymentIntentModel {
+  const PaymentIntentModel({
+    required this.clientSecret,
+    required this.paymentIntentId,
+    this.amount,
+    this.currency,
+    this.bookingId,
+  });
+
+  final String clientSecret;
+  final String paymentIntentId;
+  final double? amount;
+  final String? currency;
+  final String? bookingId;
+
+  factory PaymentIntentModel.fromJson(Map<String, dynamic> json) {
+    return PaymentIntentModel(
+      clientSecret: json['clientSecret']?.toString() ?? '',
+      paymentIntentId: json['paymentIntentId']?.toString() ?? '',
+      amount: json['amount'] is num ? (json['amount'] as num).toDouble() : null,
+      currency: json['currency']?.toString(),
+      bookingId: json['bookingId']?.toString(),
+    );
+  }
+}
+
+class PaymentIntentResult {
+  const PaymentIntentResult({
+    required this.success,
+    required this.message,
+    this.intent,
+  });
+
+  final bool success;
+  final String message;
+  final PaymentIntentModel? intent;
+}
+
+/// `GET /payments/config` — public, no auth. Confirmed shape per the Stripe
+/// checkout guide (2026-10-05); this endpoint wasn't deployed yet as of
+/// that writing (requests fell through to `GET /payments/:id` instead), so
+/// this is built against the documented contract, not yet live-verified.
+class PaymentsConfigModel {
+  const PaymentsConfigModel({
+    required this.publishableKey,
+    required this.paymentsEnabled,
+    this.currency = 'CAD',
+    this.merchantCountryCode = 'CA',
+    this.mode = 'test',
+  });
+
+  final String publishableKey;
+  final bool paymentsEnabled;
+  final String currency;
+  final String merchantCountryCode;
+  final String mode;
+
+  factory PaymentsConfigModel.fromJson(Map<String, dynamic> json) {
+    return PaymentsConfigModel(
+      publishableKey: json['publishableKey']?.toString() ?? '',
+      paymentsEnabled: json['paymentsEnabled'] == true,
+      currency: json['currency']?.toString() ?? 'CAD',
+      merchantCountryCode: json['merchantCountryCode']?.toString() ?? 'CA',
+      mode: json['mode']?.toString() ?? 'test',
+    );
+  }
+}
+
+class PaymentsConfigResult {
+  const PaymentsConfigResult({
+    required this.success,
+    required this.message,
+    this.config,
+  });
+
+  final bool success;
+  final String message;
+  final PaymentsConfigModel? config;
+}
+
+// ─────────────────────────────────────────────
 //  Payment / transaction record
 // ─────────────────────────────────────────────
 

@@ -2,15 +2,18 @@ import 'dart:io';
 
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:zip_peer/config/stripe/stripe_config.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:zip_peer/controllers/bookings/booking_controller.dart';
 import 'package:zip_peer/controllers/disputes/dispute_controller.dart';
 import 'package:zip_peer/controllers/eco/eco_controller.dart';
+import 'package:zip_peer/controllers/payments/payment_method_controller.dart';
 import 'package:zip_peer/controllers/reviews/review_controller.dart';
 import 'package:zip_peer/generated/assets.dart';
 import 'package:zip_peer/models/bookings/booking_models.dart';
@@ -33,11 +36,17 @@ class _BookingsScreenState extends State<BookingsScreen> {
   late final ReviewController _reviewController;
   late final EcoController _ecoController;
   late final DisputeController _disputeController;
+  late final PaymentMethodController _paymentController;
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   int _selectedMainTab = 0;
   int _selectedSubTab = 0;
+
+  /// The booking currently going through "Pay Now", if any — tracked by id
+  /// (not a single bool) so only that one card's button shows "Processing…"
+  /// while others in the list stay tappable.
+  String? _payingBookingId;
 
   @override
   void initState() {
@@ -54,6 +63,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
     _disputeController = Get.isRegistered<DisputeController>()
         ? Get.find<DisputeController>()
         : Get.put(DisputeController());
+    _paymentController = Get.isRegistered<PaymentMethodController>()
+        ? Get.find<PaymentMethodController>()
+        : Get.put(PaymentMethodController());
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadCurrentTab(refresh: true);
@@ -255,9 +267,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
       );
     }
 
-    if (!isOwnerView &&
-        (status == BookingStatuses.pending ||
-            status == BookingStatuses.accepted)) {
+    if (!isOwnerView && status == BookingStatuses.pending) {
       return MyButton(
         onTap: () => _showReasonDialog(
           title: 'Cancel Booking',
@@ -268,6 +278,37 @@ class _BookingsScreenState extends State<BookingsScreen> {
         backgroundColor: kredColor.withOpacity(0.2),
         fontColor: kredColor,
         radius: 20,
+      );
+    }
+
+    // Payment is only permitted once the owner has accepted — confirmed by
+    // both the payments guide and a live 400 when attempted on a pending
+    // booking, so "Pay Now" only appears here, not on the pending branch
+    // above.
+    if (!isOwnerView && status == BookingStatuses.accepted) {
+      final isPaying = _payingBookingId == booking.id;
+      return Column(
+        children: [
+          MyButton(
+            onTap: isPaying ? () {} : () => _payNow(booking),
+            buttonText: isPaying ? 'Processing...' : 'Pay Now',
+            backgroundColor: kPrimaryColor,
+            fontColor: kWhite,
+            radius: 20,
+          ),
+          const Gap(12),
+          MyButton(
+            onTap: () => _showReasonDialog(
+              title: 'Cancel Booking',
+              confirmText: 'Cancel Booking',
+              onConfirm: (reason) => _controller.cancelBooking(booking.id, reason),
+            ),
+            buttonText: 'Cancel Booking',
+            backgroundColor: kredColor.withOpacity(0.2),
+            fontColor: kredColor,
+            radius: 20,
+          ),
+        ],
       );
     }
 
@@ -438,6 +479,76 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
     if (confirmed == true) {
       await onConfirm(reasonController.text.trim());
+    }
+  }
+
+  /// Real Stripe checkout: create a PaymentIntent for the booking, present
+  /// the native PaymentSheet, then tell the backend to verify it with
+  /// Stripe and mark the booking paid. Mirrors the sequence in the Payments
+  /// & Stripe Connect guide (2026-10-05) exactly.
+  Future<void> _payNow(BookingModel booking) async {
+    // Config is fetched by PaymentMethodController.onInit() (this screen
+    // always has one registered); this is a fallback in case that fetch
+    // hadn't finished yet by the time the button was tapped.
+    await _paymentController.ensureStripeConfigLoaded();
+    if (!StripeRuntimeConfig.isConfigured) {
+      Get.snackbar(
+        'Payment Unavailable',
+        'Payment processing is not configured on this server yet.',
+      );
+      return;
+    }
+
+    setState(() => _payingBookingId = booking.id);
+    try {
+      final intent = await _paymentController.createPaymentIntent(booking.id);
+      if (intent == null || !mounted) return;
+
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: intent.clientSecret,
+          merchantDisplayName: StripeConfig.merchantDisplayName,
+          applePay: PaymentSheetApplePay(
+            merchantCountryCode: StripeRuntimeConfig.merchantCountryCode,
+          ),
+          googlePay: PaymentSheetGooglePay(
+            merchantCountryCode: StripeRuntimeConfig.merchantCountryCode,
+            testEnv: StripeRuntimeConfig.mode != 'live',
+          ),
+          style: ThemeMode.system,
+        ),
+      );
+      if (!mounted) return;
+
+      await Stripe.instance.presentPaymentSheet();
+      if (!mounted) return;
+
+      final outcome = await _paymentController.confirmPayment(
+        bookingId: booking.id,
+        paymentIntentId: intent.paymentIntentId,
+      );
+      if (outcome.success) {
+        Get.snackbar('Payment Successful', 'Your booking is now paid.');
+      }
+      // Refresh even on a "failure" that actually means already-paid or
+      // still-processing (bookingLikelyUpdated) — see confirmPayment's doc.
+      if (outcome.success || outcome.bookingLikelyUpdated) {
+        await _controller.fetchBookingDetail(booking.id);
+        await _loadCurrentTab(refresh: true);
+      }
+    } on StripeException catch (e) {
+      if (e.error.code == FailureCode.Canceled) {
+        // User dismissed the sheet — not an error, nothing to show.
+      } else {
+        Get.snackbar(
+          'Payment Failed',
+          e.error.localizedMessage ?? 'Something went wrong with the payment.',
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Payment Failed', e.toString());
+    } finally {
+      if (mounted) setState(() => _payingBookingId = null);
     }
   }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:app_links/app_links.dart' as deep_links;
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:zip_peer/config/stripe/stripe_config.dart';
 import 'package:zip_peer/constants/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:zip_peer/config/routes/routes.dart';
@@ -10,6 +12,7 @@ import 'package:zip_peer/services/auth/auth_session_store.dart';
 import 'package:zip_peer/services/auth/auth_service.dart';
 import 'package:zip_peer/services/auth/token_refresh_service.dart';
 import 'package:zip_peer/services/chat/chat_socket_service.dart';
+import 'package:zip_peer/services/payments/payment_service.dart';
 import 'package:zip_peer/views/screens/auth/login.dart';
 import 'package:zip_peer/views/screens/payouts/payout_information_screen.dart';
 
@@ -23,10 +26,45 @@ StreamSubscription<Uri>? _deepLinkSub;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _maybeInitStripe();
   _listenForSessionExpiry();
   _listenForPayoutDeepLinks();
   await _maybeStartTokenRefresh();
   runApp(MyApp());
+}
+
+/// Fetches `GET /payments/config` and applies it — "fetching it at launch
+/// means a test→live switch, or a key rotation, needs no app release" (the
+/// backend's own framing). Guarded by [StripeRuntimeConfig.fetched], so
+/// this is skipped if it somehow already ran (it can't have, this early,
+/// but [PaymentMethodController.ensureStripeConfigLoaded] uses the same
+/// guard as a fallback in case this one failed, e.g. no network at boot).
+/// A "Pay Now" attempt with Stripe still unconfigured is caught separately
+/// and shown as a friendly message rather than crashing.
+///
+/// The whole body is wrapped defensively: `Stripe.instance.applySettings()`
+/// previously threw an **unhandled** `PlatformException` here when the
+/// native SDK couldn't initialize (confirmed live, 2026-10-06 — caused by
+/// `MainActivity` extending `FlutterActivity` instead of the
+/// `FlutterFragmentActivity` flutter_stripe's Android side requires), which
+/// happened early enough in `main()` to block `runApp()` entirely — the app
+/// never rendered. Fixed at the root (MainActivity.kt), but config-fetching
+/// code this early in boot should never be able to take the whole app down
+/// regardless of the specific cause, so every path here is now non-fatal.
+Future<void> _maybeInitStripe() async {
+  if (StripeRuntimeConfig.fetched) return;
+  try {
+    final result = await PaymentService().getPaymentsConfig();
+    if (!result.success || result.config == null) return;
+
+    StripeRuntimeConfig.applyFrom(result.config!);
+    if (StripeRuntimeConfig.isConfigured) {
+      Stripe.publishableKey = StripeRuntimeConfig.effectivePublishableKey;
+      await Stripe.instance.applySettings();
+    }
+  } catch (e) {
+    developer.log('Stripe init failed: $e', name: 'stripe');
+  }
 }
 
 void _listenForPayoutDeepLinks() {
