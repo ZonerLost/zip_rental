@@ -153,6 +153,12 @@ void _paymentStateTests() {
       expect(b.awaitingPayment, isTrue);
     });
 
+    test('a refund makes a live booking payable again', () {
+      final b = booking(status: 'accepted', paymentStatus: 'refunded');
+      expect(b.isPaid, isFalse);
+      expect(b.awaitingPayment, isTrue);
+    });
+
     test('a missing paymentStatus reads as unpaid, not paid', () {
       // Every booking created before the server grew the field. Unpaid is the safe direction: the
       // worst case is offering Pay Now on a paid booking, which the server refuses with a 409.

@@ -27,7 +27,10 @@ class BookingPaymentStatuses {
   static const String paid = 'paid';
   static const String failed = 'failed';
 
-  static const List<String> all = <String>[unpaid, paid, failed];
+  /// An admin refunded a completed payment. Not 'paid', so a live booking becomes payable again.
+  static const String refunded = 'refunded';
+
+  static const List<String> all = <String>[unpaid, paid, failed, refunded];
 }
 
 class QuoteRequestModel {
