@@ -1,4 +1,4 @@
-package com.sequoia.sequoiaapp
+package com.atussapp.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
