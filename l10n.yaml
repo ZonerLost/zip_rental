@@ -1,0 +1,14 @@
+# Flutter localization config.
+#
+# `flutter_localizations` was already declared in pubspec.yaml but nothing used it — there were no
+# .arb files and no generated AppLocalizations, so all 715 Text() widgets held English literals.
+# These two .arb files were generated from the client's "Atussa French UI Translations" document
+# (17 November 2026); `scripts/` in the backend repo holds the generator.
+#
+# Run `flutter gen-l10n` (or just `flutter run`, which calls it) to produce AppLocalizations, then
+# replace a literal with `AppLocalizations.of(context)!.<key>`.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

@@ -1,0 +1,1596 @@
+{
+  "@@locale": "en",
+  "home_welcomeBack": "Welcome Back!",
+  "@home_welcomeBack": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_exploreRentals": "Explore Rentals",
+  "@home_exploreRentals": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_whatLooking": "What are you looking for?",
+  "@home_whatLooking": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_map": "Map",
+  "@home_map": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_all": "All",
+  "@home_all": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_popular": "Popular",
+  "@home_popular": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_recentlyAdded": "Recently Added",
+  "@home_recentlyAdded": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_search": "Search",
+  "@home_search": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_bookings": "Bookings",
+  "@home_bookings": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_addItemBottomNavigationOnly": "Add Item (bottom navigation only)",
+  "@home_addItemBottomNavigationOnly": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_myListings": "My Listings",
+  "@home_myListings": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_chats": "Chats",
+  "@home_chats": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_noConversationsYet": "No conversations yet",
+  "@home_noConversationsYet": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_dashboardBottomNavigation": "Dashboard (bottom navigation)",
+  "@home_dashboardBottomNavigation": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_favouritesFavorites": "Favourites / Favorites",
+  "@home_favouritesFavorites": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_notifications": "Notifications",
+  "@home_notifications": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_day": "/day",
+  "@home_day": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "home_00Ratings": "0.0 ratings",
+  "@home_00Ratings": {
+    "description": "Section 1: Navigation and Home — Search / Explore Rentals"
+  },
+  "addItem_addNewItem": "Add new item",
+  "@addItem_addNewItem": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_step15": "Step 1/5",
+  "@addItem_step15": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_uploadProductImages": "Upload Product Images",
+  "@addItem_uploadProductImages": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_multipleImagesAllowedMax5": "Multiple images allowed (max 5)",
+  "@addItem_multipleImagesAllowedMax5": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_upload": "Upload",
+  "@addItem_upload": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_title": "Title",
+  "@addItem_title": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_eGNikeJordan6": "e.g. Nike Jordan 6",
+  "@addItem_eGNikeJordan6": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_minimum5Characters05": "Minimum 5 characters (0/5)",
+  "@addItem_minimum5Characters05": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_category": "Category",
+  "@addItem_category": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_electronics": "Electronics",
+  "@addItem_electronics": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_kitchen": "Kitchen",
+  "@addItem_kitchen": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_condition": "Condition",
+  "@addItem_condition": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_new": "New",
+  "@addItem_new": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_likeNew": "Like New",
+  "@addItem_likeNew": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_good": "Good",
+  "@addItem_good": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_price": "Price",
+  "@addItem_price": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_per": "Per",
+  "@addItem_per": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_perDay": "Per Day",
+  "@addItem_perDay": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_perWeek": "Per Week",
+  "@addItem_perWeek": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_productDescription": "Product Description",
+  "@addItem_productDescription": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_minimum20Characters": "Minimum 20 characters",
+  "@addItem_minimum20Characters": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_rentalDuration": "Rental Duration",
+  "@addItem_rentalDuration": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_158Days": "1–58 days",
+  "@addItem_158Days": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_130Days": "1–30 days",
+  "@addItem_130Days": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_190Days": "1–90 days",
+  "@addItem_190Days": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_describeItem": "Describe your item…",
+  "@addItem_describeItem": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_validation": "Validation",
+  "@addItem_validation": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_titleMustBeAtLeast": "Title must be at least 5 characters.",
+  "@addItem_titleMustBeAtLeast": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_deliveryOnly": "Delivery only",
+  "@addItem_deliveryOnly": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_pickupOnly": "Pickup only",
+  "@addItem_pickupOnly": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_enableBoth": "Enable Both",
+  "@addItem_enableBoth": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "addItem_continue": "Continue",
+  "@addItem_continue": {
+    "description": "Section 2: Add New Item — Step 1"
+  },
+  "delivery_deliveryFee": "Delivery Fee",
+  "@delivery_deliveryFee": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_step25": "Step 2/5",
+  "@delivery_step25": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_chargedWhenNoDistanceTier": "Charged when no distance tier matches.",
+  "@delivery_chargedWhenNoDistanceTier": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_distancePricingTiers": "Distance Pricing Tiers",
+  "@delivery_distancePricingTiers": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_setPricePerDistanceRange": "Set a price per distance range (e.g. up to 10 km → $10).",
+  "@delivery_setPricePerDistanceRange": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_eG10": "e.g. 10",
+  "@delivery_eG10": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_eG1000": "e.g. 10.00",
+  "@delivery_eG1000": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_addTier": "Add tier",
+  "@delivery_addTier": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "delivery_continue": "Continue",
+  "@delivery_continue": {
+    "description": "Section 3: Delivery Fees — Step 2"
+  },
+  "availability_deliveryAvailability": "Delivery Availability",
+  "@availability_deliveryAvailability": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_pickupAvailability": "Pickup Availability",
+  "@availability_pickupAvailability": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_step35": "Step 3/5",
+  "@availability_step35": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_step45": "Step 4/5",
+  "@availability_step45": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_requestBookManualApproval": "Request to book (manual approval)",
+  "@availability_requestBookManualApproval": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_instantBookingAutoConfirmed": "Instant booking (auto-confirmed)",
+  "@availability_instantBookingAutoConfirmed": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_recurringSchedule": "Recurring schedule",
+  "@availability_recurringSchedule": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_specificDatesOnly": "Specific dates only",
+  "@availability_specificDatesOnly": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_monday": "Monday",
+  "@availability_monday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_tuesday": "Tuesday",
+  "@availability_tuesday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_wednesday": "Wednesday",
+  "@availability_wednesday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_thursday": "Thursday",
+  "@availability_thursday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_friday": "Friday",
+  "@availability_friday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_saturday": "Saturday",
+  "@availability_saturday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_sunday": "Sunday",
+  "@availability_sunday": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_allDay": "All Day",
+  "@availability_allDay": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "availability_continue": "Continue",
+  "@availability_continue": {
+    "description": "Section 4: Availability, Pickup and Booking"
+  },
+  "boost_boostAd": "Boost Ad",
+  "@boost_boostAd": {
+    "description": "Section 5: Boost Listing"
+  },
+  "boost_boostAd999": "Boost your ad for $9.99",
+  "@boost_boostAd999": {
+    "description": "Section 5: Boost Listing"
+  },
+  "boost_boostAd9997": "Boost Ad — $9.99 / 7 days",
+  "@boost_boostAd9997": {
+    "description": "Section 5: Boost Listing"
+  },
+  "boost_boostAdd": "Boost add",
+  "@boost_boostAdd": {
+    "description": "Section 5: Boost Listing"
+  },
+  "boost_addItemPublishButton": "Add Item (publish button)",
+  "@boost_addItemPublishButton": {
+    "description": "Section 5: Boost Listing"
+  },
+  "boost_getMoreViewsBetterResults": "Get more views and better results by promoting your listing for 7 days.",
+  "@boost_getMoreViewsBetterResults": {
+    "description": "Section 5: Boost Listing"
+  },
+  "boost_skipThisStep": "Skip this step",
+  "@boost_skipThisStep": {
+    "description": "Section 5: Boost Listing"
+  },
+  "publish_summary": "Summary",
+  "@publish_summary": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_productInformation": "Product Information",
+  "@publish_productInformation": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_edit": "Edit",
+  "@publish_edit": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_productName": "Product Name",
+  "@publish_productName": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_category": "Category",
+  "@publish_category": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_condition": "Condition",
+  "@publish_condition": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_rentalType": "Rental Type",
+  "@publish_rentalType": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_price": "Price",
+  "@publish_price": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_deliveryFees": "Delivery Fees",
+  "@publish_deliveryFees": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_description": "Description",
+  "@publish_description": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_pickupAddress": "Pickup Address",
+  "@publish_pickupAddress": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_requestBookInstantApproval": "Request to book (instant approval)",
+  "@publish_requestBookInstantApproval": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_adding": "Adding…",
+  "@publish_adding": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_boostAdd": "Boost add",
+  "@publish_boostAdd": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_addItemFinalButton": "Add Item (final button)",
+  "@publish_addItemFinalButton": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_success": "Success",
+  "@publish_success": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_itemCreatedSuccessfully": "Item created successfully.",
+  "@publish_itemCreatedSuccessfully": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "publish_itemAddedSuccessfully": "Item added successfully.",
+  "@publish_itemAddedSuccessfully": {
+    "description": "Section 6: Listing Summary and Publication"
+  },
+  "myListings_myListings": "My Listings",
+  "@myListings_myListings": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_category": "Category",
+  "@myListings_category": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_condition": "Condition",
+  "@myListings_condition": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_price": "Price",
+  "@myListings_price": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_address": "Address",
+  "@myListings_address": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_status": "Status",
+  "@myListings_status": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_active": "Active",
+  "@myListings_active": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_pauseListing": "Pause listing",
+  "@myListings_pauseListing": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_itemDetails": "Item Details",
+  "@myListings_itemDetails": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_uploadPhotos": "Upload Photos",
+  "@myListings_uploadPhotos": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_deletePhoto": "Delete Photo",
+  "@myListings_deletePhoto": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_availability": "Availability",
+  "@myListings_availability": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_delete": "Delete",
+  "@myListings_delete": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_edit": "Edit",
+  "@myListings_edit": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_totalRentals": "Total Rentals",
+  "@myListings_totalRentals": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_rating": "Rating",
+  "@myListings_rating": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_homeAddress": "Home Address",
+  "@myListings_homeAddress": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_togetherWeSaved0Rental": "Together, we saved 0 rental trips with this item and made sustainable choices!",
+  "@myListings_togetherWeSaved0Rental": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_day": "/day",
+  "@myListings_day": {
+    "description": "Section 7: My Listings"
+  },
+  "myListings_week": "/week",
+  "@myListings_week": {
+    "description": "Section 7: My Listings"
+  },
+  "listingDetails_listingDetails": "Listing Details",
+  "@listingDetails_listingDetails": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_category": "Category",
+  "@listingDetails_category": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_condition": "Condition",
+  "@listingDetails_condition": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_booking": "Booking",
+  "@listingDetails_booking": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_instantAutoConfirmed": "Instant (auto-confirmed)",
+  "@listingDetails_instantAutoConfirmed": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_rentalTerms": "Rental Terms",
+  "@listingDetails_rentalTerms": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_status": "Status",
+  "@listingDetails_status": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_availableBooking": "Available for booking",
+  "@listingDetails_availableBooking": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_rentalDuration": "Rental Duration",
+  "@listingDetails_rentalDuration": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_weeklyRate": "Weekly Rate",
+  "@listingDetails_weeklyRate": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_deliveryPickup": "Delivery & Pickup",
+  "@listingDetails_deliveryPickup": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_location": "Location",
+  "@listingDetails_location": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_rentalType": "Rental Type",
+  "@listingDetails_rentalType": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_flatDeliveryFee": "Flat Delivery Fee",
+  "@listingDetails_flatDeliveryFee": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_totalAmount": "Total amount",
+  "@listingDetails_totalAmount": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_bookNow": "Book Now",
+  "@listingDetails_bookNow": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_month": "Month",
+  "@listingDetails_month": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_01Month": "01 Month",
+  "@listingDetails_01Month": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_11": "1/1",
+  "@listingDetails_11": {
+    "description": "Section 8: Listing Details"
+  },
+  "listingDetails_messagePerson": "Message {person}",
+  "@listingDetails_messagePerson": {
+    "description": "Section 8: Listing Details",
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "listingDetails_send": "Send",
+  "@listingDetails_send": {
+    "description": "Section 8: Listing Details"
+  },
+  "favourites_favourites": "Favourites",
+  "@favourites_favourites": {
+    "description": "Section 9: Favourites"
+  },
+  "favourites_noFavouritesYet": "No favourites yet",
+  "@favourites_noFavouritesYet": {
+    "description": "Section 9: Favourites"
+  },
+  "favourites_tapHeartAnyItemSave": "Tap the heart on any item to save it here",
+  "@favourites_tapHeartAnyItemSave": {
+    "description": "Section 9: Favourites"
+  },
+  "favourites_1Items": "1 items",
+  "@favourites_1Items": {
+    "description": "Section 9: Favourites"
+  },
+  "favourites_day": "/day",
+  "@favourites_day": {
+    "description": "Section 9: Favourites"
+  },
+  "chat_chats": "Chats",
+  "@chat_chats": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_noConversationsYet": "No conversations yet",
+  "@chat_noConversationsYet": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_searchHere": "Search here…",
+  "@chat_searchHere": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_recentChats": "Recent Chats",
+  "@chat_recentChats": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_allChats": "All Chats",
+  "@chat_allChats": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_archiveChats": "Archive Chats",
+  "@chat_archiveChats": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_typeMessageHere": "Type your message here…",
+  "@chat_typeMessageHere": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_discussingThisItem": "Discussing this item",
+  "@chat_discussingThisItem": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_archiveChat": "Archive Chat",
+  "@chat_archiveChat": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_unarchiveChat": "Unarchive Chat",
+  "@chat_unarchiveChat": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_blockUser": "Block User",
+  "@chat_blockUser": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_reportUser": "Report User",
+  "@chat_reportUser": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_archiveUser": "Archive User",
+  "@chat_archiveUser": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_sureWantArchiveThisChat": "Are you sure you want to archive this chat?",
+  "@chat_sureWantArchiveThisChat": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "chat_yesArchive": "Yes, Archive",
+  "@chat_yesArchive": {
+    "description": "Section 10: Chats and Messaging"
+  },
+  "bookings_bookings": "Bookings",
+  "@bookings_bookings": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_itemsIRentOut": "Items I rent out",
+  "@bookings_itemsIRentOut": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_itemsIMRenting": "Items I’m renting",
+  "@bookings_itemsIMRenting": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_upcoming": "Upcoming",
+  "@bookings_upcoming": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_pending": "Pending",
+  "@bookings_pending": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_active": "Active",
+  "@bookings_active": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_past": "Past",
+  "@bookings_past": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_0BookingsFound": "0 Bookings found",
+  "@bookings_0BookingsFound": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_1BookingsFound": "1 Bookings found",
+  "@bookings_1BookingsFound": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_noBookingsFoundThisStatus": "No bookings found for this status.",
+  "@bookings_noBookingsFoundThisStatus": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_ownerName": "Owner Name",
+  "@bookings_ownerName": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_customerName": "Customer Name",
+  "@bookings_customerName": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_amount": "Amount",
+  "@bookings_amount": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_startDate": "Start Date",
+  "@bookings_startDate": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_endDate": "End Date",
+  "@bookings_endDate": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_booking": "Booking",
+  "@bookings_booking": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_cancelBooking": "Cancel Booking",
+  "@bookings_cancelBooking": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_completed": "Completed",
+  "@bookings_completed": {
+    "description": "Section 11: Bookings"
+  },
+  "bookings_cancelled": "Cancelled",
+  "@bookings_cancelled": {
+    "description": "Section 11: Bookings"
+  },
+  "report_reportProblem": "Report a Problem",
+  "@report_reportProblem": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_reason": "Reason",
+  "@report_reason": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_itemDamaged": "Item Damaged",
+  "@report_itemDamaged": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_itemNotReturned": "Item Not Returned",
+  "@report_itemNotReturned": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_itemNotAsDescribed": "Item Not As Described",
+  "@report_itemNotAsDescribed": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_lateReturn": "Late Return",
+  "@report_lateReturn": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_noShow": "No Show",
+  "@report_noShow": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_paymentIssue": "Payment Issue",
+  "@report_paymentIssue": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_other": "Other",
+  "@report_other": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_description": "Description",
+  "@report_description": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_evidenceOptional": "Evidence (optional)",
+  "@report_evidenceOptional": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_addPhotos": "Add Photos",
+  "@report_addPhotos": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_submitReport": "Submit Report",
+  "@report_submitReport": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_disputeFailed": "Dispute Failed",
+  "@report_disputeFailed": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "report_haveAlreadyRaisedDisputeThis": "You have already raised a dispute for this booking",
+  "@report_haveAlreadyRaisedDisputeThis": {
+    "description": "Section 12: Report a Problem and Claims"
+  },
+  "dashboard_dashboardBottomNavigation": "Dashboard (bottom navigation)",
+  "@dashboard_dashboardBottomNavigation": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_itemsIRentedOut": "Items I rented out",
+  "@dashboard_itemsIRentedOut": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_rentedFromOthers": "Rented from Others",
+  "@dashboard_rentedFromOthers": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_itemsListed": "Items Listed",
+  "@dashboard_itemsListed": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_ratings": "Ratings",
+  "@dashboard_ratings": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_earningFromRentedItems": "Earning from rented items",
+  "@dashboard_earningFromRentedItems": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_thisMonth": "This Month",
+  "@dashboard_thisMonth": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_coSavedByRentingOut": "CO₂ saved by renting out items instead of buying",
+  "@dashboard_coSavedByRentingOut": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_byCar": "by car",
+  "@dashboard_byCar": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_recentBookings": "Recent Bookings",
+  "@dashboard_recentBookings": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_customerName": "Customer Name",
+  "@dashboard_customerName": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_cancelled": "Cancelled",
+  "@dashboard_cancelled": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_settings": "SETTINGS",
+  "@dashboard_settings": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_badges": "BADGES",
+  "@dashboard_badges": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_lifetime": "Lifetime",
+  "@dashboard_lifetime": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_totalCoSaved": "Total CO₂ saved",
+  "@dashboard_totalCoSaved": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_equivalentCarKilometersAvoided": "Equivalent in car kilometers avoided",
+  "@dashboard_equivalentCarKilometersAvoided": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_numberRentalsContributing": "Number of rentals contributing",
+  "@dashboard_numberRentalsContributing": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_currentBadgeTier": "Current badge tier",
+  "@dashboard_currentBadgeTier": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_ecoStarter": "Eco Starter",
+  "@dashboard_ecoStarter": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_greenAchiever": "Green Achiever",
+  "@dashboard_greenAchiever": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_planetHero": "Planet Hero",
+  "@dashboard_planetHero": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_impactLegend": "Impact Legend",
+  "@dashboard_impactLegend": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_reach0KgCoSaved": "Reach 0 kg CO₂ saved",
+  "@dashboard_reach0KgCoSaved": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_reach50KgCoSaved": "Reach 50 kg CO₂ saved",
+  "@dashboard_reach50KgCoSaved": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_reach200KgCoSaved": "Reach 200 kg CO₂ saved",
+  "@dashboard_reach200KgCoSaved": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "dashboard_reach500KgCoSaved": "Reach 500 kg CO₂ saved",
+  "@dashboard_reach500KgCoSaved": {
+    "description": "Section 13: My Activity — Dashboard"
+  },
+  "settings_accountSettings": "Account Settings",
+  "@settings_accountSettings": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_payoutInformation": "Payout Information",
+  "@settings_payoutInformation": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_logout": "Logout",
+  "@settings_logout": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_myAddresses": "My Addresses",
+  "@settings_myAddresses": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_addNewAddress": "Add new address",
+  "@settings_addNewAddress": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_changePassword": "Change Password",
+  "@settings_changePassword": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_currentPassword": "Current Password",
+  "@settings_currentPassword": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_createNewPassword": "Create new password",
+  "@settings_createNewPassword": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_confirmNewPassword": "Confirm new password",
+  "@settings_confirmNewPassword": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_update": "Update",
+  "@settings_update": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_default": "Default",
+  "@settings_default": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_havenTBlockedAnyone": "You haven’t blocked anyone.",
+  "@settings_havenTBlockedAnyone": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_notificationsBlocked": "Notifications Blocked",
+  "@settings_notificationsBlocked": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_notificationsBlockedAtSystemLevel": "Notifications are blocked at the system level. Enable them from your device settings.",
+  "@settings_notificationsBlockedAtSystemLevel": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_settings": "Settings",
+  "@settings_settings": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_myAddress": "My Address",
+  "@settings_myAddress": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_language": "Language",
+  "@settings_language": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_enableNotifications": "Enable Notifications",
+  "@settings_enableNotifications": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_blockedUsers": "Blocked Users",
+  "@settings_blockedUsers": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_about": "About",
+  "@settings_about": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_helpSupport": "Help & Support",
+  "@settings_helpSupport": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_privacyPolicy": "Privacy Policy",
+  "@settings_privacyPolicy": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_termsConditions": "Terms & Conditions",
+  "@settings_termsConditions": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_actionNeeded": "Action needed",
+  "@settings_actionNeeded": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_stripeNeedsBitMoreInformation": "Stripe needs a bit more information before payouts can be enabled.",
+  "@settings_stripeNeedsBitMoreInformation": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_proofLiveness": "Proof of liveness",
+  "@settings_proofLiveness": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "settings_continueSetup": "Continue setup",
+  "@settings_continueSetup": {
+    "description": "Section 14: Account Settings and Addresses"
+  },
+  "dates_selectRange": "Select range",
+  "@dates_selectRange": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_endDate": "End Date",
+  "@dates_endDate": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_save": "Save",
+  "@dates_save": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_october": "October",
+  "@dates_october": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_november": "November",
+  "@dates_november": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_sundaySun": "Sunday / Sun",
+  "@dates_sundaySun": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_mondayMon": "Monday / Mon",
+  "@dates_mondayMon": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_tuesdayTue": "Tuesday / Tue",
+  "@dates_tuesdayTue": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_wednesdayWed": "Wednesday / Wed",
+  "@dates_wednesdayWed": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_thursdayThu": "Thursday / Thu",
+  "@dates_thursdayThu": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_fridayFri": "Friday / Fri",
+  "@dates_fridayFri": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_saturdaySat": "Saturday / Sat",
+  "@dates_saturdaySat": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "dates_bookNow": "Book Now",
+  "@dates_bookNow": {
+    "description": "Section 15: Date Selection and Booking"
+  },
+  "checkout_checkoutPageTitle": "Checkout (page title)",
+  "@checkout_checkoutPageTitle": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_addedItems": "ADDED ITEMS",
+  "@checkout_addedItems": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_1TimesRented": "1 Times rented",
+  "@checkout_1TimesRented": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_day": "/day",
+  "@checkout_day": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_delivery": "Delivery",
+  "@checkout_delivery": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_pickup": "Pickup",
+  "@checkout_pickup": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_selectAddress": "Select address",
+  "@checkout_selectAddress": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_homeAddress": "Home Address",
+  "@checkout_homeAddress": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_change": "Change",
+  "@checkout_change": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_iHaveReadAgreeTerms": "I have read and agree to the Terms of Use, including the applicable rental, cancellation, security deposit, claims, and prohibited items policies.",
+  "@checkout_iHaveReadAgreeTerms": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_discountCode": "Discount code",
+  "@checkout_discountCode": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_apply": "Apply",
+  "@checkout_apply": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_loading": "Loading…",
+  "@checkout_loading": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_itemsPrice": "Items Price",
+  "@checkout_itemsPrice": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_discount0": "Discount (0%)",
+  "@checkout_discount0": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_deliveryFees": "Delivery Fees",
+  "@checkout_deliveryFees": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_subtotal": "Subtotal",
+  "@checkout_subtotal": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_atussaFee": "Atussa Fee",
+  "@checkout_atussaFee": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_tpsGst": "TPS (GST)",
+  "@checkout_tpsGst": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_tvqQst": "TVQ (QST)",
+  "@checkout_tvqQst": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_totalAmount": "Total Amount",
+  "@checkout_totalAmount": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_continuePayment": "Continue to payment",
+  "@checkout_continuePayment": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_selectBookingDates": "Select Booking Dates",
+  "@checkout_selectBookingDates": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_availableFrom": "Available From",
+  "@checkout_availableFrom": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_available": "Available To",
+  "@checkout_available": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_termsRequired": "Terms Required",
+  "@checkout_termsRequired": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_pleaseAgreeTermsUse": "Please agree to the Terms of Use.",
+  "@checkout_pleaseAgreeTermsUse": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_selectPayment": "Select Payment",
+  "@checkout_selectPayment": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_back": "Back",
+  "@checkout_back": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_pleaseSelectSavedCardAdd": "Please select a saved card, or add a new one.",
+  "@checkout_pleaseSelectSavedCardAdd": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_havenTSavedPaymentMethod": "You haven’t saved a payment method yet.",
+  "@checkout_havenTSavedPaymentMethod": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_addNewCard": "Add new card",
+  "@checkout_addNewCard": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "checkout_continue": "Continue",
+  "@checkout_continue": {
+    "description": "Section 16: Checkout / Booking Summary"
+  },
+  "payment_addNewPaymentMethod": "Add new payment method",
+  "@payment_addNewPaymentMethod": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_cardLabel": "Card Label",
+  "@payment_cardLabel": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_cardType": "Card Type",
+  "@payment_cardType": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_visa": "Visa",
+  "@payment_visa": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_mastercard": "Mastercard",
+  "@payment_mastercard": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_last4Digits": "Last 4 Digits",
+  "@payment_last4Digits": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_expiryMonth": "Expiry Month",
+  "@payment_expiryMonth": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_expiryYear": "Expiry Year",
+  "@payment_expiryYear": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_setAsDefaultPaymentMethod": "Set as default payment method",
+  "@payment_setAsDefaultPaymentMethod": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_enterExactly4DigitsLast": "Enter exactly 4 digits for the last-4.",
+  "@payment_enterExactly4DigitsLast": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "payment_add": "Add",
+  "@payment_add": {
+    "description": "Section 17: Add a Payment Method"
+  },
+  "confirmation_success": "Success",
+  "@confirmation_success": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_bookingRequestCreatedSuccessfully": "Booking request created successfully.",
+  "@confirmation_bookingRequestCreatedSuccessfully": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_requestSent": "Request Sent!",
+  "@confirmation_requestSent": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_requestRentingThisItemHas": "Your request for renting this item has been sent to the owner of the product, you’ll receive a notification once approved.",
+  "@confirmation_requestRentingThisItemHas": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_dateTime": "Date & Time",
+  "@confirmation_dateTime": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_rentedDuration": "Rented Duration",
+  "@confirmation_rentedDuration": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_8Days": "8 days",
+  "@confirmation_8Days": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_orderType": "Order Type",
+  "@confirmation_orderType": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_delivery": "Delivery",
+  "@confirmation_delivery": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_totalAmount": "Total Amount",
+  "@confirmation_totalAmount": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_paymentMethodSelected": "Payment Method Selected",
+  "@confirmation_paymentMethodSelected": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_rentingInsteadBuyingHelpsReduce": "Renting instead of buying helps reduce waste — thanks for choosing to rent!",
+  "@confirmation_rentingInsteadBuyingHelpsReduce": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "confirmation_goHomePage": "Go to Home Page",
+  "@confirmation_goHomePage": {
+    "description": "Section 18: Booking Request Confirmation"
+  },
+  "status_cancelBooking": "Cancel Booking",
+  "@status_cancelBooking": {
+    "description": "Section 19: Cancellation and Booking Statuses"
+  },
+  "status_pending": "Pending",
+  "@status_pending": {
+    "description": "Section 19: Cancellation and Booking Statuses"
+  },
+  "status_upcoming": "Upcoming",
+  "@status_upcoming": {
+    "description": "Section 19: Cancellation and Booking Statuses"
+  },
+  "status_active": "Active",
+  "@status_active": {
+    "description": "Section 19: Cancellation and Booking Statuses"
+  },
+  "status_completed": "Completed",
+  "@status_completed": {
+    "description": "Section 19: Cancellation and Booking Statuses"
+  },
+  "status_cancelled": "Cancelled",
+  "@status_cancelled": {
+    "description": "Section 19: Cancellation and Booking Statuses"
+  },
+  "filters_nearMe": "Near Me",
+  "@filters_nearMe": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_selectFilters": "Select Filters",
+  "@filters_selectFilters": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_pleaseSelectFiltersAsPer": "Please select the filters as per your preferences.",
+  "@filters_pleaseSelectFiltersAsPer": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_searchProducts": "Search products",
+  "@filters_searchProducts": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_eGFootwear": "e.g. Footwear…",
+  "@filters_eGFootwear": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_location": "Location",
+  "@filters_location": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_eGBrooklynNewYork": "e.g. Brooklyn, New York",
+  "@filters_eGBrooklynNewYork": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_distance": "Distance",
+  "@filters_distance": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_500M": "500 m",
+  "@filters_500M": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_25Km": "2.5 km",
+  "@filters_25Km": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_5Km": "5 km",
+  "@filters_5Km": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_10Km": "10 km +",
+  "@filters_10Km": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_reset": "Reset",
+  "@filters_reset": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_apply": "Apply",
+  "@filters_apply": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_back": "Back",
+  "@filters_back": {
+    "description": "Section 20: Search Filters"
+  },
+  "filters_all": "All",
+  "@filters_all": {
+    "description": "Section 20: Search Filters"
+  },
+  "notifications_notifications": "Notifications",
+  "@notifications_notifications": {
+    "description": "Section 21: Notifications"
+  },
+  "notifications_bookingCancelled": "Booking Cancelled",
+  "@notifications_bookingCancelled": {
+    "description": "Section 21: Notifications"
+  },
+  "notifications_newBookingRequest": "New Booking Request",
+  "@notifications_newBookingRequest": {
+    "description": "Section 21: Notifications"
+  },
+  "notifications_nameCancelledBookingItem": "{name} cancelled the booking for {item}",
+  "@notifications_nameCancelledBookingItem": {
+    "description": "Section 21: Notifications",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "notifications_nameHasRequestedRentItem": "{name} has requested to rent your {item}",
+  "@notifications_nameHasRequestedRentItem": {
+    "description": "Section 21: Notifications",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "editListing_itemDetails": "Item Details",
+  "@editListing_itemDetails": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_uploadPhotos": "Upload Photos",
+  "@editListing_uploadPhotos": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_deletePhoto": "Delete Photo",
+  "@editListing_deletePhoto": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_availability": "Availability",
+  "@editListing_availability": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_rating": "Rating",
+  "@editListing_rating": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_totalRentals": "Total Rentals",
+  "@editListing_totalRentals": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_pauseListing": "Pause listing",
+  "@editListing_pauseListing": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_edit": "Edit",
+  "@editListing_edit": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_delete": "Delete",
+  "@editListing_delete": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_active": "Active",
+  "@editListing_active": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "editListing_homeAddress": "Home Address",
+  "@editListing_homeAddress": {
+    "description": "Section 22: Edit and Manage a Listing"
+  },
+  "account_changePassword": "Change Password",
+  "@account_changePassword": {
+    "description": "Section 23: Account Management"
+  },
+  "account_currentPassword": "Current Password",
+  "@account_currentPassword": {
+    "description": "Section 23: Account Management"
+  },
+  "account_createNewPassword": "Create new password",
+  "@account_createNewPassword": {
+    "description": "Section 23: Account Management"
+  },
+  "account_confirmNewPassword": "Confirm new password",
+  "@account_confirmNewPassword": {
+    "description": "Section 23: Account Management"
+  },
+  "account_update": "Update",
+  "@account_update": {
+    "description": "Section 23: Account Management"
+  },
+  "account_myAddresses": "My Addresses",
+  "@account_myAddresses": {
+    "description": "Section 23: Account Management"
+  },
+  "account_homeAddress": "Home Address",
+  "@account_homeAddress": {
+    "description": "Section 23: Account Management"
+  },
+  "account_default": "Default",
+  "@account_default": {
+    "description": "Section 23: Account Management"
+  },
+  "account_addNewAddress": "Add new address",
+  "@account_addNewAddress": {
+    "description": "Section 23: Account Management"
+  },
+  "account_language": "Language",
+  "@account_language": {
+    "description": "Section 23: Account Management"
+  },
+  "account_english": "English",
+  "@account_english": {
+    "description": "Section 23: Account Management"
+  },
+  "account_franAis": "Français",
+  "@account_franAis": {
+    "description": "Section 23: Account Management"
+  },
+  "account_espaOl": "Español",
+  "@account_espaOl": {
+    "description": "Section 23: Account Management"
+  },
+  "account_portuguese": "Portuguese",
+  "@account_portuguese": {
+    "description": "Section 23: Account Management"
+  },
+  "account_blockedUsers": "Blocked Users",
+  "@account_blockedUsers": {
+    "description": "Section 23: Account Management"
+  },
+  "account_havenTBlockedAnyone": "You haven’t blocked anyone.",
+  "@account_havenTBlockedAnyone": {
+    "description": "Section 23: Account Management"
+  },
+  "account_notificationsBlocked": "Notifications Blocked",
+  "@account_notificationsBlocked": {
+    "description": "Section 23: Account Management"
+  },
+  "account_notificationsBlockedAtSystemLevel": "Notifications are blocked at the system level. Enable them from your device settings.",
+  "@account_notificationsBlockedAtSystemLevel": {
+    "description": "Section 23: Account Management"
+  },
+  "account_settings": "Settings",
+  "@account_settings": {
+    "description": "Section 23: Account Management"
+  },
+  "help_helpSupport": "Help & Support",
+  "@help_helpSupport": {
+    "description": "Section 24: Help & Support — Navigation Only"
+  },
+  "help_about": "About",
+  "@help_about": {
+    "description": "Section 24: Help & Support — Navigation Only"
+  },
+  "help_privacyPolicyLinkLabelOnly": "Privacy Policy (link label only)",
+  "@help_privacyPolicyLinkLabelOnly": {
+    "description": "Section 24: Help & Support — Navigation Only"
+  },
+  "help_termsConditionsLinkLabelOnly": "Terms & Conditions (link label only)",
+  "@help_termsConditionsLinkLabelOnly": {
+    "description": "Section 24: Help & Support — Navigation Only"
+  },
+  "term_addItem_bottomNavigation": "Add Item",
+  "@term_addItem_bottomNavigation": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_addItem_finalPublishAction": "Add Item",
+  "@term_addItem_finalPublishAction": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_checkout_bookingStepTitle": "Checkout",
+  "@term_checkout_bookingStepTitle": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_continuePayment_summaryActionButton": "Continue to payment",
+  "@term_continuePayment_summaryActionButton": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_dashboard_bottomNavigation": "Dashboard",
+  "@term_dashboard_bottomNavigation": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_welcomeBack_welcomeMessage": "Welcome Back!",
+  "@term_welcomeBack_welcomeMessage": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_pickup_itemPickup": "Pickup",
+  "@term_pickup_itemPickup": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_rentalType_itemHandoverOptions": "Rental Type",
+  "@term_rentalType_itemHandoverOptions": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_cardType_paymentCardNetwork": "Card Type",
+  "@term_cardType_paymentCardNetwork": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_itemsIRentedOut_ownerActivity": "Items I rented out",
+  "@term_itemsIRentedOut_ownerActivity": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_rentedFromOthers_renterActivity": "Rented from Others",
+  "@term_rentedFromOthers_renterActivity": {
+    "description": "Section 25: Approved UI Terminology"
+  },
+  "term_payoutInformation_payoutArea": "Payout Information",
+  "@term_payoutInformation_payoutArea": {
+    "description": "Section 25: Approved UI Terminology"
+  }
+}

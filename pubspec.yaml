@@ -81,6 +81,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Builds AppLocalizations from lib/l10n/*.arb (see l10n.yaml). Without this flag the
+  # .arb files are inert and every screen stays English.
+  generate: true
 
   assets:
     - assets/images/
