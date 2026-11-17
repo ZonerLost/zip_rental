@@ -1225,4 +1225,143 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get term_payoutInformation_payoutArea => 'Payout Information';
+
+  @override
+  String get cat_listing_item_title_label => 'Item name';
+
+  @override
+  String get cat_listing_item_title_placeholder =>
+      'Enter the name of your item';
+
+  @override
+  String get cat_listing_suggested_category => 'Suggested category';
+
+  @override
+  String get cat_listing_suggested_subcategory => 'Suggested subcategory';
+
+  @override
+  String get cat_listing_suggested_item_type => 'Suggested item type';
+
+  @override
+  String get cat_listing_edit_category => 'Edit category';
+
+  @override
+  String get cat_listing_choose_category => 'Choose a category';
+
+  @override
+  String get cat_listing_choose_subcategory => 'Choose a subcategory';
+
+  @override
+  String get cat_listing_other_item => 'Other item';
+
+  @override
+  String get cat_listing_no_match => 'We couldn\'t recognize this item';
+
+  @override
+  String get cat_listing_choose_manually => 'Choose manually';
+
+  @override
+  String get cat_listing_confirm_classification => 'Confirm category';
+
+  @override
+  String get cat_listing_alternative_suggestions => 'Other suggestions';
+
+  @override
+  String get cat_search_placeholder => 'What are you looking for?';
+
+  @override
+  String get cat_search_no_results => 'No results found';
+
+  @override
+  String get cat_search_try_other_terms => 'Try different keywords';
+
+  @override
+  String get cat_search_results => 'Search results';
+
+  @override
+  String get cat_search_category => 'Category';
+
+  @override
+  String get cat_search_subcategory => 'Subcategory';
+
+  @override
+  String get cat_search_filters => 'Filters';
+
+  @override
+  String get cat_search_clear_filters => 'Clear filters';
+
+  @override
+  String get cat_admin_catalog => 'Item catalog';
+
+  @override
+  String get cat_admin_categories => 'Categories';
+
+  @override
+  String get cat_admin_subcategories => 'Subcategories';
+
+  @override
+  String get cat_admin_item_types => 'Item types';
+
+  @override
+  String get cat_admin_aliases => 'Synonyms and keywords';
+
+  @override
+  String get cat_admin_add_alias => 'Add synonym';
+
+  @override
+  String get cat_admin_search_unrecognized => 'Unrecognized searches';
+
+  @override
+  String get cat_admin_user_corrections => 'User corrections';
+
+  @override
+  String get cat_admin_active => 'Active';
+
+  @override
+  String get cat_admin_inactive => 'Inactive';
+
+  @override
+  String get cat_admin_under_review => 'Under review';
+
+  @override
+  String get cat_admin_allowed => 'Allowed';
+
+  @override
+  String get cat_admin_conditionally_allowed => 'Conditionally allowed';
+
+  @override
+  String get cat_admin_prohibited => 'Prohibited';
+
+  @override
+  String get cat_admin_approve => 'Approve';
+
+  @override
+  String get cat_admin_reject => 'Reject';
+
+  @override
+  String get cat_admin_save_changes => 'Save changes';
+
+  @override
+  String get cat_admin_test_search => 'Test a search';
+
+  @override
+  String get cat_admin_add_category => 'Add category';
+
+  @override
+  String get cat_admin_add_subcategory => 'Add subcategory';
+
+  @override
+  String get cat_admin_add_item_type => 'Add item type';
+
+  @override
+  String get delivery_flatFallbackFee => 'Flat Fallback Fee (\$)';
+
+  @override
+  String get delivery_tier1 => 'Tier 1';
+
+  @override
+  String get delivery_maxKm => 'Max km';
+
+  @override
+  String get delivery_price => 'Price (\$)';
 }

@@ -174,7 +174,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get delivery_setPricePerDistanceRange =>
-      'Définissez un tarif selon la distance (ex. : jusqu’à 10 km : 10 ).||Tier1|Tranche1||Maxkm| Distancemaximale(km)||Price()';
+      'Définissez un tarif selon la distance (ex. : jusqu’à 10 km : 10 \$).';
 
   @override
   String get delivery_eG10 => 'Ex. : 10';
@@ -1229,4 +1229,143 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get term_payoutInformation_payoutArea => 'Mes versements';
+
+  @override
+  String get cat_listing_item_title_label => 'Nom de l\'objet';
+
+  @override
+  String get cat_listing_item_title_placeholder => 'Entre le nom de ton objet';
+
+  @override
+  String get cat_listing_suggested_category => 'Catégorie suggérée';
+
+  @override
+  String get cat_listing_suggested_subcategory => 'Sous-catégorie suggérée';
+
+  @override
+  String get cat_listing_suggested_item_type => 'Type d\'objet suggéré';
+
+  @override
+  String get cat_listing_edit_category => 'Modifier la catégorie';
+
+  @override
+  String get cat_listing_choose_category => 'Choisir une catégorie';
+
+  @override
+  String get cat_listing_choose_subcategory => 'Choisir une sous-catégorie';
+
+  @override
+  String get cat_listing_other_item => 'Autre objet';
+
+  @override
+  String get cat_listing_no_match => 'Nous n\'avons pas reconnu cet objet';
+
+  @override
+  String get cat_listing_choose_manually => 'Choisir manuellement';
+
+  @override
+  String get cat_listing_confirm_classification => 'Confirmer la catégorie';
+
+  @override
+  String get cat_listing_alternative_suggestions => 'Autres suggestions';
+
+  @override
+  String get cat_search_placeholder => 'Qu\'est-ce que tu cherches?';
+
+  @override
+  String get cat_search_no_results => 'Aucun résultat trouvé';
+
+  @override
+  String get cat_search_try_other_terms => 'Essaie d\'autres mots-clés';
+
+  @override
+  String get cat_search_results => 'Résultats de recherche';
+
+  @override
+  String get cat_search_category => 'Catégorie';
+
+  @override
+  String get cat_search_subcategory => 'Sous-catégorie';
+
+  @override
+  String get cat_search_filters => 'Filtres';
+
+  @override
+  String get cat_search_clear_filters => 'Effacer les filtres';
+
+  @override
+  String get cat_admin_catalog => 'Catalogue des objets';
+
+  @override
+  String get cat_admin_categories => 'Catégories';
+
+  @override
+  String get cat_admin_subcategories => 'Sous-catégories';
+
+  @override
+  String get cat_admin_item_types => 'Types d\'objets';
+
+  @override
+  String get cat_admin_aliases => 'Synonymes et mots-clés';
+
+  @override
+  String get cat_admin_add_alias => 'Ajouter un synonyme';
+
+  @override
+  String get cat_admin_search_unrecognized => 'Recherches non reconnues';
+
+  @override
+  String get cat_admin_user_corrections => 'Corrections des utilisateurs';
+
+  @override
+  String get cat_admin_active => 'Actif';
+
+  @override
+  String get cat_admin_inactive => 'Inactif';
+
+  @override
+  String get cat_admin_under_review => 'En révision';
+
+  @override
+  String get cat_admin_allowed => 'Autorisé';
+
+  @override
+  String get cat_admin_conditionally_allowed => 'Autorisé sous conditions';
+
+  @override
+  String get cat_admin_prohibited => 'Interdit';
+
+  @override
+  String get cat_admin_approve => 'Approuver';
+
+  @override
+  String get cat_admin_reject => 'Refuser';
+
+  @override
+  String get cat_admin_save_changes => 'Enregistrer les modifications';
+
+  @override
+  String get cat_admin_test_search => 'Tester une recherche';
+
+  @override
+  String get cat_admin_add_category => 'Ajouter une catégorie';
+
+  @override
+  String get cat_admin_add_subcategory => 'Ajouter une sous-catégorie';
+
+  @override
+  String get cat_admin_add_item_type => 'Ajouter un type d\'objet';
+
+  @override
+  String get delivery_flatFallbackFee =>
+      'Frais fixes de livraison de base (\$)';
+
+  @override
+  String get delivery_tier1 => 'Tranche 1';
+
+  @override
+  String get delivery_maxKm => 'Distance maximale (km)';
+
+  @override
+  String get delivery_price => 'Prix (\$)';
 }

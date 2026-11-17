@@ -218,7 +218,7 @@
   },
   "delivery_setPricePerDistanceRange": "Set a price per distance range (e.g. up to 10 km → $10).",
   "@delivery_setPricePerDistanceRange": {
-    "description": "Section 3: Delivery Fees — Step 2"
+    "description": "Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them"
   },
   "delivery_eG10": "e.g. 10",
   "@delivery_eG10": {
@@ -1592,5 +1592,189 @@
   "term_payoutInformation_payoutArea": "Payout Information",
   "@term_payoutInformation_payoutArea": {
     "description": "Section 25: Approved UI Terminology"
+  },
+  "cat_listing_item_title_label": "Item name",
+  "@cat_listing_item_title_label": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.item_title.label"
+  },
+  "cat_listing_item_title_placeholder": "Enter the name of your item",
+  "@cat_listing_item_title_placeholder": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.item_title.placeholder"
+  },
+  "cat_listing_suggested_category": "Suggested category",
+  "@cat_listing_suggested_category": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.suggested_category"
+  },
+  "cat_listing_suggested_subcategory": "Suggested subcategory",
+  "@cat_listing_suggested_subcategory": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.suggested_subcategory"
+  },
+  "cat_listing_suggested_item_type": "Suggested item type",
+  "@cat_listing_suggested_item_type": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.suggested_item_type"
+  },
+  "cat_listing_edit_category": "Edit category",
+  "@cat_listing_edit_category": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.edit_category"
+  },
+  "cat_listing_choose_category": "Choose a category",
+  "@cat_listing_choose_category": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.choose_category"
+  },
+  "cat_listing_choose_subcategory": "Choose a subcategory",
+  "@cat_listing_choose_subcategory": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.choose_subcategory"
+  },
+  "cat_listing_other_item": "Other item",
+  "@cat_listing_other_item": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.other_item"
+  },
+  "cat_listing_no_match": "We couldn't recognize this item",
+  "@cat_listing_no_match": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.no_match"
+  },
+  "cat_listing_choose_manually": "Choose manually",
+  "@cat_listing_choose_manually": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.choose_manually"
+  },
+  "cat_listing_confirm_classification": "Confirm category",
+  "@cat_listing_confirm_classification": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.confirm_classification"
+  },
+  "cat_listing_alternative_suggestions": "Other suggestions",
+  "@cat_listing_alternative_suggestions": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key listing.alternative_suggestions"
+  },
+  "cat_search_placeholder": "What are you looking for?",
+  "@cat_search_placeholder": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.placeholder"
+  },
+  "cat_search_no_results": "No results found",
+  "@cat_search_no_results": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.no_results"
+  },
+  "cat_search_try_other_terms": "Try different keywords",
+  "@cat_search_try_other_terms": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.try_other_terms"
+  },
+  "cat_search_results": "Search results",
+  "@cat_search_results": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.results"
+  },
+  "cat_search_category": "Category",
+  "@cat_search_category": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.category"
+  },
+  "cat_search_subcategory": "Subcategory",
+  "@cat_search_subcategory": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.subcategory"
+  },
+  "cat_search_filters": "Filters",
+  "@cat_search_filters": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.filters"
+  },
+  "cat_search_clear_filters": "Clear filters",
+  "@cat_search_clear_filters": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key search.clear_filters"
+  },
+  "cat_admin_catalog": "Item catalog",
+  "@cat_admin_catalog": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.catalog"
+  },
+  "cat_admin_categories": "Categories",
+  "@cat_admin_categories": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.categories"
+  },
+  "cat_admin_subcategories": "Subcategories",
+  "@cat_admin_subcategories": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.subcategories"
+  },
+  "cat_admin_item_types": "Item types",
+  "@cat_admin_item_types": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.item_types"
+  },
+  "cat_admin_aliases": "Synonyms and keywords",
+  "@cat_admin_aliases": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.aliases"
+  },
+  "cat_admin_add_alias": "Add synonym",
+  "@cat_admin_add_alias": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.add_alias"
+  },
+  "cat_admin_search_unrecognized": "Unrecognized searches",
+  "@cat_admin_search_unrecognized": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.search_unrecognized"
+  },
+  "cat_admin_user_corrections": "User corrections",
+  "@cat_admin_user_corrections": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.user_corrections"
+  },
+  "cat_admin_active": "Active",
+  "@cat_admin_active": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.active"
+  },
+  "cat_admin_inactive": "Inactive",
+  "@cat_admin_inactive": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.inactive"
+  },
+  "cat_admin_under_review": "Under review",
+  "@cat_admin_under_review": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.under_review"
+  },
+  "cat_admin_allowed": "Allowed",
+  "@cat_admin_allowed": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.allowed"
+  },
+  "cat_admin_conditionally_allowed": "Conditionally allowed",
+  "@cat_admin_conditionally_allowed": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.conditionally_allowed"
+  },
+  "cat_admin_prohibited": "Prohibited",
+  "@cat_admin_prohibited": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.prohibited"
+  },
+  "cat_admin_approve": "Approve",
+  "@cat_admin_approve": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.approve"
+  },
+  "cat_admin_reject": "Reject",
+  "@cat_admin_reject": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.reject"
+  },
+  "cat_admin_save_changes": "Save changes",
+  "@cat_admin_save_changes": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.save_changes"
+  },
+  "cat_admin_test_search": "Test a search",
+  "@cat_admin_test_search": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.test_search"
+  },
+  "cat_admin_add_category": "Add category",
+  "@cat_admin_add_category": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.add_category"
+  },
+  "cat_admin_add_subcategory": "Add subcategory",
+  "@cat_admin_add_subcategory": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.add_subcategory"
+  },
+  "cat_admin_add_item_type": "Add item type",
+  "@cat_admin_add_item_type": {
+    "description": "Catalogue workbook (v2, 2026-11-12), key admin.add_item_type"
+  },
+  "delivery_flatFallbackFee": "Flat Fallback Fee ($)",
+  "@delivery_flatFallbackFee": {
+    "description": "Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them"
+  },
+  "delivery_tier1": "Tier 1",
+  "@delivery_tier1": {
+    "description": "Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them"
+  },
+  "delivery_maxKm": "Max km",
+  "@delivery_maxKm": {
+    "description": "Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them"
+  },
+  "delivery_price": "Price ($)",
+  "@delivery_price": {
+    "description": "Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them"
   }
 }

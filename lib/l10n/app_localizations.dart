@@ -422,7 +422,7 @@ abstract class AppLocalizations {
   /// **'Distance Pricing Tiers'**
   String get delivery_distancePricingTiers;
 
-  /// Section 3: Delivery Fees — Step 2
+  /// Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them
   ///
   /// In en, this message translates to:
   /// **'Set a price per distance range (e.g. up to 10 km → \$10).'**
@@ -2455,6 +2455,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payout Information'**
   String get term_payoutInformation_payoutArea;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.item_title.label
+  ///
+  /// In en, this message translates to:
+  /// **'Item name'**
+  String get cat_listing_item_title_label;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.item_title.placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the name of your item'**
+  String get cat_listing_item_title_placeholder;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.suggested_category
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested category'**
+  String get cat_listing_suggested_category;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.suggested_subcategory
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested subcategory'**
+  String get cat_listing_suggested_subcategory;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.suggested_item_type
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested item type'**
+  String get cat_listing_suggested_item_type;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.edit_category
+  ///
+  /// In en, this message translates to:
+  /// **'Edit category'**
+  String get cat_listing_edit_category;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.choose_category
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a category'**
+  String get cat_listing_choose_category;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.choose_subcategory
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a subcategory'**
+  String get cat_listing_choose_subcategory;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.other_item
+  ///
+  /// In en, this message translates to:
+  /// **'Other item'**
+  String get cat_listing_other_item;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.no_match
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t recognize this item'**
+  String get cat_listing_no_match;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.choose_manually
+  ///
+  /// In en, this message translates to:
+  /// **'Choose manually'**
+  String get cat_listing_choose_manually;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.confirm_classification
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm category'**
+  String get cat_listing_confirm_classification;
+
+  /// Catalogue workbook (v2, 2026-11-12), key listing.alternative_suggestions
+  ///
+  /// In en, this message translates to:
+  /// **'Other suggestions'**
+  String get cat_listing_alternative_suggestions;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'What are you looking for?'**
+  String get cat_search_placeholder;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.no_results
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get cat_search_no_results;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.try_other_terms
+  ///
+  /// In en, this message translates to:
+  /// **'Try different keywords'**
+  String get cat_search_try_other_terms;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.results
+  ///
+  /// In en, this message translates to:
+  /// **'Search results'**
+  String get cat_search_results;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.category
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get cat_search_category;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.subcategory
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategory'**
+  String get cat_search_subcategory;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.filters
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get cat_search_filters;
+
+  /// Catalogue workbook (v2, 2026-11-12), key search.clear_filters
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get cat_search_clear_filters;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.catalog
+  ///
+  /// In en, this message translates to:
+  /// **'Item catalog'**
+  String get cat_admin_catalog;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.categories
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get cat_admin_categories;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.subcategories
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategories'**
+  String get cat_admin_subcategories;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.item_types
+  ///
+  /// In en, this message translates to:
+  /// **'Item types'**
+  String get cat_admin_item_types;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.aliases
+  ///
+  /// In en, this message translates to:
+  /// **'Synonyms and keywords'**
+  String get cat_admin_aliases;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.add_alias
+  ///
+  /// In en, this message translates to:
+  /// **'Add synonym'**
+  String get cat_admin_add_alias;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.search_unrecognized
+  ///
+  /// In en, this message translates to:
+  /// **'Unrecognized searches'**
+  String get cat_admin_search_unrecognized;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.user_corrections
+  ///
+  /// In en, this message translates to:
+  /// **'User corrections'**
+  String get cat_admin_user_corrections;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.active
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get cat_admin_active;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.inactive
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get cat_admin_inactive;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.under_review
+  ///
+  /// In en, this message translates to:
+  /// **'Under review'**
+  String get cat_admin_under_review;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.allowed
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get cat_admin_allowed;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.conditionally_allowed
+  ///
+  /// In en, this message translates to:
+  /// **'Conditionally allowed'**
+  String get cat_admin_conditionally_allowed;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.prohibited
+  ///
+  /// In en, this message translates to:
+  /// **'Prohibited'**
+  String get cat_admin_prohibited;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get cat_admin_approve;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.reject
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get cat_admin_reject;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.save_changes
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get cat_admin_save_changes;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.test_search
+  ///
+  /// In en, this message translates to:
+  /// **'Test a search'**
+  String get cat_admin_test_search;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.add_category
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get cat_admin_add_category;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.add_subcategory
+  ///
+  /// In en, this message translates to:
+  /// **'Add subcategory'**
+  String get cat_admin_add_subcategory;
+
+  /// Catalogue workbook (v2, 2026-11-12), key admin.add_item_type
+  ///
+  /// In en, this message translates to:
+  /// **'Add item type'**
+  String get cat_admin_add_item_type;
+
+  /// Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them
+  ///
+  /// In en, this message translates to:
+  /// **'Flat Fallback Fee (\$)'**
+  String get delivery_flatFallbackFee;
+
+  /// Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them
+  ///
+  /// In en, this message translates to:
+  /// **'Tier 1'**
+  String get delivery_tier1;
+
+  /// Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them
+  ///
+  /// In en, this message translates to:
+  /// **'Max km'**
+  String get delivery_maxKm;
+
+  /// Section 3: Delivery Fees — Step 2. Reconstructed from a mangled table cell on page 3 of the client's PDF — confirm with them
+  ///
+  /// In en, this message translates to:
+  /// **'Price (\$)'**
+  String get delivery_price;
 }
 
 class _AppLocalizationsDelegate
